@@ -155,6 +155,41 @@ namespace BattleshipChallenge.UnitTests
             subject.Ships[0].Sunk.Should().BeTrue();
         }
 
+        [Test]
+        public void IsGameOver_WhenAllShipsSink_ReturnsTrue()
+        {
+            var subject = CreateSubject();
+            subject.AddShip("C3", "C5");
+            subject.AddShip("A7", "C7");
+            // Attack ship 1 - sunk
+            _ = subject.Attack("C3");
+            _ = subject.Attack("C4");
+            _ = subject.Attack("C5");
+            // Attack ship 2 - sunk
+            _ = subject.Attack("A7");
+            _ = subject.Attack("B7");
+            _ = subject.Attack("C7");
+
+            subject.IsGameOver.Should().BeTrue();
+        }
+
+        [Test]
+        public void IsGameOver_WhenAnyShipStillAfloat_ReturnsFalse()
+        {
+            var subject = CreateSubject();
+            subject.AddShip("C3", "C5");
+            subject.AddShip("A7", "C7");
+            // Attack ship 1 - not sunk
+            _ = subject.Attack("C3");
+            _ = subject.Attack("C5");
+            // Attack ship 2 - sunk
+            _ = subject.Attack("A7");
+            _ = subject.Attack("B7");
+            _ = subject.Attack("C7");
+
+            subject.IsGameOver.Should().BeFalse();
+        }
+
         private Board CreateSubject()
         {
             return new Board(_translator);

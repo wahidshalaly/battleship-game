@@ -4,6 +4,12 @@ using System.Linq;
 
 namespace BattleshipChallenge
 {
+    /// <summary>
+    /// A board encapsulates all data about positions and ships on itself.
+    /// Keeps track of attacks and can query ships for their state
+    /// The state of board <c>IsGameOver</c> will be <c>true</c>, if all ships are sunk.
+    /// This board has a fixed size of 10.
+    /// </summary>
     internal class Board
     {
         private readonly ILocationTranslator _locationTranslator;
@@ -34,7 +40,7 @@ namespace BattleshipChallenge
         /// <summary>
         /// Returns true when all ships are sunk.
         /// </summary>
-        public bool IsGameOver => throw new NotImplementedException();
+        public bool IsGameOver => Ships.All(s => s.Sunk);
 
         public void AddShip(string bow, string stern)
         {
@@ -45,6 +51,12 @@ namespace BattleshipChallenge
             Ships.Add(ship);
         }
 
+        /// <summary>
+        /// Attacks a position on the board.
+        /// </summary>
+        /// <param name="position">A valid position on the board</param>
+        /// <returns>True, if a `Hit`, false if a `Miss`</returns>
+        /// <exception cref="ArgumentException">If not a valid position it'll throw an Argument exception</exception>
         public bool Attack(string position)
         {
             if (string.IsNullOrWhiteSpace(position))
