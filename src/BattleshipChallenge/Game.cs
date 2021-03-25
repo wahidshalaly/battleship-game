@@ -17,9 +17,9 @@ namespace BattleshipChallenge
     /// - A game has two players (we'll focus on a single player, but the other won't be different anyway)
     /// - When a player joins, create his/her empty board (N*N) where N=10 in this implementation
     /// - A player has number of ships (as long as it's possible to add them to the board)
-    /// - A battleship has a size (s) 1 <= s <= N positioned either horizontally or vertically and totally on the board
-    /// - To take a hit, you need to pick a position (optionally: that has not been targetted before)
-    /// - After taking a hit, we must report the state of targetted position, if it's a hit or not.
+    /// - A battleship has a size between 1 and N positioned either horizontally or vertically and totally on the board
+    /// - To take a hit, you need to pick a position (optionally: that has not been targeted before)
+    /// - After taking a hit, we must report the state of targeted position, if it's a hit or not.
     /// - This should affect the state of battleship affected & also the state of the board
     /// - At any time, we should be able to query the player/board state (if has lost or not yet)
     ///
@@ -43,22 +43,48 @@ namespace BattleshipChallenge
 
         public void CreateBoard(Player player)
         {
-            // TODO: Initialise a board with all positions
-            // validate to create board for a player only once
-            // Later to think about when game is over, how to re-initialise the board
-            throw new NotImplementedException();
+            switch (player)
+            {
+                case Player.One:
+                    Player1 = CreateNewBoard();
+                    break;
+                case Player.Two:
+                    Player2 = CreateNewBoard();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(player), player, null);
+            }
         }
 
         public void AddShip(Player player, string bow, string stern)
         {
-            // TODO: Send command to player's board
-            throw new NotImplementedException();
+            BoardSelector(player).AddShip(bow, stern);
         }
 
         public bool Attack(Player player, string position)
         {
-            // TODO: Send command to player's board
-            throw new NotImplementedException();
+            return BoardSelector(player).Attack(position);
+        }
+
+        public bool PlayerHasLost(Player player) => BoardSelector(player).IsGameOver;
+
+        private readonly LocationTranslator _locationTranslator = new LocationTranslator();
+        private Board CreateNewBoard()
+        {
+            return new Board(_locationTranslator);
+        }
+
+        private Board BoardSelector(Player player)
+        {
+            switch (player)
+            {
+                case Player.One:
+                    return Player1;
+                case Player.Two:
+                    return Player2;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(player), player, null);
+            }
         }
     }
 
