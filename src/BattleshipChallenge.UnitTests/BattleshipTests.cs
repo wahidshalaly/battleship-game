@@ -4,6 +4,7 @@ using NUnit.Framework;
 
 namespace BattleshipChallenge.UnitTests
 {
+    [TestFixture]
     public class BattleshipTests
     {
         [Test]

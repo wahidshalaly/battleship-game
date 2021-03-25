@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 namespace BattleshipChallenge
@@ -15,10 +14,10 @@ namespace BattleshipChallenge
         public List<string> Positions { get; }
         public List<string> Damages { get; }
 
-        public Battleship(int id, List<string> positions)
+        public Battleship(int id, IEnumerable<string> positions)
         {
             Id = id;
-            Positions = positions;
+            Positions = new List<string>(positions);
             Damages = new List<string>();
         }
 
