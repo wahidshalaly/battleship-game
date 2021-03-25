@@ -11,7 +11,7 @@ namespace BattleshipChallenge
         public static class Constants
         {
             public const int BoardSize = 10;
-            public const string ErrorMsg_InvalidPositionOutOfRange = "Bow and stern positions must be defined on the board";
+            public const string ErrorMsg_InvalidPositionOutOfRange = "Selected position must be defined on the board";
             public const string ErrorMsg_InvalidShipPosition = "Ship must be positioned either vertically or horizontally";
         }
 
@@ -38,11 +38,40 @@ namespace BattleshipChallenge
 
         public void AddShip(string bow, string stern)
         {
-            var id = Ships.Count + 1;
+            var id = Ships.Count;
             var positions = FindShipLocation(bow, stern).ToList();
             var ship = new Battleship(id, positions);
             positions.ForEach(l => Positions[l] = id);
             Ships.Add(ship);
+        }
+
+        public bool Attack(string position)
+        {
+            if (string.IsNullOrWhiteSpace(position))
+            {
+                throw new ArgumentException(Constants.ErrorMsg_InvalidPositionOutOfRange);
+            }
+
+            if (!Positions.ContainsKey(position))
+            {
+                throw new ArgumentException(Constants.ErrorMsg_InvalidPositionOutOfRange);
+            }
+
+            if (!Positions[position].HasValue)
+            {
+                return false;
+            }
+
+            if (Attacks.Contains(position))
+            {
+                // TODO: Discuss if we should throw an exception when position has been hit more than once and how to prevent this
+                return false;
+            }
+
+            Attacks.Add(position);
+            var shipId = Positions[position].Value;
+            Ships[shipId].AttackAt(position);
+            return true;
         }
 
         private IEnumerable<string> FindShipLocation(string bow, string stern)
@@ -58,15 +87,6 @@ namespace BattleshipChallenge
             }
 
             return _locationTranslator.FindPositions(bow, stern);
-        }
-
-        public bool Attack(string position)
-        {
-            // TODO: find ship-id if any and send it the attack and return Hit.
-            // if not ship-id found, then it's a Miss.
-            // return true as hit and false as miss
-            // TODO: add this attack to attacks collection and it should be attacked again.
-            throw new NotImplementedException();
         }
     }
 }
