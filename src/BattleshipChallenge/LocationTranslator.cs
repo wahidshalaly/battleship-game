@@ -29,9 +29,9 @@ namespace BattleshipChallenge
         public IEnumerable<string> FindPositions(string bow, string stern)
         {
             var bowLetter = bow[0];
-            var bowDigit = int.Parse(bow[1].ToString());
+            var bowDigit = int.Parse(bow.Substring(1));
             var sternLetter = stern[0];
-            var sternDigit = int.Parse(stern[1].ToString());
+            var sternDigit = int.Parse(stern.Substring(1));
 
             if (bowLetter == sternLetter && bowDigit == sternDigit)
             {
@@ -43,9 +43,9 @@ namespace BattleshipChallenge
             {
                 var x = Math.Min(bowDigit, sternDigit);
                 var y = Math.Max(bowDigit, sternDigit);
-                for (var horizontal = x; horizontal <= y; horizontal++)
+                for (var digit = x; digit <= y; digit++)
                 {
-                    yield return $"{bowLetter}{horizontal}";
+                    yield return $"{bowLetter}{digit}";
                 }
                 yield break;
             }
@@ -56,9 +56,9 @@ namespace BattleshipChallenge
                 var b = _letters.IndexOf(sternLetter);
                 var x = Math.Min(a, b);
                 var y = Math.Max(a, b);
-                for (var vertical = x; vertical <= y; vertical++)
+                for (var idx = x; idx <= y; idx++)
                 {
-                    yield return $"{_letters[vertical]}{bowDigit}";
+                    yield return $"{_letters[idx]}{bowDigit}";
                 }
             }
         }
@@ -70,14 +70,14 @@ namespace BattleshipChallenge
                 throw new ArgumentOutOfRangeException(nameof(size));
             }
 
-            var verticals = _letters.GetRange(0, size);
-            var horizontals = Enumerable.Range(1, 10).ToArray();
+            var letters = _letters.GetRange(0, size);
+            var digits = Enumerable.Range(1, 10).ToArray();
 
-            foreach (var v in verticals)
+            foreach (var letter in letters)
             {
-                foreach (var h in horizontals)
+                foreach (var digigt in digits)
                 {
-                    yield return $"{v}{h}";
+                    yield return $"{letter}{digigt}";
                 }
             }
         }

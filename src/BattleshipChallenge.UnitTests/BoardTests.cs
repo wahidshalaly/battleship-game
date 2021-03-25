@@ -11,12 +11,14 @@ namespace BattleshipChallenge.UnitTests
         public void Ctor_InitiatesAllPositionsOnBoard()
         {
             var translator = new LocationTranslator();
-            var board = new Board(translator);
-            board.Positions.Distinct()
-                .Should().HaveCount(Board.BoardSize * Board.BoardSize);
 
-            board.Ships.Should().BeEmpty();
-            board.Attacks.Should().BeEmpty();
+            var subject = new Board(translator);
+
+            subject.Positions.Distinct().Should().HaveCount(Board.BoardSize * Board.BoardSize);
+            subject.Positions.ContainsKey("A1").Should().BeTrue();
+            subject.Positions.ContainsKey("J10").Should().BeTrue();
+            subject.Ships.Should().BeEmpty();
+            subject.Attacks.Should().BeEmpty();
         }
     }
 }

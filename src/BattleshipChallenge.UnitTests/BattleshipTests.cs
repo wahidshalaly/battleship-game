@@ -12,12 +12,13 @@ namespace BattleshipChallenge.UnitTests
         {
             var id = 3;
             var positions = new List<string>(new[] { "abc", "bcd", "cde" });
-            var ship = new Battleship(id, positions);
 
-            ship.Id.Should().Be(id);
-            ship.Positions.Should().BeEquivalentTo(positions);
-            ship.Damages.Should().BeEmpty();
-            ship.Sunk.Should().BeFalse();
+            var subject = new Battleship(id, positions);
+
+            subject.Id.Should().Be(id);
+            subject.Positions.Should().BeEquivalentTo(positions);
+            subject.Damages.Should().BeEmpty();
+            subject.Sunk.Should().BeFalse();
         }
 
         [Test]
@@ -25,14 +26,13 @@ namespace BattleshipChallenge.UnitTests
         {
             var id = 3;
             var positions = new List<string>(new[] { "abc", "bcd", "cde" });
-            var ship = new Battleship(id, positions);
+            var subject = new Battleship(id, positions);
 
-            ship.AttackAt("bcd");
+            subject.AttackAt("bcd");
 
             var expectedDamages = new List<string>(new[] { "bcd" });
-            ship.Damages.Should().BeEquivalentTo(expectedDamages);
-
-            ship.Sunk.Should().BeFalse();
+            subject.Damages.Should().BeEquivalentTo(expectedDamages);
+            subject.Sunk.Should().BeFalse();
         }
 
         [Test]
@@ -40,16 +40,15 @@ namespace BattleshipChallenge.UnitTests
         {
             var id = 3;
             var positions = new List<string>(new[] { "abc", "bcd", "cde" });
-            var ship = new Battleship(id, positions);
+            var subject = new Battleship(id, positions);
 
-            ship.AttackAt("abc");
-            ship.AttackAt("bcd");
-            ship.AttackAt("cde");
+            subject.AttackAt("abc");
+            subject.AttackAt("bcd");
+            subject.AttackAt("cde");
 
             var expectedDamages = positions;
-            ship.Damages.Should().BeEquivalentTo(expectedDamages);
-
-            ship.Sunk.Should().BeTrue();
+            subject.Damages.Should().BeEquivalentTo(expectedDamages);
+            subject.Sunk.Should().BeTrue();
         }
     }
 }
