@@ -8,7 +8,12 @@ namespace BattleshipChallenge
     {
         private readonly ILocationTranslator _locationTranslator;
 
-        public const int BoardSize = 10;
+        public static class Constants
+        {
+            public const int BoardSize = 10;
+            public const string ErrorMsg_InvalidPositionOutOfRange = "Bow and stern positions must be defined on the board";
+            public const string ErrorMsg_InvalidShipPosition = "Ship must be positioned either vertically or horizontally";
+        }
 
         public Dictionary<string, int?> Positions { get; }
         public List<Battleship> Ships { get; }
@@ -22,8 +27,8 @@ namespace BattleshipChallenge
             Ships = new List<Battleship>();
             Attacks = new List<string>();
 
-            var positions = _locationTranslator.GetAllPositionsOnBoardOf(BoardSize);
-            positions.ToList().ForEach(p => Positions.Add(p, null));
+            var positions = _locationTranslator.GetAllPositionsOnBoardOf(Constants.BoardSize).ToList();
+            positions.ForEach(p => Positions.Add(p, null));
         }
 
         /// <summary>
@@ -33,9 +38,26 @@ namespace BattleshipChallenge
 
         public void AddShip(string bow, string stern)
         {
-            // TODO: Add a ship to mentioned positions and mark these positions are occupied by ship-id
-            // TODO: Validate that ship is positioned either horizontally or vertically
-            throw new NotImplementedException();
+            var id = Ships.Count + 1;
+            var positions = FindShipLocation(bow, stern).ToList();
+            var ship = new Battleship(id, positions);
+            positions.ForEach(l => Positions[l] = id);
+            Ships.Add(ship);
+        }
+
+        private IEnumerable<string> FindShipLocation(string bow, string stern)
+        {
+            if (!Positions.ContainsKey(bow) || !Positions.ContainsKey(stern))
+            {
+                throw new ArgumentException(Constants.ErrorMsg_InvalidPositionOutOfRange);
+            }
+
+            if (bow[0] != stern[0] && bow.Substring(1) != stern.Substring(1))
+            {
+                throw new ArgumentException(Constants.ErrorMsg_InvalidShipPosition);
+            }
+
+            return _locationTranslator.FindPositions(bow, stern);
         }
 
         public bool Attack(string position)
