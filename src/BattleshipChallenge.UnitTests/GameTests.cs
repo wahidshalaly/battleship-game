@@ -40,6 +40,5 @@ namespace BattleshipChallenge.UnitTests
 
             Assert.True(result);
         }
-
     }
 }

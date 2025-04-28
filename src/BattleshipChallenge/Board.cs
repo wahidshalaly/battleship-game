@@ -5,8 +5,8 @@ using System.Linq;
 namespace BattleshipChallenge
 {
     /// <summary>
-    /// A board encapsulates all data about positions and ships on itself.
-    /// Keeps track of attacks and can query ships for their state
+    /// This entity represents a board, its positions and ships it contains.
+    /// It keeps track of attacks and can query ships for their state.
     /// The state of board <c>IsGameOver</c> will be <c>true</c>, if all ships are sunk.
     /// This board has a fixed size of 10.
     /// </summary>
@@ -17,8 +17,10 @@ namespace BattleshipChallenge
         public static class Constants
         {
             public const int BoardSize = 10;
-            public const string ErrorMsg_InvalidPositionOutOfRange = "Selected position must be defined on the board";
-            public const string ErrorMsg_InvalidShipPosition = "Ship must be positioned either vertically or horizontally";
+            public const string ErrorMsg_InvalidPositionOutOfRange =
+                "Selected position must be defined on the board";
+            public const string ErrorMsg_InvalidShipPosition =
+                "Ship must be positioned either vertically or horizontally";
         }
 
         public Dictionary<string, int?> Positions { get; }
@@ -33,7 +35,9 @@ namespace BattleshipChallenge
             Ships = new List<Battleship>();
             Attacks = new List<string>();
 
-            var positions = _locationTranslator.GetAllPositionsOnBoardOf(Constants.BoardSize).ToList();
+            var positions = _locationTranslator
+                .GetAllPositionsOnBoardOf(Constants.BoardSize)
+                .ToList();
             positions.ForEach(p => Positions.Add(p, null));
         }
 

@@ -7,7 +7,7 @@ namespace BattleshipChallenge
     public interface ILocationTranslator
     {
         /// <summary>
-        /// Returns positions between two positions inclusively.
+        /// This returns positions between two positions inclusively.
         /// </summary>
         /// <param name="bow">Any valid location on the board</param>
         /// <param name="stern">Any valid location on the board</param>

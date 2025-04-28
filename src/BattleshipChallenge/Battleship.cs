@@ -3,10 +3,7 @@ using System.Collections.Generic;
 namespace BattleshipChallenge
 {
     /// <summary>
-    /// Simple data structure that encapsulates data of a ship
-    /// It's ID, positions, and any damages it receives.
-    /// No need for validating if initial positions are either horizontally or virtually
-    /// Or, if positions of attack actually belong to ship or not, this all will be responsibility of the Board
+    /// This entity represent a ship, its positions, and any damages it receives.
     /// </summary>
     internal class Battleship
     {

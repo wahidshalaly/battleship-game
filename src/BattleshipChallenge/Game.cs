@@ -69,6 +69,7 @@ namespace BattleshipChallenge
         public bool PlayerHasLost(Player player) => BoardSelector(player).IsGameOver;
 
         private readonly LocationTranslator _locationTranslator = new LocationTranslator();
+
         private Board CreateNewBoard()
         {
             return new Board(_locationTranslator);
@@ -88,5 +89,9 @@ namespace BattleshipChallenge
         }
     }
 
-    public enum Player { One = 1, Two = 2 }
+    public enum Player
+    {
+        One = 1,
+        Two = 2,
+    }
 }

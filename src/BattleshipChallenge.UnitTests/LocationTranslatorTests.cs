@@ -19,7 +19,10 @@ namespace BattleshipChallenge.UnitTests
 
         [TestCase("C5", "C8")]
         [TestCase("C8", "C5")]
-        public void FindPositions_WhenBowAndSternHasSameLetter_ReturnsCollection(string bow, string stern)
+        public void FindPositions_WhenBowAndSternHasSameLetter_ReturnsCollection(
+            string bow,
+            string stern
+        )
         {
             var subject = new LocationTranslator();
 
@@ -27,7 +30,6 @@ namespace BattleshipChallenge.UnitTests
 
             positions.Should().BeEquivalentTo("C5", "C6", "C7", "C8");
         }
-
 
         [TestCase("C10", "C7")]
         [TestCase("C7", "C10")]
@@ -42,7 +44,10 @@ namespace BattleshipChallenge.UnitTests
 
         [TestCase("C5", "E5")]
         [TestCase("E5", "C5")]
-        public void FindPositions_WhenBowAndSternHasSameDigit_ReturnsCollection(string bow, string stern)
+        public void FindPositions_WhenBowAndSternHasSameDigit_ReturnsCollection(
+            string bow,
+            string stern
+        )
         {
             var subject = new LocationTranslator();
 

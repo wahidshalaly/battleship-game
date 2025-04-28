@@ -39,9 +39,10 @@ namespace BattleshipChallenge.UnitTests
             subject.Ships[0].Positions.Should().BeEquivalentTo(expectedPositions);
 
             // validate that board has marked the ship location by ship-id (0)
-            subject.Positions
-                .Count(p => expectedPositions.Contains(p.Key) && p.Value == 0)
-                .Should().Be(expectedPositions.Length);
+            subject
+                .Positions.Count(p => expectedPositions.Contains(p.Key) && p.Value == 0)
+                .Should()
+                .Be(expectedPositions.Length);
         }
 
         [Test]
@@ -52,13 +53,13 @@ namespace BattleshipChallenge.UnitTests
             {
                 new Tuple<string, string>("C4", "C6"),
                 new Tuple<string, string>("J10", "G10"),
-                new Tuple<string, string>("F8", "G8")
+                new Tuple<string, string>("F8", "G8"),
             };
             var subject = CreateSubject();
 
             foreach (var (bow, stern) in ships)
             {
-                subject.AddShip(bow , stern);
+                subject.AddShip(bow, stern);
 
                 var expectedPositions = _translator.FindPositions(bow, stern).ToArray();
 
@@ -67,9 +68,10 @@ namespace BattleshipChallenge.UnitTests
                 subject.Ships[shipId].Positions.Should().BeEquivalentTo(expectedPositions);
 
                 // validate that board has marked the ship location
-                subject.Positions
-                    .Count(p => expectedPositions.Contains(p.Key) && p.Value == shipId)
-                    .Should().Be(expectedPositions.Length);
+                subject
+                    .Positions.Count(p => expectedPositions.Contains(p.Key) && p.Value == shipId)
+                    .Should()
+                    .Be(expectedPositions.Length);
 
                 shipId++;
             }
@@ -88,7 +90,8 @@ namespace BattleshipChallenge.UnitTests
         {
             var subject = CreateSubject();
 
-            subject.Invoking(s => s.AddShip(bow, stern))
+            subject
+                .Invoking(s => s.AddShip(bow, stern))
                 .Should()
                 .Throw<ArgumentException>()
                 .WithMessage(Board.Constants.ErrorMsg_InvalidShipPosition);
@@ -99,7 +102,8 @@ namespace BattleshipChallenge.UnitTests
         {
             var subject = CreateSubject();
 
-            subject.Invoking(s => s.AddShip(bow, stern))
+            subject
+                .Invoking(s => s.AddShip(bow, stern))
                 .Should()
                 .Throw<ArgumentException>()
                 .WithMessage(Board.Constants.ErrorMsg_InvalidPositionOutOfRange);
@@ -110,7 +114,8 @@ namespace BattleshipChallenge.UnitTests
         {
             var subject = CreateSubject();
 
-            subject.Invoking(s => s.Attack("C40"))
+            subject
+                .Invoking(s => s.Attack("C40"))
                 .Should()
                 .Throw<ArgumentException>()
                 .WithMessage(Board.Constants.ErrorMsg_InvalidPositionOutOfRange);
