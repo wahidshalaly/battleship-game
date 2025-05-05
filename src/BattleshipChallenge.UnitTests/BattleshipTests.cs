@@ -1,54 +1,50 @@
 using System.Collections.Generic;
 using FluentAssertions;
-using NUnit.Framework;
+using Xunit;
 
-namespace BattleshipChallenge.UnitTests
+namespace BattleshipChallenge.UnitTests;
+
+public class BattleshipTests
 {
-    [TestFixture]
-    public class BattleshipTests
+    private const int ShipId = 3;
+
+    [Fact]
+    public void Ctor_CreatesNewShipWithGivenCells()
     {
-        [Test]
-        public void Ctor_CreatesNewShipWithGivenPositions()
-        {
-            var id = 3;
-            var positions = new List<string>(new[] { "abc", "bcd", "cde" });
+        var cells = new List<string>(["abc", "bcd", "cde"]);
 
-            var subject = new Battleship(id, positions);
+        var subject = new Battleship(ShipId, cells);
 
-            subject.Id.Should().Be(id);
-            subject.Positions.Should().BeEquivalentTo(positions);
-            subject.Damages.Should().BeEmpty();
-            subject.Sunk.Should().BeFalse();
-        }
+        subject.Id.Should().Be(ShipId);
+        subject.Cells.Should().BeEquivalentTo(cells);
+        subject.Damages.Should().BeEmpty();
+        subject.Sunk.Should().BeFalse();
+    }
 
-        [Test]
-        public void AttackAt_MarksPositionsOfAttackAsDamaged()
-        {
-            var id = 3;
-            var positions = new List<string>(new[] { "abc", "bcd", "cde" });
-            var subject = new Battleship(id, positions);
+    [Fact]
+    public void AttackAt_MarksCellsOfAttackAsDamaged()
+    {
+        var cells = new List<string>(["abc", "bcd", "cde"]);
+        var subject = new Battleship(ShipId, cells);
 
-            subject.AttackAt("bcd");
+        subject.AttackAt("bcd");
 
-            var expectedDamages = new List<string>(new[] { "bcd" });
-            subject.Damages.Should().BeEquivalentTo(expectedDamages);
-            subject.Sunk.Should().BeFalse();
-        }
+        var expectedDamages = new List<string>(["bcd"]);
+        subject.Damages.Should().BeEquivalentTo(expectedDamages);
+        subject.Sunk.Should().BeFalse();
+    }
 
-        [Test]
-        public void Sunk_WhenAllPositionsAreDamaged_ReturnsTrue()
-        {
-            var id = 3;
-            var positions = new List<string>(new[] { "abc", "bcd", "cde" });
-            var subject = new Battleship(id, positions);
+    [Fact]
+    public void Sunk_WhenAllCellsAreDamaged_ReturnsTrue()
+    {
+        var cells = new List<string>(["abc", "bcd", "cde"]);
+        var subject = new Battleship(ShipId, cells);
 
-            subject.AttackAt("abc");
-            subject.AttackAt("bcd");
-            subject.AttackAt("cde");
+        subject.AttackAt("abc");
+        subject.AttackAt("bcd");
+        subject.AttackAt("cde");
 
-            var expectedDamages = positions;
-            subject.Damages.Should().BeEquivalentTo(expectedDamages);
-            subject.Sunk.Should().BeTrue();
-        }
+        subject.Damages.Should().BeEquivalentTo(cells);
+        subject.Sunk.Should().BeTrue();
     }
 }

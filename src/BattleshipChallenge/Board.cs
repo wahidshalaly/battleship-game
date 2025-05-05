@@ -2,107 +2,109 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BattleshipChallenge
+namespace BattleshipChallenge;
+
+/// <summary>
+/// This entity represents a board, its cells and ships it contains.
+/// It keeps track of attacks and can query ships for their state.
+/// The state of board <c>IsGameOver</c> will be <c>true</c>, if all ships are sunk.
+/// This board has a fixed size of 10.
+/// </summary>
+internal class Board
 {
-    /// <summary>
-    /// This entity represents a board, its positions and ships it contains.
-    /// It keeps track of attacks and can query ships for their state.
-    /// The state of board <c>IsGameOver</c> will be <c>true</c>, if all ships are sunk.
-    /// This board has a fixed size of 10.
-    /// </summary>
-    internal class Board
+    private readonly int _boardSize = 10;
+    private readonly ICellLocator _locator;
+
+    // All cell codes on the board and their corresponding ShipId, if any
+    public Dictionary<string, int?> Cells { get; }
+    public List<Battleship> Ships { get; }
+    public List<string> Attacks { get; }
+
+    public Board(ICellLocator locator)
     {
-        private readonly ILocationTranslator _locationTranslator;
+        _locator = locator;
 
-        public static class Constants
+        Cells = new Dictionary<string, int?>();
+        Ships = new List<Battleship>();
+        Attacks = new List<string>();
+
+        var cells = _locator
+            .GetAllCellsOnBoardOf(_boardSize)
+            .ToList();
+        cells.ForEach(p => Cells.Add(p, null));
+    }
+
+    public Board(int size)
+    {
+        if (size <= 0 || size > Constants.MaxBoardSize)
         {
-            public const int BoardSize = 10;
-            public const string ErrorMsg_InvalidPositionOutOfRange =
-                "Selected position must be defined on the board";
-            public const string ErrorMsg_InvalidShipPosition =
-                "Ship must be positioned either vertically or horizontally";
+            throw new ArgumentOutOfRangeException(nameof(size), size, Constants.ErrorMessages.InvalidBoardSize);
         }
 
-        public Dictionary<string, int?> Positions { get; }
-        public List<Battleship> Ships { get; }
-        public List<string> Attacks { get; }
+        _boardSize = size;
+    }
 
-        public Board(ILocationTranslator locationTranslator)
+    /// <summary>
+    /// Returns true when all ships are sunk.
+    /// </summary>
+    public bool IsGameOver => Ships.All(s => s.Sunk);
+
+    public void AddShip(string bow, string stern)
+    {
+        var shipId = Ships.Count;
+        var cells = FindShipLocation(bow, stern).ToList();
+        var ship = new Battleship(shipId, cells);
+        cells.ForEach(c => Cells[c] = shipId);
+        Ships.Add(ship);
+    }
+
+    /// <summary>
+    /// Attacks a cell on the board.
+    /// </summary>
+    /// <param name="cell">A valid cell on the board</param>
+    /// <returns>True, if a `Hit`, false if a `Miss`</returns>
+    /// <exception cref="ArgumentException">If not a valid cell it'll throw an Argument exception</exception>
+    public bool Attack(string cell)
+    {
+        if (string.IsNullOrWhiteSpace(cell))
         {
-            _locationTranslator = locationTranslator;
-
-            Positions = new Dictionary<string, int?>();
-            Ships = new List<Battleship>();
-            Attacks = new List<string>();
-
-            var positions = _locationTranslator
-                .GetAllPositionsOnBoardOf(Constants.BoardSize)
-                .ToList();
-            positions.ForEach(p => Positions.Add(p, null));
+            throw new ArgumentException(Constants.ErrorMessages.InvalidCellCode);
         }
 
-        /// <summary>
-        /// Returns true when all ships are sunk.
-        /// </summary>
-        public bool IsGameOver => Ships.All(s => s.Sunk);
-
-        public void AddShip(string bow, string stern)
+        if (!Cells.TryGetValue(cell, out var shipId))
         {
-            var id = Ships.Count;
-            var positions = FindShipLocation(bow, stern).ToList();
-            var ship = new Battleship(id, positions);
-            positions.ForEach(l => Positions[l] = id);
-            Ships.Add(ship);
+            throw new ArgumentException(Constants.ErrorMessages.InvalidCellOutOfRange);
         }
 
-        /// <summary>
-        /// Attacks a position on the board.
-        /// </summary>
-        /// <param name="position">A valid position on the board</param>
-        /// <returns>True, if a `Hit`, false if a `Miss`</returns>
-        /// <exception cref="ArgumentException">If not a valid position it'll throw an Argument exception</exception>
-        public bool Attack(string position)
+        if (!shipId.HasValue)
         {
-            if (string.IsNullOrWhiteSpace(position))
-            {
-                throw new ArgumentException(Constants.ErrorMsg_InvalidPositionOutOfRange);
-            }
-
-            if (!Positions.ContainsKey(position))
-            {
-                throw new ArgumentException(Constants.ErrorMsg_InvalidPositionOutOfRange);
-            }
-
-            if (!Positions[position].HasValue)
-            {
-                return false;
-            }
-
-            if (Attacks.Contains(position))
-            {
-                // TODO: Discuss if we should throw an exception when position has been hit more than once and how to prevent this
-                return false;
-            }
-
-            Attacks.Add(position);
-            var shipId = Positions[position].Value;
-            Ships[shipId].AttackAt(position);
-            return true;
+            return false;
         }
 
-        private IEnumerable<string> FindShipLocation(string bow, string stern)
+        if (Attacks.Contains(cell))
         {
-            if (!Positions.ContainsKey(bow) || !Positions.ContainsKey(stern))
-            {
-                throw new ArgumentException(Constants.ErrorMsg_InvalidPositionOutOfRange);
-            }
-
-            if (bow[0] != stern[0] && bow.Substring(1) != stern.Substring(1))
-            {
-                throw new ArgumentException(Constants.ErrorMsg_InvalidShipPosition);
-            }
-
-            return _locationTranslator.FindPositions(bow, stern);
+            throw new ArgumentException(Constants.ErrorMessages.InvalidCellToHit);
         }
+
+        Attacks.Add(cell);
+        Ships[shipId.Value].AttackAt(cell);
+        return true;
+    }
+
+    private IEnumerable<string> FindShipLocation(string bow, string stern)
+    {
+        if (!Cells.ContainsKey(bow) || !Cells.ContainsKey(stern))
+        {
+            throw new ArgumentException(Constants.ErrorMessages.InvalidCellOutOfRange);
+        }
+
+        var bowCell = (Cell)bow;
+        var sternCell = (Cell)stern;
+        if (!bowCell.HasSameColumn(sternCell) && !bowCell.HasSameRow(sternCell))
+        {
+            throw new ArgumentException(Constants.ErrorMessages.InvalidShipLocation);
+        }
+
+        return _locator.FindCells(bow, stern);
     }
 }

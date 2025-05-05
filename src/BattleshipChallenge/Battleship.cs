@@ -1,35 +1,34 @@
 using System.Collections.Generic;
 
-namespace BattleshipChallenge
+namespace BattleshipChallenge;
+
+/// <summary>
+/// This represents a ship on the board, its cells, and any damages it receives.
+/// </summary>
+internal class Battleship
 {
-    /// <summary>
-    /// This entity represent a ship, its positions, and any damages it receives.
-    /// </summary>
-    internal class Battleship
+    public int Id { get; }
+    public List<string> Cells { get; }
+    public List<string> Damages { get; }
+
+    public Battleship(int id, IEnumerable<string> cells)
     {
-        public int Id { get; }
-        public List<string> Positions { get; }
-        public List<string> Damages { get; }
-
-        public Battleship(int id, IEnumerable<string> positions)
-        {
-            Id = id;
-            Positions = new List<string>(positions);
-            Damages = new List<string>();
-        }
-
-        /// <summary>
-        /// Take an attack at designated position
-        /// </summary>
-        /// <param name="position">position of attack, expected to be like A5, C6, etc.</param>
-        public void AttackAt(string position)
-        {
-            Damages.Add(position);
-        }
-
-        /// <summary>
-        /// Returns true if all positions are damaged, and false otherwise.
-        /// </summary>
-        public bool Sunk => Positions.Count == Damages.Count;
+        Id = id;
+        Cells = new List<string>(cells);
+        Damages = new List<string>();
     }
+
+    /// <summary>
+    /// Takes an attack at designated cell
+    /// </summary>
+    /// <param name="cell">cell of attack, expected to be like A5, C6, etc.</param>
+    public void AttackAt(string cell)
+    {
+        Damages.Add(cell);
+    }
+
+    /// <summary>
+    /// Returns true if all cells are damaged, and false otherwise.
+    /// </summary>
+    public bool Sunk => Cells.Count == Damages.Count;
 }
