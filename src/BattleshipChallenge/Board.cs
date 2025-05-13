@@ -20,6 +20,21 @@ internal class Board
     public List<Battleship> Ships { get; }
     public List<Cell> Attacks { get; }
 
+    public Board(ICellLocator locator, int size)
+    {
+        _locator = locator;
+
+        Cells = new Dictionary<Cell, int?>();
+        Ships = [];
+        Attacks = [];
+
+        var cells = _locator
+            .GetAllCellsOnBoardOf(_boardSize)
+            .ToList();
+
+        cells.ForEach(p => Cells.Add(p, null));
+    }
+
     public Board(ICellLocator locator)
     {
         _locator = locator;
@@ -31,12 +46,13 @@ internal class Board
         var cells = _locator
             .GetAllCellsOnBoardOf(_boardSize)
             .ToList();
+
         cells.ForEach(p => Cells.Add(p, null));
     }
 
     public Board(int size)
     {
-        if (size <= 0 || size > Constants.MaxBoardSize)
+        if (size is <= 0 or > Constants.MaxBoardSize)
         {
             throw new ArgumentOutOfRangeException(nameof(size), size, Constants.ErrorMessages.InvalidBoardSize);
         }
@@ -63,7 +79,7 @@ internal class Board
     /// </summary>
     /// <param name="cell">A valid cell on the board</param>
     /// <returns>True, if a `Hit`, false if a `Miss`</returns>
-    /// <exception cref="ArgumentException">If not a valid cell it'll throw an Argument exception</exception>
+    /// <exception cref="ArgumentException">If an invalid cell, it'll throw an Argument exception</exception>
     public bool Attack(Cell cell)
     {
         if (cell == null)
@@ -103,6 +119,6 @@ internal class Board
             throw new ArgumentException(Constants.ErrorMessages.InvalidShipLocation);
         }
 
-        return _locator.FindCells(bow, stern);
+        return _locator.FindCellsBetween(bow, stern);
     }
 }

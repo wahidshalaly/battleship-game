@@ -14,7 +14,7 @@ public class CellLocatorTests
     {
         var bow = (Cell)"C5";
 
-        var cells = _subject.FindCells(bow, bow).ToArray();
+        var cells = _subject.FindCellsBetween(bow, bow).ToArray();
 
         cells.Should().BeEquivalentTo([bow]);
     }
@@ -27,7 +27,7 @@ public class CellLocatorTests
         string stern
     )
     {
-        var cells = _subject.FindCells((Cell)bow, (Cell)stern).ToArray();
+        var cells = _subject.FindCellsBetween((Cell)bow, (Cell)stern).ToArray();
 
         cells.Should().BeEquivalentTo([(Cell)"C5", (Cell)"C6", (Cell)"C7", (Cell)"C8"]);
     }
@@ -37,7 +37,7 @@ public class CellLocatorTests
     [InlineData("C7", "C10")]
     public void FindCells_WhenBowOrSternInColumn10(string bow, string stern)
     {
-        var cells = _subject.FindCells((Cell)bow, (Cell)stern);
+        var cells = _subject.FindCellsBetween((Cell)bow, (Cell)stern);
 
         cells.Should().BeEquivalentTo([(Cell)"C7", (Cell)"C8", (Cell)"C9", (Cell)"C10"]);
     }
@@ -50,7 +50,7 @@ public class CellLocatorTests
         string stern
     )
     {
-        var cells = _subject.FindCells((Cell)bow, (Cell)stern);
+        var cells = _subject.FindCellsBetween((Cell)bow, (Cell)stern);
 
         cells.Should().BeEquivalentTo([(Cell)"C5", (Cell)"D5", (Cell)"E5"]);
     }
@@ -66,11 +66,11 @@ public class CellLocatorTests
     [Fact]
     public void FindCells_WhenInputIsNull_ThrowsException()
     {
-        _subject.Invoking(s => s.FindCells(null, (Cell)"A1").ToArray())
+        _subject.Invoking(s => s.FindCellsBetween(null, (Cell)"A1").ToArray())
             .Should()
             .Throw<ArgumentNullException>();
 
-        _subject.Invoking(s => s.FindCells((Cell)"A1", null).ToArray())
+        _subject.Invoking(s => s.FindCellsBetween((Cell)"A1", null).ToArray())
             .Should()
             .Throw<ArgumentNullException>();
     }

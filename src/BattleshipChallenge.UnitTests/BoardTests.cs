@@ -28,7 +28,7 @@ public class BoardTests
     [InlineData("A4", "D4")]
     public void AddShip_WhenLocationIsValid_AddsShipToBoard(string bow, string stern)
     {
-        var expectedCells = _locator.FindCells((Cell)bow, (Cell)stern).ToArray();
+        var expectedCells = _locator.FindCellsBetween((Cell)bow, (Cell)stern).ToArray();
         var subject = CreateSubject();
 
         subject.AddShip((Cell)bow, (Cell)stern);
@@ -61,7 +61,7 @@ public class BoardTests
         {
             subject.AddShip((Cell)bow, (Cell)stern);
 
-            var expectedCells = _locator.FindCells((Cell)bow, (Cell)stern).ToArray();
+            var expectedCells = _locator.FindCellsBetween((Cell)bow, (Cell)stern).ToArray();
 
             // validate that ship has been successfully created
             subject.Ships[shipId].Id.Should().Be(shipId);
@@ -115,7 +115,7 @@ public class BoardTests
 
         result.Should().BeTrue();
         subject.Attacks.Should().HaveCount(1);
-        subject.Ships[0].Damages.Should().HaveCount(1);
+        subject.Ships[0].Cells.Select(c => c.IsHit).Should().HaveCount(1);
         subject.Ships[0].Sunk.Should().BeFalse();
     }
 
@@ -130,7 +130,7 @@ public class BoardTests
         _ = subject.Attack((Cell)"C5");
 
         subject.Attacks.Should().HaveCount(3);
-        subject.Ships[0].Damages.Should().HaveCount(3);
+        subject.Ships[0].Cells.Select(c => c.IsHit).Should().HaveCount(3);
         subject.Ships[0].Sunk.Should().BeTrue();
     }
 

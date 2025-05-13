@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BattleshipChallenge;
 
@@ -7,15 +9,18 @@ namespace BattleshipChallenge;
 /// </summary>
 internal class Battleship
 {
+    private readonly List<Cell> _cells;
+
     public int Id { get; }
-    public List<Cell> Cells { get; }
-    public List<Cell> Damages { get; }
+    public IEnumerable<Cell> Cells => _cells.AsReadOnly();
 
     public Battleship(int id, IEnumerable<Cell> cells)
     {
+        ArgumentNullException.ThrowIfNull(cells);
+
         Id = id;
-        Cells = [..cells];
-        Damages = [];
+
+        _cells = [..cells];
     }
 
     /// <summary>
@@ -24,11 +29,18 @@ internal class Battleship
     /// <param name="cell">cell of attack</param>
     public void AttackAt(Cell cell)
     {
-        Damages.Add(cell);
+        ArgumentNullException.ThrowIfNull(cell);
+
+        if (!_cells.Contains(cell))
+        {
+            throw new ArgumentException(Constants.ErrorMessages.InvalidCellToHit);
+        }
+
+        cell.Attack();
     }
 
     /// <summary>
     /// Returns true if all cells are damaged, and false otherwise.
     /// </summary>
-    public bool Sunk => Cells.Count == Damages.Count;
+    public bool Sunk => _cells.All(c => c.IsHit);
 }

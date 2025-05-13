@@ -9,10 +9,10 @@ public interface ICellLocator
     /// <summary>
     /// This returns cells between two cells inclusively.
     /// </summary>
-    /// <param name="bow">A valid location on the board</param>
-    /// <param name="stern">A valid location on the board</param>
+    /// <param name="bow">A valid cell on the board</param>
+    /// <param name="stern">A valid cell on the board</param>
     /// <returns>All cells between given two cells inclusively, if they share same column or row.</returns>
-    IEnumerable<Cell> FindCells(Cell bow, Cell stern);
+    IEnumerable<Cell> FindCellsBetween(Cell bow, Cell stern);
 
     /// <summary>
     /// Returns all possible cells on a board of a given size
@@ -26,7 +26,7 @@ internal class CellLocator : ICellLocator
 {
     private static readonly List<char> _letters = Constants.Alphabet.ToList();
 
-    public IEnumerable<Cell> FindCells(Cell bow, Cell stern)
+    public IEnumerable<Cell> FindCellsBetween(Cell bow, Cell stern)
     {
         ArgumentNullException.ThrowIfNull(bow);
         ArgumentNullException.ThrowIfNull(stern);

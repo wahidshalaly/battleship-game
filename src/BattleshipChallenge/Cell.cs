@@ -10,6 +10,7 @@ public class Cell
 
     public char Letter { get; }
     public int Digit { get; }
+    public bool IsHit { get; private set; }
 
     private Cell(char letter, int digit)
     {
@@ -46,6 +47,8 @@ public class Cell
     public bool HasSameColumn(Cell other) => (Letter == other.Letter);
 
     public bool HasSameRow(Cell other) => (Digit == other.Digit);
+
+    public void Attack() => IsHit = true;
 
     public static explicit operator Cell(string cell) => FromString(cell);
 

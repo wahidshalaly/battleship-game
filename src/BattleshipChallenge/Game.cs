@@ -5,35 +5,6 @@ namespace BattleshipChallenge;
 /// <summary>
 /// This represents an instance of Battleship game, and it tracks the state of the game.
 /// </summary>
-/// <remarks>
-/// Requirements:
-/// - Create a board
-/// - Add a battleship to a board
-/// - Take a hit and report outcome
-/// - Return player state
-/// - Application should implement only the state tracker, not the entire game
-///
-/// Analysis:
-/// - A game has two players (we'll focus on a single player, but the other won't be different anyway)
-/// - When a player joins, create his/her empty board (N*N) where N=10 in this implementation
-/// - A player has number of ships (as long as it's possible to add them to the board)
-/// - A battleship has a size between 1 and N celled either horizontally or vertically and totally on the board
-/// - To take a hit, you need to pick a cell (optionally: that has not been targeted before)
-/// - After taking a hit, we must report the state of targeted cell, if it's a hit or not.
-/// - This should affect the state of battleship affected & also the state of the board
-/// - At any time, we should be able to query the player/board state (if it has lost or not yet)
-///
-/// Notes:
-/// There is no need for a Player entity, it's actually the board state is what matters.
-/// If we let the board tracks the battleships on it, then it can report its state based on their states.
-/// Q1: When a cell takes a hit, who should report that it's a hit? the cell or battleship in cell?
-/// A1: If cell belongs to a battleship, we'll consider it a hit & update battleship state
-/// If cell does not have a battleship, we'll consider it a miss.
-/// Optionally, in both scenarios, we can update the board state to reject taking hits in this cell again. (BoardCell.CanTakeHit?)
-///
-/// Outside of scope:
-/// - Size of board is fixed to 10 (BOARD_SIZE)
-/// </remarks>
 public class Game
 {
     private Board Player1 { get; set; }
@@ -75,15 +46,12 @@ public class Game
 
     private Board BoardSelector(Player player)
     {
-        switch (player)
+        return player switch
         {
-            case Player.One:
-                return Player1;
-            case Player.Two:
-                return Player2;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(player), player, null);
-        }
+            Player.One => Player1,
+            Player.Two => Player2,
+            _ => throw new ArgumentOutOfRangeException(nameof(player), player, null)
+        };
     }
 }
 

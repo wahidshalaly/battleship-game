@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Xunit;
 
@@ -17,7 +18,7 @@ public class BattleshipTests
 
         subject.Id.Should().Be(ShipId);
         subject.Cells.Should().BeEquivalentTo(cells);
-        subject.Damages.Should().BeEmpty();
+        subject.Cells.Select(c => c.IsHit).Should().BeEmpty();
         subject.Sunk.Should().BeFalse();
     }
 
@@ -30,7 +31,7 @@ public class BattleshipTests
         subject.AttackAt((Cell)"A2");
 
         List<Cell> expectedDamages = [(Cell)"A2"];
-        subject.Damages.Should().BeEquivalentTo(expectedDamages);
+        subject.Cells.Select(c => c.IsHit).ToArray().Should().BeEquivalentTo(expectedDamages);
         subject.Sunk.Should().BeFalse();
     }
 
@@ -44,7 +45,7 @@ public class BattleshipTests
         subject.AttackAt((Cell)"A2");
         subject.AttackAt((Cell)"A3");
 
-        subject.Damages.Should().BeEquivalentTo(cells);
+        subject.Cells.Select(c => c.IsHit).Should().BeEquivalentTo(cells);
         subject.Sunk.Should().BeTrue();
     }
 }
