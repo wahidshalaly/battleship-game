@@ -54,12 +54,12 @@ public class Game
         }
     }
 
-    public void AddShip(Player player, string bow, string stern)
+    public void AddShip(Player player, Cell bow, Cell stern)
     {
         BoardSelector(player).AddShip(bow, stern);
     }
 
-    public bool Attack(Player player, string cell)
+    public bool Attack(Player player, Cell cell)
     {
         return BoardSelector(player).Attack(cell);
     }

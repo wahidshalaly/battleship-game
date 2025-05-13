@@ -8,21 +8,21 @@ namespace BattleshipChallenge;
 internal class Battleship
 {
     public int Id { get; }
-    public List<string> Cells { get; }
-    public List<string> Damages { get; }
+    public List<Cell> Cells { get; }
+    public List<Cell> Damages { get; }
 
-    public Battleship(int id, IEnumerable<string> cells)
+    public Battleship(int id, IEnumerable<Cell> cells)
     {
         Id = id;
-        Cells = new List<string>(cells);
-        Damages = new List<string>();
+        Cells = [..cells];
+        Damages = [];
     }
 
     /// <summary>
     /// Takes an attack at designated cell
     /// </summary>
-    /// <param name="cell">cell of attack, expected to be like A5, C6, etc.</param>
-    public void AttackAt(string cell)
+    /// <param name="cell">cell of attack</param>
+    public void AttackAt(Cell cell)
     {
         Damages.Add(cell);
     }

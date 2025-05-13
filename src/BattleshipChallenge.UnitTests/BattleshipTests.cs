@@ -11,7 +11,7 @@ public class BattleshipTests
     [Fact]
     public void Ctor_CreatesNewShipWithGivenCells()
     {
-        var cells = new List<string>(["abc", "bcd", "cde"]);
+        List<Cell> cells = [(Cell)"A1", (Cell)"A2", (Cell)"A3"];
 
         var subject = new Battleship(ShipId, cells);
 
@@ -24,12 +24,12 @@ public class BattleshipTests
     [Fact]
     public void AttackAt_MarksCellsOfAttackAsDamaged()
     {
-        var cells = new List<string>(["abc", "bcd", "cde"]);
+        List<Cell> cells = [(Cell)"A1", (Cell)"A2", (Cell)"A3"];
         var subject = new Battleship(ShipId, cells);
 
-        subject.AttackAt("bcd");
+        subject.AttackAt((Cell)"A2");
 
-        var expectedDamages = new List<string>(["bcd"]);
+        List<Cell> expectedDamages = [(Cell)"A2"];
         subject.Damages.Should().BeEquivalentTo(expectedDamages);
         subject.Sunk.Should().BeFalse();
     }
@@ -37,12 +37,12 @@ public class BattleshipTests
     [Fact]
     public void Sunk_WhenAllCellsAreDamaged_ReturnsTrue()
     {
-        var cells = new List<string>(["abc", "bcd", "cde"]);
+        List<Cell> cells = [(Cell)"A1", (Cell)"A2", (Cell)"A3"];
         var subject = new Battleship(ShipId, cells);
 
-        subject.AttackAt("abc");
-        subject.AttackAt("bcd");
-        subject.AttackAt("cde");
+        subject.AttackAt((Cell)"A1");
+        subject.AttackAt((Cell)"A2");
+        subject.AttackAt((Cell)"A3");
 
         subject.Damages.Should().BeEquivalentTo(cells);
         subject.Sunk.Should().BeTrue();

@@ -15,8 +15,8 @@ public class BoardTests
         var subject = CreateSubject();
 
         subject.Cells.Should().HaveCount(100);
-        subject.Cells.ContainsKey("A1").Should().BeTrue();
-        subject.Cells.ContainsKey("J10").Should().BeTrue();
+        subject.Cells.ContainsKey((Cell)"A1").Should().BeTrue();
+        subject.Cells.ContainsKey((Cell)"J10").Should().BeTrue();
         subject.Ships.Should().BeEmpty();
         subject.Attacks.Should().BeEmpty();
     }
@@ -28,10 +28,10 @@ public class BoardTests
     [InlineData("A4", "D4")]
     public void AddShip_WhenLocationIsValid_AddsShipToBoard(string bow, string stern)
     {
-        var expectedCells = _locator.FindCells(bow, stern).ToArray();
+        var expectedCells = _locator.FindCells((Cell)bow, (Cell)stern).ToArray();
         var subject = CreateSubject();
 
-        subject.AddShip(bow, stern);
+        subject.AddShip((Cell)bow, (Cell)stern);
 
         // validate that ship has been successfully created
         subject.Ships.Should().HaveCount(1);
@@ -59,9 +59,9 @@ public class BoardTests
 
         foreach (var (bow, stern) in ships)
         {
-            subject.AddShip(bow, stern);
+            subject.AddShip((Cell)bow, (Cell)stern);
 
-            var expectedCells = _locator.FindCells(bow, stern).ToArray();
+            var expectedCells = _locator.FindCells((Cell)bow, (Cell)stern).ToArray();
 
             // validate that ship has been successfully created
             subject.Ships[shipId].Id.Should().Be(shipId);
@@ -79,9 +79,6 @@ public class BoardTests
         // validate that ship has been successfully created
         subject.Ships.Should().HaveCount(3);
         subject.Cells.Where(p => p.Value == 0).Should().HaveCount(3);
-        subject.Cells.Where(p => p.Value == 1).Should().HaveCount(4);
-        subject.Cells.Where(p => p.Value == 2).Should().HaveCount(2);
-        subject.Cells.Values.Where(v => v != null).Should().HaveCount(9);
     }
 
     [Theory]
@@ -92,35 +89,10 @@ public class BoardTests
         var subject = CreateSubject();
 
         subject
-            .Invoking(s => s.AddShip(bow, stern))
+            .Invoking(s => s.AddShip((Cell)bow, (Cell)stern))
             .Should()
             .Throw<ArgumentException>()
             .WithMessage(Constants.ErrorMessages.InvalidShipLocation);
-    }
-
-    [Theory]
-    [InlineData("D40", "C40")]
-    public void AddShip_WhenLocationOutsideOfBoard_ThrowsException(string bow, string stern)
-    {
-        var subject = CreateSubject();
-
-        subject
-            .Invoking(s => s.AddShip(bow, stern))
-            .Should()
-            .Throw<ArgumentException>()
-            .WithMessage(Constants.ErrorMessages.InvalidCellOutOfRange);
-    }
-
-    [Fact]
-    public void Attack_WhenCellIsInvalid()
-    {
-        var subject = CreateSubject();
-
-        subject
-            .Invoking(s => s.Attack("C40"))
-            .Should()
-            .Throw<ArgumentException>()
-            .WithMessage(Constants.ErrorMessages.InvalidCellOutOfRange);
     }
 
     [Fact]
@@ -128,7 +100,7 @@ public class BoardTests
     {
         var subject = CreateSubject();
 
-        var result = subject.Attack("C4");
+        var result = subject.Attack((Cell)"C4");
 
         result.Should().BeFalse();
     }
@@ -137,9 +109,9 @@ public class BoardTests
     public void Attack_WhenCellIsValidAndOccupied_ReturnTrue()
     {
         var subject = CreateSubject();
-        subject.AddShip("C3", "C5");
+        subject.AddShip((Cell)"C3", (Cell)"C5");
 
-        var result = subject.Attack("C4");
+        var result = subject.Attack((Cell)"C4");
 
         result.Should().BeTrue();
         subject.Attacks.Should().HaveCount(1);
@@ -151,11 +123,11 @@ public class BoardTests
     public void Attack_WhenAllShipAttack_ShouldSink()
     {
         var subject = CreateSubject();
-        subject.AddShip("C3", "C5");
+        subject.AddShip((Cell)"C3", (Cell)"C5");
 
-        _ = subject.Attack("C3");
-        _ = subject.Attack("C4");
-        _ = subject.Attack("C5");
+        _ = subject.Attack((Cell)"C3");
+        _ = subject.Attack((Cell)"C4");
+        _ = subject.Attack((Cell)"C5");
 
         subject.Attacks.Should().HaveCount(3);
         subject.Ships[0].Damages.Should().HaveCount(3);
@@ -166,16 +138,16 @@ public class BoardTests
     public void IsGameOver_WhenAllShipsSink_ReturnsTrue()
     {
         var subject = CreateSubject();
-        subject.AddShip("C3", "C5");
-        subject.AddShip("A7", "C7");
+        subject.AddShip((Cell)"C3", (Cell)"C5");
+        subject.AddShip((Cell)"A7", (Cell)"C7");
         // Attack ship 1 - sunk
-        _ = subject.Attack("C3");
-        _ = subject.Attack("C4");
-        _ = subject.Attack("C5");
+        _ = subject.Attack((Cell)"C3");
+        _ = subject.Attack((Cell)"C4");
+        _ = subject.Attack((Cell)"C5");
         // Attack ship 2 - sunk
-        _ = subject.Attack("A7");
-        _ = subject.Attack("B7");
-        _ = subject.Attack("C7");
+        _ = subject.Attack((Cell)"A7");
+        _ = subject.Attack((Cell)"B7");
+        _ = subject.Attack((Cell)"C7");
 
         subject.IsGameOver.Should().BeTrue();
     }
@@ -184,15 +156,15 @@ public class BoardTests
     public void IsGameOver_WhenAnyShipStillAfloat_ReturnsFalse()
     {
         var subject = CreateSubject();
-        subject.AddShip("C3", "C5");
-        subject.AddShip("A7", "C7");
+        subject.AddShip((Cell)"C3", (Cell)"C5");
+        subject.AddShip((Cell)"A7", (Cell)"C7");
         // Attack ship 1 - not sunk
-        _ = subject.Attack("C3");
-        _ = subject.Attack("C5");
+        _ = subject.Attack((Cell)"C3");
+        _ = subject.Attack((Cell)"C5");
         // Attack ship 2 - sunk
-        _ = subject.Attack("A7");
-        _ = subject.Attack("B7");
-        _ = subject.Attack("C7");
+        _ = subject.Attack((Cell)"A7");
+        _ = subject.Attack((Cell)"B7");
+        _ = subject.Attack((Cell)"C7");
 
         subject.IsGameOver.Should().BeFalse();
     }

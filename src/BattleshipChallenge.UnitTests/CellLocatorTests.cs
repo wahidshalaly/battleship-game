@@ -12,11 +12,11 @@ public class CellLocatorTests
     [Fact]
     public void FindCells_WhenBowAndSternAreEqual_ReturnsBow()
     {
-        const string bow = "C5";
+        var bow = (Cell)"C5";
 
-        var cells = _subject.FindCells(bow, bow);
+        var cells = _subject.FindCells(bow, bow).ToArray();
 
-        cells.Should().BeEquivalentTo(bow);
+        cells.Should().BeEquivalentTo([bow]);
     }
 
     [Theory]
@@ -27,9 +27,9 @@ public class CellLocatorTests
         string stern
     )
     {
-        var cells = _subject.FindCells(bow, stern);
+        var cells = _subject.FindCells((Cell)bow, (Cell)stern).ToArray();
 
-        cells.Should().BeEquivalentTo("C5", "C6", "C7", "C8");
+        cells.Should().BeEquivalentTo([(Cell)"C5", (Cell)"C6", (Cell)"C7", (Cell)"C8"]);
     }
 
     [Theory]
@@ -37,9 +37,9 @@ public class CellLocatorTests
     [InlineData("C7", "C10")]
     public void FindCells_WhenBowOrSternInColumn10(string bow, string stern)
     {
-        var cells = _subject.FindCells(bow, stern);
+        var cells = _subject.FindCells((Cell)bow, (Cell)stern);
 
-        cells.Should().BeEquivalentTo("C7", "C8", "C9", "C10");
+        cells.Should().BeEquivalentTo([(Cell)"C7", (Cell)"C8", (Cell)"C9", (Cell)"C10"]);
     }
 
     [Theory]
@@ -50,9 +50,9 @@ public class CellLocatorTests
         string stern
     )
     {
-        var cells = _subject.FindCells(bow, stern);
+        var cells = _subject.FindCells((Cell)bow, (Cell)stern);
 
-        cells.Should().BeEquivalentTo("C5", "D5", "E5");
+        cells.Should().BeEquivalentTo([(Cell)"C5", (Cell)"D5", (Cell)"E5"]);
     }
 
     [Fact]
@@ -63,25 +63,21 @@ public class CellLocatorTests
         cells.Should().BeEquivalentTo([(Cell)"A1", (Cell)"A2", (Cell)"B1", (Cell)"B2"]);
     }
 
-    //Bug #1
-    [Theory]
-    [InlineData("C-1")]
-    [InlineData("Z99")]
-    [InlineData("1-C")]
-    public void FindCells_WhenInputIsInvalid_ThrowsException(string cell)
+    [Fact]
+    public void FindCells_WhenInputIsNull_ThrowsException()
     {
-        _subject.Invoking(s => s.FindCells(cell, "A1").ToArray())
+        _subject.Invoking(s => s.FindCells(null, (Cell)"A1").ToArray())
             .Should()
-            .Throw<ArgumentException>();
+            .Throw<ArgumentNullException>();
 
-        _subject.Invoking(s => s.FindCells("A1", cell).ToArray())
+        _subject.Invoking(s => s.FindCells((Cell)"A1", null).ToArray())
             .Should()
-            .Throw<ArgumentException>();
+            .Throw<ArgumentNullException>();
     }
 
-    //Bug #2
     [Theory]
     [InlineData(0)]
+    [InlineData(27)]
     public void GetAllCellsOnBoardOf_WhenSizeIsInvalid_ThrowsException(int size)
     {
         _subject.Invoking(s => s.GetAllCellsOnBoardOf(size).ToArray())

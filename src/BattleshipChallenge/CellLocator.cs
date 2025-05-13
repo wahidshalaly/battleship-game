@@ -12,7 +12,7 @@ public interface ICellLocator
     /// <param name="bow">A valid location on the board</param>
     /// <param name="stern">A valid location on the board</param>
     /// <returns>All cells between given two cells inclusively, if they share same column or row.</returns>
-    IEnumerable<string> FindCells(string bow, string stern);
+    IEnumerable<Cell> FindCells(Cell bow, Cell stern);
 
     /// <summary>
     /// Returns all possible cells on a board of a given size
@@ -26,52 +26,47 @@ internal class CellLocator : ICellLocator
 {
     private static readonly List<char> _letters = Constants.Alphabet.ToList();
 
-    public IEnumerable<string> FindCells(string bow, string stern)
+    public IEnumerable<Cell> FindCells(Cell bow, Cell stern)
     {
-        if (string.IsNullOrWhiteSpace(bow) || string.IsNullOrWhiteSpace(stern))
-        {
-            throw new ArgumentException(Constants.ErrorMessages.InvalidCellCode);
-        }
+        ArgumentNullException.ThrowIfNull(bow);
+        ArgumentNullException.ThrowIfNull(stern);
 
-        var bowCell = (Cell)bow;
-        var sternCell = (Cell)stern;
-
-        if (!bowCell.HasSameColumn(sternCell) && !bowCell.HasSameRow(sternCell))
+        if (!bow.HasSameColumn(stern) && !bow.HasSameRow(stern))
         {
             throw new ArgumentException(Constants.ErrorMessages.InvalidShipLocation);
         }
 
-        if (bowCell == sternCell)
+        if (bow == stern)
         {
             yield return bow;
             yield break;
         }
 
-        if (bowCell.Letter == sternCell.Letter)
+        if (bow.Letter == stern.Letter)
         {
-            var minDigit = Math.Min(bowCell.Digit, sternCell.Digit);
-            var maxDigit = Math.Max(bowCell.Digit, sternCell.Digit);
+            var minDigit = Math.Min(bow.Digit, stern.Digit);
+            var maxDigit = Math.Max(bow.Digit, stern.Digit);
 
             for (var digit = minDigit; digit <= maxDigit; digit++)
             {
-                yield return $"{bowCell.Letter}{digit}";
+                yield return (Cell)$"{bow.Letter}{digit}";
             }
         }
         else
         {
-            var minIndex = Math.Min(_letters.IndexOf(bowCell.Letter), _letters.IndexOf(sternCell.Letter));
-            var maxIndex = Math.Max(_letters.IndexOf(bowCell.Letter), _letters.IndexOf(sternCell.Letter));
+            var minIndex = Math.Min(_letters.IndexOf(bow.Letter), _letters.IndexOf(stern.Letter));
+            var maxIndex = Math.Max(_letters.IndexOf(bow.Letter), _letters.IndexOf(stern.Letter));
 
             for (var idx = minIndex; idx <= maxIndex; idx++)
             {
-                yield return $"{_letters[idx]}{bowCell.Digit}";
+                yield return (Cell)$"{_letters[idx]}{bow.Digit}";
             }
         }
     }
 
     public IEnumerable<Cell> GetAllCellsOnBoardOf(int size)
     {
-        if (size <= 0 || size > Constants.MaxBoardSize)
+        if (size is <= 0 or > Constants.MaxBoardSize)
         {
             throw new ArgumentOutOfRangeException(nameof(size), size, Constants.ErrorMessages.InvalidBoardSize);
         }

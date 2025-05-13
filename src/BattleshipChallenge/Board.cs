@@ -15,18 +15,18 @@ internal class Board
     private readonly int _boardSize = 10;
     private readonly ICellLocator _locator;
 
-    // All cell codes on the board and their corresponding ShipId, if any
-    public Dictionary<string, int?> Cells { get; }
+    // All cells on the board and their corresponding ShipId, if any
+    public Dictionary<Cell, int?> Cells { get; }
     public List<Battleship> Ships { get; }
-    public List<string> Attacks { get; }
+    public List<Cell> Attacks { get; }
 
     public Board(ICellLocator locator)
     {
         _locator = locator;
 
-        Cells = new Dictionary<string, int?>();
-        Ships = new List<Battleship>();
-        Attacks = new List<string>();
+        Cells = new Dictionary<Cell, int?>();
+        Ships = [];
+        Attacks = [];
 
         var cells = _locator
             .GetAllCellsOnBoardOf(_boardSize)
@@ -49,7 +49,7 @@ internal class Board
     /// </summary>
     public bool IsGameOver => Ships.All(s => s.Sunk);
 
-    public void AddShip(string bow, string stern)
+    public void AddShip(Cell bow, Cell stern)
     {
         var shipId = Ships.Count;
         var cells = FindShipLocation(bow, stern).ToList();
@@ -64,9 +64,9 @@ internal class Board
     /// <param name="cell">A valid cell on the board</param>
     /// <returns>True, if a `Hit`, false if a `Miss`</returns>
     /// <exception cref="ArgumentException">If not a valid cell it'll throw an Argument exception</exception>
-    public bool Attack(string cell)
+    public bool Attack(Cell cell)
     {
-        if (string.IsNullOrWhiteSpace(cell))
+        if (cell == null)
         {
             throw new ArgumentException(Constants.ErrorMessages.InvalidCellCode);
         }
@@ -91,16 +91,14 @@ internal class Board
         return true;
     }
 
-    private IEnumerable<string> FindShipLocation(string bow, string stern)
+    private IEnumerable<Cell> FindShipLocation(Cell bow, Cell stern)
     {
         if (!Cells.ContainsKey(bow) || !Cells.ContainsKey(stern))
         {
             throw new ArgumentException(Constants.ErrorMessages.InvalidCellOutOfRange);
         }
 
-        var bowCell = (Cell)bow;
-        var sternCell = (Cell)stern;
-        if (!bowCell.HasSameColumn(sternCell) && !bowCell.HasSameRow(sternCell))
+        if (!bow.HasSameColumn(stern) && !bow.HasSameRow(stern))
         {
             throw new ArgumentException(Constants.ErrorMessages.InvalidShipLocation);
         }

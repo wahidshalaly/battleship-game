@@ -9,7 +9,7 @@ public class GameTests
     {
         var game = new Game();
         game.CreateBoard(Player.One);
-        var result = game.Attack(Player.One, "C5");
+        var result = game.Attack(Player.One, (Cell)"C5");
 
         Assert.False(result);
     }
@@ -19,8 +19,8 @@ public class GameTests
     {
         var game = new Game();
         game.CreateBoard(Player.One);
-        game.AddShip(Player.One, "C3", "C5");
-        var result = game.Attack(Player.One, "C4");
+        game.AddShip(Player.One, (Cell)"C3", (Cell)"C5");
+        var result = game.Attack(Player.One, (Cell)"C4");
 
         Assert.True(result);
     }
@@ -30,10 +30,10 @@ public class GameTests
     {
         var game = new Game();
         game.CreateBoard(Player.One);
-        game.AddShip(Player.One, "C3", "C5");
-        _ = game.Attack(Player.One, "C3");
-        _ = game.Attack(Player.One, "C4");
-        _ = game.Attack(Player.One, "C5");
+        game.AddShip(Player.One, (Cell)"C3", (Cell)"C5");
+        _ = game.Attack(Player.One, (Cell)"C3");
+        _ = game.Attack(Player.One, (Cell)"C4");
+        _ = game.Attack(Player.One, (Cell)"C5");
 
         var result = game.PlayerHasLost(Player.One);
 
