@@ -1,27 +1,30 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace BattleshipChallenge;
 
 public class Cell
 {
-    private static readonly List<char> _letters = Constants.Alphabet.ToList();
+    private static readonly List<char> _letters = [..Constants.Alphabet];
 
     public char Letter { get; }
+
     public int Digit { get; }
-    public bool IsHit { get; private set; }
+
+    public int? ShipId { get; private set; }
+
+    public CellState State { get; private set; } = CellState.Clear;
 
     private Cell(char letter, int digit)
     {
         if (!_letters.Contains(letter))
         {
-            throw new ArgumentException(Constants.ErrorMessages.InvalidCellCode, nameof(letter));
+            throw new ArgumentException(ErrorMessages.InvalidCellCode, nameof(letter));
         }
 
         if (digit is <= 0 or > Constants.MaxBoardSize)
         {
-            throw new ArgumentException(Constants.ErrorMessages.InvalidCellCode, nameof(digit));
+            throw new ArgumentException(ErrorMessages.InvalidCellCode, nameof(digit));
         }
 
         Letter = letter;
@@ -38,7 +41,7 @@ public class Cell
         }
         catch
         {
-            throw new ArgumentException(Constants.ErrorMessages.InvalidCellCode, nameof(cell));
+            throw new ArgumentException(ErrorMessages.InvalidCellCode);
         }
     }
 
@@ -48,7 +51,27 @@ public class Cell
 
     public bool HasSameRow(Cell other) => (Digit == other.Digit);
 
-    public void Attack() => IsHit = true;
+    public void Assign(int shipId)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(shipId);
+
+        if (State != CellState.Clear)
+        {
+            throw new ApplicationException(ErrorMessages.InvalidCellToAssign);
+        }
+
+        ShipId = shipId;
+        State = CellState.Occupied;
+    }
+
+    public void Attack()
+    {
+        if (State == CellState.Hit)
+        {
+            throw new ApplicationException(ErrorMessages.InvalidCellToHit);
+        }
+        State = CellState.Hit;
+    }
 
     public static explicit operator Cell(string cell) => FromString(cell);
 
@@ -83,4 +106,11 @@ public class Cell
     {
         return HashCode.Combine(Letter, Digit);
     }
+}
+
+public enum CellState
+{
+    Clear,
+    Occupied,
+    Hit
 }

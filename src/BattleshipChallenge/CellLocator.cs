@@ -33,7 +33,7 @@ internal class CellLocator : ICellLocator
 
         if (!bow.HasSameColumn(stern) && !bow.HasSameRow(stern))
         {
-            throw new ArgumentException(Constants.ErrorMessages.InvalidShipLocation);
+            throw new ArgumentException(ErrorMessages.InvalidShipLocation);
         }
 
         if (bow == stern)
@@ -68,7 +68,7 @@ internal class CellLocator : ICellLocator
     {
         if (size is <= 0 or > Constants.MaxBoardSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(size), size, Constants.ErrorMessages.InvalidBoardSize);
+            throw new ArgumentOutOfRangeException(nameof(size), size, ErrorMessages.InvalidBoardSize);
         }
 
         var letters = _letters.GetRange(0, size);

@@ -33,7 +33,7 @@ internal class Battleship
 
         if (!_cells.Contains(cell))
         {
-            throw new ArgumentException(Constants.ErrorMessages.InvalidCellToHit);
+            throw new ArgumentException(ErrorMessages.InvalidCellToHit);
         }
 
         cell.Attack();

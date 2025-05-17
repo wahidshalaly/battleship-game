@@ -92,7 +92,7 @@ public class BoardTests
             .Invoking(s => s.AddShip((Cell)bow, (Cell)stern))
             .Should()
             .Throw<ArgumentException>()
-            .WithMessage(Constants.ErrorMessages.InvalidShipLocation);
+            .WithMessage(ErrorMessages.InvalidShipLocation);
     }
 
     [Fact]

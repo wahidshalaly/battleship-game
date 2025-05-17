@@ -84,12 +84,12 @@ internal class Board
     {
         if (cell == null)
         {
-            throw new ArgumentException(Constants.ErrorMessages.InvalidCellCode);
+            throw new ArgumentException(ErrorMessages.InvalidCellOutOfRange);
         }
 
         if (!Cells.TryGetValue(cell, out var shipId))
         {
-            throw new ArgumentException(Constants.ErrorMessages.InvalidCellOutOfRange);
+            throw new ArgumentException(ErrorMessages.InvalidCellToHit);
         }
 
         if (!shipId.HasValue)
@@ -111,12 +111,12 @@ internal class Board
     {
         if (!Cells.ContainsKey(bow) || !Cells.ContainsKey(stern))
         {
-            throw new ArgumentException(Constants.ErrorMessages.InvalidCellOutOfRange);
+            throw new ArgumentException(ErrorMessages.InvalidCellOutOfRange);
         }
 
         if (!bow.HasSameColumn(stern) && !bow.HasSameRow(stern))
         {
-            throw new ArgumentException(Constants.ErrorMessages.InvalidShipLocation);
+            throw new ArgumentException(ErrorMessages.InvalidShipLocation);
         }
 
         return _locator.FindCellsBetween(bow, stern);
