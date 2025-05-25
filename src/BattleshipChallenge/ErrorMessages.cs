@@ -19,10 +19,12 @@ public static class ErrorMessages
         "Invalid board size. It must be a positive number and it doesn't exceed the maximum board size of 26 squares.";
 
     public const string InvalidShipLocation =
-        "Ship must be celled either vertically or horizontally.";
+        "Ship must be positioned either vertically or horizontally on clear cells.";
 
     // Ship Error Messages
-    // Game Error Messages
-    public const string InvalidShipSize =
-        "Ship size must be between 1 and the maximum board size of 26 squares.";
+    public const string InvalidShipPosition_Count =
+        "Invalid cell count. Number of cells mush match exactly the size of the ship.";
+
+    public const string InvalidShipPosition_Alignment =
+        "Invalid alignment. All cells must have the same row or same column.";
 }
