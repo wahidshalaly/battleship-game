@@ -21,7 +21,7 @@ public class CellTests
     public void Ctor_WhenCreatedWithInvalidValue_ThrowsException(string code)
     {
         var act = () => new Cell(code);
-        act.Should().Throw<ArgumentException>().WithMessage(ErrorMessages.InvalidPosition);
+        act.Should().Throw<ArgumentException>().WithMessage(ErrorMessages.InvalidCellCode);
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class CellTests
 
             foreach (var letter in Constants.Alphabet)
             {
-                for (var digit = 1; digit <= Constants.MaxBoardSize; digit++)
+                for (var digit = 1; digit <= Board.MaximumSize; digit++)
                 {
                     var code = $"{letter}{digit}";
                     data.Add(letter, digit, code);

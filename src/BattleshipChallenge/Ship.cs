@@ -10,6 +10,8 @@ namespace BattleshipChallenge;
 /// </summary>
 internal class Ship
 {
+    private readonly HashSet<string> _hits = [];
+
     /// <summary>
     /// Gets the unique identifier for this ship
     /// </summary>
@@ -20,7 +22,12 @@ internal class Ship
     /// </summary>
     public ShipKind Kind { get; }
 
+    /// <summary>
+    /// Ship's position, cells it occupies
+    /// </summary>
     public ReadOnlyCollection<string> Position { get; }
+
+    public bool Sunk { get; private set; }
 
     /// <summary>
     /// Creates a new battleship with the specified ID, type, and cells
@@ -35,6 +42,21 @@ internal class Ship
         Id = id;
         Kind = kind;
         Position = new ReadOnlyCollection<string>(position);
+    }
+
+    public void Attack(string code)
+    {
+        if (!Position.Contains(code))
+        {
+            throw new NotImplementedException();
+        }
+
+        _hits.Add(code);
+
+        if (_hits.Count == (int)Kind)
+        {
+            Sunk = true;
+        }
     }
 
     private static void ValidatePosition(ShipKind kind, List<string> position)

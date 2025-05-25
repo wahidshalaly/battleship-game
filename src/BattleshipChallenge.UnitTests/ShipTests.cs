@@ -60,6 +60,31 @@ public class ShipTests
             .WithMessage(ErrorMessages.InvalidShipPosition_Alignment);
     }
 
+    [Fact]
+    public void Attack_WhenNotAllCellsAttacked_SunkIsFalse()
+    {
+        var subject = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
+
+        subject.Attack("A1");
+        subject.Attack("A2");
+        subject.Attack("A3");
+
+        subject.Sunk.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Attack_WhenAllCellsAttacked_SunkIsTrue()
+    {
+        var subject = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
+
+        subject.Attack("A1");
+        subject.Attack("A2");
+        subject.Attack("A3");
+        subject.Attack("A4");
+
+        subject.Sunk.Should().BeTrue();
+    }
+
     public static TheoryData<ShipKind> ShipKinds =>
         [
             ShipKind.Destroyer,

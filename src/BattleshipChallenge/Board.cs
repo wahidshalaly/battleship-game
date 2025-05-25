@@ -8,117 +8,164 @@ namespace BattleshipChallenge;
 /// This entity represents a board, its cells and ships it contains.
 /// It keeps track of attacks and can query ships for their state.
 /// The state of board <c>IsGameOver</c> will be <c>true</c>, if all ships are sunk.
-/// This board has a fixed size of 10.
 /// </summary>
 internal class Board
 {
-    private readonly int _boardSize = 10;
-    private readonly ICellLocator _locator;
+    public const int DefaultSize = 10;
+    public const int MaximumSize = 26;
 
-    // All cells on the board and their corresponding ShipId, if any
-    public Dictionary<Cell, int?> Cells { get; }
-    public List<Battleship> Ships { get; }
-    public List<Cell> Attacks { get; }
+    private static readonly List<char> _letters = Constants.Alphabet.ToList();
 
-    public Board(ICellLocator locator, int size)
+    private readonly int _boardSize;
+    private readonly Dictionary<string, Cell> _cells = new();
+    private readonly List<Ship> _ships = [];
+
+    public IList<Cell> Cells => _cells.Values.ToList();
+    public IList<Ship> Ships => _ships.AsReadOnly();
+
+    public Board(int size = DefaultSize)
     {
-        _locator = locator;
-
-        Cells = new Dictionary<Cell, int?>();
-        Ships = [];
-        Attacks = [];
-
-        var cells = _locator
-            .GetAllCellsOnBoardOf(_boardSize)
-            .ToList();
-
-        cells.ForEach(p => Cells.Add(p, null));
-    }
-
-    public Board(ICellLocator locator)
-    {
-        _locator = locator;
-
-        Cells = new Dictionary<Cell, int?>();
-        Ships = [];
-        Attacks = [];
-
-        var cells = _locator
-            .GetAllCellsOnBoardOf(_boardSize)
-            .ToList();
-
-        cells.ForEach(p => Cells.Add(p, null));
-    }
-
-    public Board(int size)
-    {
-        if (size is <= 0 or > Constants.MaxBoardSize)
+        if (size is < DefaultSize or > MaximumSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(size), size, Constants.ErrorMessages.InvalidBoardSize);
+            throw new ArgumentException(ErrorMessages.InvalidBoardSize);
         }
 
         _boardSize = size;
+
+        GenerateBoardCells();
     }
 
     /// <summary>
     /// Returns true when all ships are sunk.
     /// </summary>
-    public bool IsGameOver => Ships.All(s => s.Sunk);
+    public bool IsGameOver => _ships.All(s => s.Sunk);
 
-    public void AddShip(Cell bow, Cell stern)
+    /// <summary>
+    /// Adds a ship to the board between the specified bow and stern cells.
+    /// Validates that the ship follows standard Battleship rules and doesn't overlap with existing ships.
+    /// </summary>
+    /// <param name="shipKind"></param>
+    /// <param name="bowCode">The bow position of the ship</param>
+    /// <param name="orientation">The orientation of the ship</param>
+    /// <exception cref="ArgumentException">Thrown when the ship placement is invalid</exception>
+    public void AddShip(ShipKind shipKind, string bowCode, ShipOrientation orientation)
     {
-        var shipId = Ships.Count;
-        var cells = FindShipLocation(bow, stern).ToList();
-        var ship = new Battleship(shipId, cells);
-        cells.ForEach(c => Cells[c] = shipId);
-        Ships.Add(ship);
+        ValidateShipPosition(shipKind, bowCode, orientation, out var bow, out var stern);
+
+        var shipId = _ships.Count + 1;
+        var cells = GetShipCells(bow, stern).ToList();
+        foreach (var cell in cells)
+        {
+            cell.Assign(shipId);
+        }
+
+        var position = cells.Select(c => c.Code).ToList();
+        var ship = new Ship(shipId, shipKind, position);
+        _ships.Add(ship);
     }
 
     /// <summary>
     /// Attacks a cell on the board.
     /// </summary>
-    /// <param name="cell">A valid cell on the board</param>
-    /// <returns>True, if a `Hit`, false if a `Miss`</returns>
+    /// <param name="code">A valid cell on the board</param>
     /// <exception cref="ArgumentException">If an invalid cell, it'll throw an Argument exception</exception>
-    public bool Attack(Cell cell)
+    public void Attack(string code)
     {
-        if (cell == null)
+        var cell = ValidateAttackPosition(code);
+        if (cell.State == CellState.Occupied)
         {
-            throw new ArgumentException(ErrorMessages.InvalidCellOutOfRange);
+            Ships.First(s => s.Id == cell.ShipId).Attack(code);
+        }
+        cell.Attack();
+    }
+
+    private Cell ValidateAttackPosition(string code)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+
+        if (!_cells.TryGetValue(code, out var cell))
+        {
+            throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
         }
 
-        if (!Cells.TryGetValue(cell, out var shipId))
+        if (cell.State == CellState.Hit)
         {
             throw new ArgumentException(ErrorMessages.InvalidCellToHit);
         }
 
-        if (!shipId.HasValue)
-        {
-            return false;
-        }
-
-        if (Attacks.Contains(cell))
-        {
-            throw new ArgumentException(Constants.ErrorMessages.InvalidCellToHit);
-        }
-
-        Attacks.Add(cell);
-        Ships[shipId.Value].AttackAt(cell);
-        return true;
+        return cell;
     }
 
-    private IEnumerable<Cell> FindShipLocation(Cell bow, Cell stern)
+    private void GenerateBoardCells()
     {
-        if (!Cells.ContainsKey(bow) || !Cells.ContainsKey(stern))
+        for (var i = 0; i < _boardSize; i++)
         {
-            throw new ArgumentException(ErrorMessages.InvalidCellOutOfRange);
+            for (var j = 1; j <= _boardSize; j++)
+            {
+                var cell = new Cell(_letters[i], j);
+                _cells.Add(cell.Code, cell);
+            }
+        }
+    }
+
+    private void ValidateShipPosition(
+        ShipKind shipKind,
+        string bowCode,
+        ShipOrientation orientation,
+        out Cell bow,
+        out Cell stern
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(bowCode);
+
+        var shipSize = (int)shipKind;
+        var bowIsValid = _cells.TryGetValue(bowCode, out bow);
+        if (!bowIsValid)
+            throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
+
+        // Calculate the stern cell based on ship size and orientation
+        var sternCode = orientation == ShipOrientation.Vertical
+            ? $"{bow.Letter}{bow.Digit + shipSize - 1}"
+            : $"{_letters[_letters.IndexOf(bow.Letter) + shipSize - 1]}{bow.Digit}";
+
+        var sternIsValid = _cells.TryGetValue(sternCode, out stern);
+        if (!sternIsValid)
+            throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
+    }
+
+    private IEnumerable<Cell> GetShipCells(Cell bow, Cell stern)
+    {
+        if (bow == stern)
+        {
+            yield return bow;
+            yield break;
         }
 
-        if (!bow.HasSameColumn(stern) && !bow.HasSameRow(stern))
+        if (bow.Letter == stern.Letter)
         {
-            throw new ArgumentException(ErrorMessages.InvalidShipLocation);
-        }
+            var minDigit = Math.Min(bow.Digit, stern.Digit);
+            var maxDigit = Math.Max(bow.Digit, stern.Digit);
 
-        return _locator.FindCellsBetween(bow, stern);
+            for (var digit = minDigit; digit <= maxDigit; digit++)
+            {
+                yield return _cells[$"{bow.Letter}{digit}"];
+            }
+        }
+        else
+        {
+            var minLetterIndex = Math.Min(
+                _letters.IndexOf(bow.Letter),
+                _letters.IndexOf(stern.Letter)
+            );
+            var maxLetterIndex = Math.Max(
+                _letters.IndexOf(bow.Letter),
+                _letters.IndexOf(stern.Letter)
+            );
+
+            for (var idx = minLetterIndex; idx <= maxLetterIndex; idx++)
+            {
+                yield return _cells[$"{_letters[idx]}{bow.Digit}"];
+            }
+        }
     }
 }

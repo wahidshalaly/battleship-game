@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BattleshipChallenge;
 
-public class Cell
+internal class Cell
 {
-    private static readonly List<char> _letters = [.. Constants.Alphabet];
+    private static readonly List<char> _letters = Constants.Alphabet.ToList();
 
     public char Letter { get; }
 
@@ -25,7 +26,7 @@ public class Cell
     {
         if (string.IsNullOrWhiteSpace(code) || code.Length is < 2 or > 3)
         {
-            throw new ArgumentException(ErrorMessages.InvalidPosition);
+            throw new ArgumentException(ErrorMessages.InvalidCellCode);
         }
 
         var letter = code[0];
@@ -33,12 +34,12 @@ public class Cell
 
         if (!_letters.Contains(letter))
         {
-            throw new ArgumentException(ErrorMessages.InvalidPosition);
+            throw new ArgumentException(ErrorMessages.InvalidCellCode);
         }
 
-        if (digit is <= 0 or > Constants.MaxBoardSize)
+        if (digit is <= 0 or > Board.MaximumSize)
         {
-            throw new ArgumentException(ErrorMessages.InvalidPosition);
+            throw new ArgumentException(ErrorMessages.InvalidCellCode);
         }
 
         Letter = letter;
@@ -50,12 +51,12 @@ public class Cell
     {
         if (!_letters.Contains(letter))
         {
-            throw new ArgumentException(ErrorMessages.InvalidPosition);
+            throw new ArgumentException(ErrorMessages.InvalidCellCode);
         }
 
-        if (digit is <= 0 or > Constants.MaxBoardSize)
+        if (digit is <= 0 or > Board.MaximumSize)
         {
-            throw new ArgumentException(ErrorMessages.InvalidPosition);
+            throw new ArgumentException(ErrorMessages.InvalidCellCode);
         }
 
         Letter = letter;

@@ -7,170 +7,162 @@ namespace BattleshipChallenge.UnitTests;
 
 public class BoardTests
 {
-    private readonly CellLocator _locator = new();
+    [Theory]
+    [MemberData(nameof(ValidBoardSizes))]
+    public void Ctor_InitiatesAllCellsOnBoard(int boardSize, int expectedCellCount)
+    {
+        var subject = CreateSubject(boardSize);
+
+        subject.Cells.Should().HaveCount(expectedCellCount);
+        subject.Ships.Should().BeEmpty();
+    }
 
     [Fact]
-    public void Ctor_InitiatesAllCellsOnBoard()
+    public void Ctor_WhenBoardSizeIsLessThanDefaultBoardSize_ThrowsException()
+    {
+        var random = new Random().Next(1, Board.DefaultSize);
+        var invalidBoardSize = Board.DefaultSize - random;
+
+        var subject = () => CreateSubject(invalidBoardSize);
+
+        subject.Should().Throw<ArgumentException>().WithMessage(ErrorMessages.InvalidBoardSize);
+    }
+
+    [Theory]
+    [MemberData(nameof(ValidShipPositions))]
+    public void AddShip_WhenShipPositionIsValid(
+        ShipKind shipKind,
+        string bowPosition,
+        ShipOrientation orientation
+    )
     {
         var subject = CreateSubject();
+
+        subject.AddShip(shipKind, bowPosition, orientation);
 
         subject.Cells.Should().HaveCount(100);
-        subject.Cells.ContainsKey((Cell)"A1").Should().BeTrue();
-        subject.Cells.ContainsKey((Cell)"J10").Should().BeTrue();
-        subject.Ships.Should().BeEmpty();
-        subject.Attacks.Should().BeEmpty();
-    }
-
-    [Theory]
-    [InlineData("D4", "D4")]
-    [InlineData("D4", "D7")]
-    [InlineData("D7", "D4")]
-    [InlineData("A4", "D4")]
-    public void AddShip_WhenLocationIsValid_AddsShipToBoard(string bow, string stern)
-    {
-        var expectedCells = _locator.FindCellsBetween((Cell)bow, (Cell)stern).ToArray();
-        var subject = CreateSubject();
-
-        subject.AddShip((Cell)bow, (Cell)stern);
-
-        // validate that ship has been successfully created
         subject.Ships.Should().HaveCount(1);
-        subject.Ships[0].Id.Should().Be(0);
-        subject.Ships[0].Cells.Should().BeEquivalentTo(expectedCells);
-
-        // validate that board has marked the ship location by ship-id (0)
-        subject
-            .Cells.Count(p => expectedCells.Contains(p.Key) && p.Value == 0)
-            .Should()
-            .Be(expectedCells.Length);
-    }
-
-    [Fact]
-    public void AddShip_WhenAddingMultipleShips()
-    {
-        var shipId = 0;
-        var ships = new[]
-        {
-            new Tuple<string, string>("C4", "C6"),
-            new Tuple<string, string>("J10", "G10"),
-            new Tuple<string, string>("F8", "G8"),
-        };
-        var subject = CreateSubject();
-
-        foreach (var (bow, stern) in ships)
-        {
-            subject.AddShip((Cell)bow, (Cell)stern);
-
-            var expectedCells = _locator.FindCellsBetween((Cell)bow, (Cell)stern).ToArray();
-
-            // validate that ship has been successfully created
-            subject.Ships[shipId].Id.Should().Be(shipId);
-            subject.Ships[shipId].Cells.Should().BeEquivalentTo(expectedCells);
-
-            // validate that board has marked the ship location
-            subject
-                .Cells.Count(p => expectedCells.Contains(p.Key) && p.Value == shipId)
-                .Should()
-                .Be(expectedCells.Length);
-
-            shipId++;
-        }
-
-        // validate that ship has been successfully created
-        subject.Ships.Should().HaveCount(3);
-        subject.Cells.Where(p => p.Value == 0).Should().HaveCount(3);
     }
 
     [Theory]
-    [InlineData("A1", "J10")]
-    [InlineData("D4", "C7")]
-    public void AddShip_WhenLocationIsInvalid_ThrowsException(string bow, string stern)
+    [MemberData(nameof(InvalidShipPositions))]
+    public void AddShip_WhenShipPositionsIsInvalid(
+        ShipKind shipKind,
+        string bowPosition,
+        ShipOrientation orientation
+    )
     {
         var subject = CreateSubject();
 
-        subject
-            .Invoking(s => s.AddShip((Cell)bow, (Cell)stern))
-            .Should()
+        var act = () => subject.AddShip(shipKind, bowPosition, orientation);
+
+        act.Should()
             .Throw<ArgumentException>()
-            .WithMessage(ErrorMessages.InvalidShipLocation);
+            .WithMessage(ErrorMessages.InvalidShipOnBoardPosition);
+        subject.Cells.Should().HaveCount(100);
+        subject.Ships.Should().BeEmpty();
     }
 
     [Fact]
-    public void Attack_WhenCellIsValidButNotOccupied_ReturnFalse()
+    public void AddShip_WhenShipPositionIntersectWithOccupiedCells_ThrowsException()
     {
         var subject = CreateSubject();
+        subject.AddShip(ShipKind.Destroyer, "A1", ShipOrientation.Horizontal);
 
-        var result = subject.Attack((Cell)"C4");
+        var act = () => subject.AddShip(ShipKind.Destroyer, "B1", ShipOrientation.Horizontal);
 
-        result.Should().BeFalse();
+        act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidCellToAssign);
     }
 
     [Fact]
-    public void Attack_WhenCellIsValidAndOccupied_ReturnTrue()
+    public void Attack_WhenCellIsValid()
     {
         var subject = CreateSubject();
-        subject.AddShip((Cell)"C3", (Cell)"C5");
+        subject.AddShip(ShipKind.Battleship, "A1", ShipOrientation.Vertical);
 
-        var result = subject.Attack((Cell)"C4");
+        subject.Attack("A1"); // Attack the bow of the ship
+        subject.Attack("A2"); // Attack a clear cell
 
-        result.Should().BeTrue();
-        subject.Attacks.Should().HaveCount(1);
-        subject.Ships[0].Cells.Select(c => c.IsHit).Should().HaveCount(1);
-        subject.Ships[0].Sunk.Should().BeFalse();
+        subject.Cells
+            .Where(c => c.State == CellState.Hit)
+            .Select(c => c.Code)
+            .Should()
+            .BeEquivalentTo(["A1", "A2"]);
+
+        subject.Cells.Where(c => c.State == CellState.Occupied).Should().HaveCount(2);
+        subject.Cells.Where(c => c.State == CellState.Clear).Should().HaveCount(96);
     }
 
     [Fact]
-    public void Attack_WhenAllShipAttack_ShouldSink()
+    public void IsGameOver_WhenAllShipsAreSunk_ReturnsTrue()
     {
         var subject = CreateSubject();
-        subject.AddShip((Cell)"C3", (Cell)"C5");
+        subject.AddShip(ShipKind.Battleship, "A1", ShipOrientation.Vertical);
+        subject.AddShip(ShipKind.Destroyer, "B1", ShipOrientation.Vertical);
 
-        _ = subject.Attack((Cell)"C3");
-        _ = subject.Attack((Cell)"C4");
-        _ = subject.Attack((Cell)"C5");
+        // Attacking the Battleship
+        subject.Attack("A1");
+        subject.Attack("A4");
 
-        subject.Attacks.Should().HaveCount(3);
-        subject.Ships[0].Cells.Select(c => c.IsHit).Should().HaveCount(3);
-        subject.Ships[0].Sunk.Should().BeTrue();
-    }
+        // Sinking the Destroyer
+        subject.Attack("B1");
+        subject.Attack("B2");
 
-    [Fact]
-    public void IsGameOver_WhenAllShipsSink_ReturnsTrue()
-    {
-        var subject = CreateSubject();
-        subject.AddShip((Cell)"C3", (Cell)"C5");
-        subject.AddShip((Cell)"A7", (Cell)"C7");
-        // Attack ship 1 - sunk
-        _ = subject.Attack((Cell)"C3");
-        _ = subject.Attack((Cell)"C4");
-        _ = subject.Attack((Cell)"C5");
-        // Attack ship 2 - sunk
-        _ = subject.Attack((Cell)"A7");
-        _ = subject.Attack((Cell)"B7");
-        _ = subject.Attack((Cell)"C7");
-
-        subject.IsGameOver.Should().BeTrue();
-    }
-
-    [Fact]
-    public void IsGameOver_WhenAnyShipStillAfloat_ReturnsFalse()
-    {
-        var subject = CreateSubject();
-        subject.AddShip((Cell)"C3", (Cell)"C5");
-        subject.AddShip((Cell)"A7", (Cell)"C7");
-        // Attack ship 1 - not sunk
-        _ = subject.Attack((Cell)"C3");
-        _ = subject.Attack((Cell)"C5");
-        // Attack ship 2 - sunk
-        _ = subject.Attack((Cell)"A7");
-        _ = subject.Attack((Cell)"B7");
-        _ = subject.Attack((Cell)"C7");
+        subject.Ships[0].Sunk.Should().BeFalse(); // Battleship
+        subject.Ships[1].Sunk.Should().BeTrue(); // Destroyer
 
         subject.IsGameOver.Should().BeFalse();
     }
 
-    private Board CreateSubject()
+    [Fact]
+    public void IsGameOver_WhenNotAllShipsAreSunk_ReturnsFalse()
     {
-        return new Board(_locator);
+        var subject = CreateSubject();
+        subject.AddShip(ShipKind.Battleship, "A1", ShipOrientation.Vertical);
+        subject.AddShip(ShipKind.Destroyer, "B1", ShipOrientation.Vertical);
+
+        // Sinking the Battleship
+        subject.Attack("A1");
+        subject.Attack("A2");
+        subject.Attack("A3");
+        subject.Attack("A4");
+
+        // Sinking the Destroyer
+        subject.Attack("B1");
+        subject.Attack("B2");
+
+        subject.Ships[0].Sunk.Should().BeTrue(); // Battleship
+        subject.Ships[1].Sunk.Should().BeTrue(); // Destroyer
+
+        subject.IsGameOver.Should().BeTrue();
     }
+
+    public static TheoryData<int, int> ValidBoardSizes =>
+        new()
+        {
+            { 10, 100 },
+            { 15, 225 },
+            { 20, 400 },
+            { 26, 676 },
+        };
+
+    public static TheoryData<ShipKind, string, ShipOrientation> ValidShipPositions =>
+        new()
+        {
+            { ShipKind.Destroyer, "A1", ShipOrientation.Vertical },
+            { ShipKind.Submarine, "B2", ShipOrientation.Horizontal },
+            { ShipKind.Cruiser, "C3", ShipOrientation.Vertical },
+            { ShipKind.Battleship, "D4", ShipOrientation.Horizontal },
+        };
+
+    public static TheoryData<ShipKind, string, ShipOrientation> InvalidShipPositions =>
+        new()
+        {
+            { ShipKind.Destroyer, "Z1", ShipOrientation.Vertical },
+            { ShipKind.Submarine, "B20", ShipOrientation.Horizontal },
+            { ShipKind.Cruiser, "C0", ShipOrientation.Vertical },
+            { ShipKind.Battleship, "D-1", ShipOrientation.Horizontal },
+        };
+
+    private static Board CreateSubject(int size = 10) => new(size);
 }
