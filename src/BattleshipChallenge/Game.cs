@@ -3,58 +3,78 @@
 namespace BattleshipChallenge;
 
 /// <summary>
-/// This represents an instance of Battleship game, and it tracks the state of the game.
+/// This represents an instance of Ship game, and it tracks the state of the game.
 /// </summary>
 public class Game
 {
-    private Board Player1 { get; set; }
-    private Board Player2 { get; set; }
+    private readonly Board _player1Board;
+    private readonly Board _player2Board;
 
-    public void CreateBoard(Player player)
+    /// <summary>
+    /// Unique identifier for this game instance
+    /// </summary>
+    public Guid Id { get; } = Guid.NewGuid();
+
+    public GameState State { get; private set; } = GameState.Started;
+
+    public Game(int boardSize = Board.DefaultSize)
     {
-        switch (player)
-        {
-            case Player.One:
-                Player1 = CreateNewBoard();
-                break;
-            case Player.Two:
-                Player2 = CreateNewBoard();
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(player), player, null);
-        }
+        _player1Board = new Board(boardSize);
+        _player2Board = new Board(boardSize);
     }
 
-    public void AddShip(Player player, Cell bow, Cell stern)
+    public void AddShip(Player player, ShipKind shipKind, string bow, ShipOrientation orientation)
     {
-        BoardSelector(player).AddShip(bow, stern);
+        var board = BoardSelector(player);
+
+        board.AddShip(shipKind, bow, orientation);
     }
 
-    public bool Attack(Player player, Cell cell)
+    /// <summary>
+    /// Attacks a cell on the specified player's board
+    /// </summary>
+    /// <param name="player">The player whose board to attack</param>
+    /// <param name="cell">The cell to attack</param>
+    /// <returns>True if the attack hit a ship, false otherwise</returns>
+    public void Attack(Player player, string cell)
     {
-        return BoardSelector(player).Attack(cell);
+        BoardSelector(player).Attack(cell);
     }
 
-    public bool PlayerHasLost(Player player) => BoardSelector(player).IsGameOver;
+    /// <summary>
+    /// Checks if the specified player has lost the game
+    /// </summary>
+    /// <param name="player">The player to check</param>
+    /// <returns>True if all player's ships have been sunk, false otherwise</returns>
+    public bool IsGameOver(Player player) => BoardSelector(player).IsGameOver;
 
-    private readonly CellLocator _cellLocator = new();
+    public bool IsReady(Player player) => BoardSelector(player).IsReady;
 
-    private Board CreateNewBoard()
-    {
-        return new Board(_cellLocator);
-    }
-
+    /// <summary>
+    /// Gets the board for the specified player
+    /// </summary>
+    /// <param name="player">The player whose board to get</param>
+    /// <returns>The player's board</returns>
     private Board BoardSelector(Player player)
     {
         return player switch
         {
-            Player.One => Player1,
-            Player.Two => Player2,
-            _ => throw new ArgumentOutOfRangeException(nameof(player), player, null)
+            Player.One => _player1Board
+                ?? throw new InvalidOperationException(
+                    $"Board for {player} has not been created yet."
+                ),
+            Player.Two => _player2Board
+                ?? throw new InvalidOperationException(
+                    $"Board for {player} has not been created yet."
+                ),
+            _ => throw new ArgumentOutOfRangeException(nameof(player), player, null),
         };
     }
 }
 
+/// <summary>
+/// Represents a player in the game.
+/// </summary>
 public enum Player
 {
     One = 1,
@@ -62,28 +82,12 @@ public enum Player
 }
 
 /// <summary>
-/// These are the types of ships that can be placed on the board and their sizes.
-/// Destroyer: 2 cells
-/// Submarine: 3 cells
-/// Cruiser: 3 cells
-/// Battleship: 4 cells
-/// Carrier: 5 cells
-/// </summary>
-public enum ShipKind
-{
-    Destroyer = 2,
-    Cruiser = 3,
-    Submarine = 3,
-    Battleship = 4,
-    Carrier = 5,
-}
-
-/// <summary>
 /// This is the outcome of a hit on a cell.
 /// </summary>
-public enum HitResult
+public enum GameState
 {
-    Miss = 0,
-    Hit = 1,
-    Sunk = 2,
+    Started = 0,
+    Ready = 1,
+    Active = 2,
+    Complete = 3,
 }

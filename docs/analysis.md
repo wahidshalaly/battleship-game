@@ -30,18 +30,18 @@ Game
 - Has a current state
 
 Game State
-- Either: Setup, Ready, Active, or Complete
-- Has initial state of Setup, when a Game needs to be initiated
+- Either: Started, Ready, Active, or Complete
+- Has initial state of Started, when a Game needs to be set up
 - Has state of Ready, when a Game gets initiated
 - Has state of Active, when player turns start
 - Has state of Complete when a player wins, which is once a player hits all opponents ships first.
 
 Game Controller/Engine
-- Setup
+- Started
 	- Creates two players, Player1 (Human) and Player2 (AI)
 	- Creates two boards, a board for each player
 	- Gives turns for players to place ships on board
-	- When setup is complete, the Game State becomes Ready
+	- When set up is complete, the Game State becomes Ready
 - Player Turns
 	- When turns start, the Game State becomes Active
 	- Gives turns for players to attack other player's board

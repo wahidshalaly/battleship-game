@@ -53,7 +53,7 @@ internal class Ship
 
         _hits.Add(code);
 
-        if (_hits.Count == (int)Kind)
+        if (_hits.Count == Kind.ToSize())
         {
             Sunk = true;
         }
@@ -63,7 +63,7 @@ internal class Ship
     {
         ArgumentNullException.ThrowIfNull(position);
 
-        if (position.Count != (int)kind)
+        if (position.Count != kind.ToSize())
         {
             throw new ApplicationException(ErrorMessages.InvalidShipPosition_Count);
         }

@@ -18,6 +18,12 @@ public static class ErrorMessages
     public const string InvalidBoardSize =
         "Invalid board size. It must be a positive number and it doesn't exceed the maximum board size of 26 squares.";
 
+    public const string InvalidShipKind =
+        "Invalid ship kind. You cannot add a ship kind more than once";
+
+    public const string InvalidShipAddition =
+        "Invalid ship addition. You cannot add ships more than the maximum of board allowance";
+
     // Ship Error Messages
     public const string InvalidShipPosition_Count =
         "Invalid cell count. Number of cells mush match exactly the size of the ship.";

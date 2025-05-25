@@ -14,11 +14,14 @@ internal class Board
     public const int DefaultSize = 10;
     public const int MaximumSize = 26;
 
+    // 5 ships, one of each kind, per board
+    public const int ShipAllowance = 5;
+
     private static readonly List<char> _letters = Constants.Alphabet.ToList();
 
     private readonly int _boardSize;
     private readonly Dictionary<string, Cell> _cells = new();
-    private readonly List<Ship> _ships = [];
+    private readonly List<Ship> _ships = new(5);
 
     public IList<Cell> Cells => _cells.Values.ToList();
     public IList<Ship> Ships => _ships.AsReadOnly();
@@ -35,6 +38,8 @@ internal class Board
         GenerateBoardCells();
     }
 
+    public bool IsReady => _ships.Count == ShipAllowance;
+
     /// <summary>
     /// Returns true when all ships are sunk.
     /// </summary>
@@ -50,7 +55,7 @@ internal class Board
     /// <exception cref="ArgumentException">Thrown when the ship placement is invalid</exception>
     public void AddShip(ShipKind shipKind, string bowCode, ShipOrientation orientation)
     {
-        ValidateShipPosition(shipKind, bowCode, orientation, out var bow, out var stern);
+        ValidateBeforeAddShip(shipKind, bowCode, orientation, out var bow, out var stern);
 
         var shipId = _ships.Count + 1;
         var cells = GetShipCells(bow, stern).ToList();
@@ -71,29 +76,12 @@ internal class Board
     /// <exception cref="ArgumentException">If an invalid cell, it'll throw an Argument exception</exception>
     public void Attack(string code)
     {
-        var cell = ValidateAttackPosition(code);
+        var cell = ValidateBeforeAttack(code);
         if (cell.State == CellState.Occupied)
         {
             Ships.First(s => s.Id == cell.ShipId).Attack(code);
         }
         cell.Attack();
-    }
-
-    private Cell ValidateAttackPosition(string code)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(code);
-
-        if (!_cells.TryGetValue(code, out var cell))
-        {
-            throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
-        }
-
-        if (cell.State == CellState.Hit)
-        {
-            throw new ArgumentException(ErrorMessages.InvalidCellToHit);
-        }
-
-        return cell;
     }
 
     private void GenerateBoardCells()
@@ -108,7 +96,7 @@ internal class Board
         }
     }
 
-    private void ValidateShipPosition(
+    private void ValidateBeforeAddShip(
         ShipKind shipKind,
         string bowCode,
         ShipOrientation orientation,
@@ -118,19 +106,47 @@ internal class Board
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(bowCode);
 
-        var shipSize = (int)shipKind;
+        var shipSize = shipKind.ToSize();
         var bowIsValid = _cells.TryGetValue(bowCode, out bow);
         if (!bowIsValid)
             throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
 
         // Calculate the stern cell based on ship size and orientation
-        var sternCode = orientation == ShipOrientation.Vertical
-            ? $"{bow.Letter}{bow.Digit + shipSize - 1}"
-            : $"{_letters[_letters.IndexOf(bow.Letter) + shipSize - 1]}{bow.Digit}";
+        var sternCode =
+            orientation == ShipOrientation.Vertical
+                ? $"{bow.Letter}{bow.Digit + shipSize - 1}"
+                : $"{_letters[_letters.IndexOf(bow.Letter) + shipSize - 1]}{bow.Digit}";
 
         var sternIsValid = _cells.TryGetValue(sternCode, out stern);
         if (!sternIsValid)
             throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
+
+        if (_ships.Any(s => s.Kind.ToString() == shipKind.ToString()))
+        {
+            throw new ApplicationException(ErrorMessages.InvalidShipKind);
+        }
+
+        if (_ships.Count == ShipAllowance)
+        {
+            throw new ApplicationException(ErrorMessages.InvalidShipAddition);
+        }
+    }
+
+    private Cell ValidateBeforeAttack(string code)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+
+        if (!_cells.TryGetValue(code, out var cell))
+        {
+            throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
+        }
+
+        if (cell.State == CellState.Hit)
+        {
+            throw new ArgumentException(ErrorMessages.InvalidCellToHit);
+        }
+
+        return cell;
     }
 
     private IEnumerable<Cell> GetShipCells(Cell bow, Cell stern)

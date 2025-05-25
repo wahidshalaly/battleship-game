@@ -1,4 +1,6 @@
-﻿namespace BattleshipChallenge;
+﻿using System.Collections.Generic;
+
+namespace BattleshipChallenge;
 
 /// <summary>
 /// These are the types of ships that can be placed on the board and their sizes.
@@ -10,9 +12,23 @@
 /// </summary>
 public enum ShipKind
 {
-    Destroyer = 2,
-    Cruiser = 3,
-    Submarine = 3,
-    Battleship = 4,
-    Carrier = 5,
+    Destroyer = 0,
+    Cruiser = 1,
+    Submarine = 2,
+    Battleship = 3,
+    Carrier = 4,
+}
+
+public static class ShipKindExtensions
+{
+    private static readonly Dictionary<ShipKind, int> _sizes = new()
+    {
+        { ShipKind.Destroyer, 2 },
+        { ShipKind.Cruiser, 3 },
+        { ShipKind.Submarine, 3 },
+        { ShipKind.Battleship, 4 },
+        { ShipKind.Carrier, 5 },
+    };
+
+    public static int ToSize(this ShipKind kind) => _sizes[kind];
 }

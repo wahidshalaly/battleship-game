@@ -6,5 +6,5 @@
 public enum ShipOrientation
 {
     Vertical,
-    Horizontal
+    Horizontal,
 }

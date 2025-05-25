@@ -13,7 +13,7 @@ public class ShipTests
     [MemberData(nameof(ShipKinds))]
     public void Ctor_WhenCellsCountMatchShipKind(ShipKind kind)
     {
-        List<string> position = (int)kind switch
+        List<string> position = kind.ToSize() switch
         {
             2 => ["A1", "A2"],
             3 => ["A1", "A2", "A3"],
@@ -22,10 +22,10 @@ public class ShipTests
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
-        var subject = new Ship(ShipId, kind, position);
-        subject.Id.Should().Be(ShipId);
-        subject.Kind.Should().Be(kind);
-        subject.Position.Should().BeEquivalentTo(position);
+        var ship = new Ship(ShipId, kind, position);
+        ship.Id.Should().Be(ShipId);
+        ship.Kind.Should().Be(kind);
+        ship.Position.Should().BeEquivalentTo(position);
     }
 
     [Fact]
@@ -63,26 +63,26 @@ public class ShipTests
     [Fact]
     public void Attack_WhenNotAllCellsAttacked_SunkIsFalse()
     {
-        var subject = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
+        var ship = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
 
-        subject.Attack("A1");
-        subject.Attack("A2");
-        subject.Attack("A3");
+        ship.Attack("A1");
+        ship.Attack("A2");
+        ship.Attack("A3");
 
-        subject.Sunk.Should().BeFalse();
+        ship.Sunk.Should().BeFalse();
     }
 
     [Fact]
     public void Attack_WhenAllCellsAttacked_SunkIsTrue()
     {
-        var subject = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
+        var ship = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
 
-        subject.Attack("A1");
-        subject.Attack("A2");
-        subject.Attack("A3");
-        subject.Attack("A4");
+        ship.Attack("A1");
+        ship.Attack("A2");
+        ship.Attack("A3");
+        ship.Attack("A4");
 
-        subject.Sunk.Should().BeTrue();
+        ship.Sunk.Should().BeTrue();
     }
 
     public static TheoryData<ShipKind> ShipKinds =>
