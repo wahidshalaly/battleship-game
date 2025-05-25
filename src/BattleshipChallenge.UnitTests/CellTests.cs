@@ -8,28 +8,26 @@ public class CellTests
 {
     [Theory]
     [MemberData(nameof(ValidCells))]
-    public void Ctor_WhenCreatedWithValidValue(char letter, int digit)
+    public void Ctor_WhenCreatedWithValidValue(char letter, int digit, string code)
     {
-        var cell = (Cell)$"{letter}{digit}";
+        var cell = new Cell(letter, digit);
         cell.Letter.Should().Be(letter);
         cell.Digit.Should().Be(digit);
+        cell.Code.Should().Be(code);
     }
 
     [Theory]
     [MemberData(nameof(InvalidCells))]
-    public void Ctor_WhenCreatedWithInvalidValue_ThrowsArgumentException(string code)
+    public void Ctor_WhenCreatedWithInvalidValue_ThrowsException(string code)
     {
-        var act = () => (Cell)code;
-        act
-            .Should()
-            .Throw<ArgumentException>()
-            .WithMessage(ErrorMessages.InvalidCellCode);
+        var act = () => new Cell(code);
+        act.Should().Throw<ArgumentException>().WithMessage(ErrorMessages.InvalidPosition);
     }
 
     [Fact]
     public void Ctor_SetsStateToClear()
     {
-        var cell = (Cell)"A1";
+        var cell = new Cell("A1");
 
         cell.State.Should().Be(CellState.Clear);
     }
@@ -37,7 +35,7 @@ public class CellTests
     [Fact]
     public void Assign_WhenCellIsClear_SetsStateToOccupied()
     {
-        var cell = (Cell)"A1";
+        var cell = new Cell("A1");
 
         cell.Assign(1);
 
@@ -45,38 +43,33 @@ public class CellTests
         cell.State.Should().Be(CellState.Occupied);
     }
 
-    [Fact]
-    public void Assign_WhenShipIdIsLessThanOrEqualZero_ThrowsException()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-2)]
+    public void Assign_WhenShipIdIsLessThanOrEqualZero_ThrowsException(int id)
     {
-        var cell = (Cell)"A1";
+        var cell = new Cell("A1");
 
-        Action act = () => cell.Assign(-2);
+        Action act = () => cell.Assign(id);
 
-        act
-            .Should()
-            .Throw<ArgumentOutOfRangeException>()
-            .WithParameterName("shipId");
+        act.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("shipId");
     }
 
     [Fact]
     public void Assign_WhenCellIsOccupied_ThrowsException()
     {
-        var cell = (Cell)"A1";
+        var cell = new Cell("A1");
         cell.Assign(1);
 
         Action act = () => cell.Assign(2);
 
-        act
-            .Should()
-            .Throw<ApplicationException>()
-            .WithMessage(ErrorMessages.InvalidCellToAssign);
+        act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidCellToAssign);
     }
-
 
     [Fact]
     public void Attack_WhenCellIsNotHit_SetsStateToHit()
     {
-        var cell = (Cell)"A1";
+        var cell = new Cell("A1");
 
         cell.Attack();
 
@@ -86,28 +79,26 @@ public class CellTests
     [Fact]
     public void Attack_WhenCellIsHit_ThrowsException()
     {
-        var cell = (Cell)"A1";
+        var cell = new Cell("A1");
         cell.Attack();
 
         Action act = () => cell.Attack();
 
-        act
-            .Should()
-            .Throw<ApplicationException>()
-            .WithMessage(ErrorMessages.InvalidCellToHit);
+        act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidCellToHit);
     }
 
-    public static TheoryData<char, int> ValidCells
+    public static TheoryData<char, int, string> ValidCells
     {
         get
         {
-            var data = new TheoryData<char, int>();
+            var data = new TheoryData<char, int, string>();
 
             foreach (var letter in Constants.Alphabet)
             {
                 for (var digit = 1; digit <= Constants.MaxBoardSize; digit++)
                 {
-                    data.Add(letter, digit);
+                    var code = $"{letter}{digit}";
+                    data.Add(letter, digit, code);
                 }
             }
 

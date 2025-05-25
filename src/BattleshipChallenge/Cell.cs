@@ -5,51 +5,63 @@ namespace BattleshipChallenge;
 
 public class Cell
 {
-    private static readonly List<char> _letters = [..Constants.Alphabet];
+    private static readonly List<char> _letters = [.. Constants.Alphabet];
 
     public char Letter { get; }
 
     public int Digit { get; }
 
+    public string Code { get; }
+
     public int? ShipId { get; private set; }
 
     public CellState State { get; private set; } = CellState.Clear;
 
-    private Cell(char letter, int digit)
+    public bool HasSameColumn(Cell other) => (Letter == other.Letter);
+
+    public bool HasSameRow(Cell other) => (Digit == other.Digit);
+
+    public Cell(string code)
     {
+        if (string.IsNullOrWhiteSpace(code) || code.Length is < 2 or > 3)
+        {
+            throw new ArgumentException(ErrorMessages.InvalidPosition);
+        }
+
+        var letter = code[0];
+        var digit = int.Parse(code[1..]);
+
         if (!_letters.Contains(letter))
         {
-            throw new ArgumentException(ErrorMessages.InvalidCellCode, nameof(letter));
+            throw new ArgumentException(ErrorMessages.InvalidPosition);
         }
 
         if (digit is <= 0 or > Constants.MaxBoardSize)
         {
-            throw new ArgumentException(ErrorMessages.InvalidCellCode, nameof(digit));
+            throw new ArgumentException(ErrorMessages.InvalidPosition);
         }
 
         Letter = letter;
         Digit = digit;
+        Code = $"{letter}{digit}";
     }
 
-    private static Cell FromString(string cell)
+    public Cell(char letter, int digit)
     {
-        try
+        if (!_letters.Contains(letter))
         {
-            var letter = cell[0];
-            var digit = int.Parse(cell[1..]);
-            return new Cell(letter, digit);
+            throw new ArgumentException(ErrorMessages.InvalidPosition);
         }
-        catch
+
+        if (digit is <= 0 or > Constants.MaxBoardSize)
         {
-            throw new ArgumentException(ErrorMessages.InvalidCellCode);
+            throw new ArgumentException(ErrorMessages.InvalidPosition);
         }
+
+        Letter = letter;
+        Digit = digit;
+        Code = $"{letter}{digit}";
     }
-
-    public override string ToString() => $"{Letter}{Digit}";
-
-    public bool HasSameColumn(Cell other) => (Letter == other.Letter);
-
-    public bool HasSameRow(Cell other) => (Digit == other.Digit);
 
     public void Assign(int shipId)
     {
@@ -72,10 +84,6 @@ public class Cell
         }
         State = CellState.Hit;
     }
-
-    public static explicit operator Cell(string cell) => FromString(cell);
-
-    public static implicit operator string(Cell cell) => cell.ToString();
 
     // Overload ==
     public static bool operator ==(Cell c1, Cell c2)
@@ -112,5 +120,5 @@ public enum CellState
 {
     Clear,
     Occupied,
-    Hit
+    Hit,
 }
