@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BattleshipChallenge.Common;
+using BattleshipChallenge.Domain.Base;
 
-namespace BattleshipChallenge;
+namespace BattleshipChallenge.Domain;
 
-internal class Cell
+internal class Cell : ValueObject
 {
     private static readonly List<char> _letters = Constants.Alphabet.ToList();
 
@@ -21,31 +23,6 @@ internal class Cell
     public bool HasSameColumn(Cell other) => (Letter == other.Letter);
 
     public bool HasSameRow(Cell other) => (Digit == other.Digit);
-
-    public Cell(string code)
-    {
-        if (string.IsNullOrWhiteSpace(code) || code.Length is < 2 or > 3)
-        {
-            throw new ArgumentException(ErrorMessages.InvalidCellCode);
-        }
-
-        var letter = code[0];
-        var digit = int.Parse(code[1..]);
-
-        if (!_letters.Contains(letter))
-        {
-            throw new ArgumentException(ErrorMessages.InvalidCellCode);
-        }
-
-        if (digit is <= 0 or > Board.MaximumSize)
-        {
-            throw new ArgumentException(ErrorMessages.InvalidCellCode);
-        }
-
-        Letter = letter;
-        Digit = digit;
-        Code = $"{letter}{digit}";
-    }
 
     public Cell(char letter, int digit)
     {
@@ -86,22 +63,21 @@ internal class Cell
         State = CellState.Hit;
     }
 
-    // Overload ==
-    public static bool operator ==(Cell c1, Cell c2)
+    public static (char Letter, int Digit) FromCode(string code)
     {
-        if (ReferenceEquals(c1, c2))
-            return true;
+        if (string.IsNullOrWhiteSpace(code) || code.Length is < 2 or > 3)
+        {
+            throw new ArgumentException(ErrorMessages.InvalidCellCode);
+        }
 
-        if (c1 is null || c2 is null)
-            return false;
+        var letter = code[0];
+        _ = int.TryParse(code[1..], out var digit);
+        if (!_letters.Contains(letter) || digit is <= 0 or > Board.MaximumSize)
+        {
+            throw new ArgumentException(ErrorMessages.InvalidCellCode);
+        }
 
-        return c1.HasSameColumn(c2) && c1.HasSameRow(c2);
-    }
-
-    // Overload !=
-    public static bool operator !=(Cell c1, Cell c2)
-    {
-        return !(c1 == c2);
+        return (letter, digit);
     }
 
     // Override Equals
@@ -115,11 +91,4 @@ internal class Cell
     {
         return HashCode.Combine(Letter, Digit);
     }
-}
-
-public enum CellState
-{
-    Clear,
-    Occupied,
-    Hit,
 }

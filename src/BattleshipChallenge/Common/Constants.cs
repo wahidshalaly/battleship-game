@@ -1,4 +1,4 @@
-namespace BattleshipChallenge;
+namespace BattleshipChallenge.Common;
 
 public static class Constants
 {

@@ -1,24 +1,21 @@
 ﻿using System;
+using BattleshipChallenge.Domain.Base;
 
-namespace BattleshipChallenge;
+namespace BattleshipChallenge.Domain;
 
 /// <summary>
 /// This represents an instance of Ship game, and it tracks the state of the game.
 /// </summary>
-public class Game
+public class Game : Entity<Guid>
 {
     private readonly Board _player1Board;
     private readonly Board _player2Board;
-
-    /// <summary>
-    /// Unique identifier for this game instance
-    /// </summary>
-    public Guid Id { get; } = Guid.NewGuid();
 
     public GameState State { get; private set; } = GameState.Started;
 
     public Game(int boardSize = Board.DefaultSize)
     {
+        Id = Guid.NewGuid();
         _player1Board = new Board(boardSize);
         _player2Board = new Board(boardSize);
     }
@@ -70,24 +67,4 @@ public class Game
             _ => throw new ArgumentOutOfRangeException(nameof(player), player, null),
         };
     }
-}
-
-/// <summary>
-/// Represents a player in the game.
-/// </summary>
-public enum Player
-{
-    One = 1,
-    Two = 2,
-}
-
-/// <summary>
-/// This is the outcome of a hit on a cell.
-/// </summary>
-public enum GameState
-{
-    Started = 0,
-    Ready = 1,
-    Active = 2,
-    Complete = 3,
 }

@@ -2,20 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using BattleshipChallenge.Common;
+using BattleshipChallenge.Domain.Base;
 
-namespace BattleshipChallenge;
+namespace BattleshipChallenge.Domain;
 
 /// <summary>
 /// This represents a ship on the board, its cells, and any damages it receives.
 /// </summary>
-internal class Ship
+internal class Ship : Entity<int>
 {
     private readonly HashSet<string> _hits = [];
-
-    /// <summary>
-    /// Gets the unique identifier for this ship
-    /// </summary>
-    public int Id { get; }
 
     /// <summary>
     /// Gets the type of this ship
@@ -68,7 +65,7 @@ internal class Ship
             throw new ApplicationException(ErrorMessages.InvalidShipPosition_Count);
         }
 
-        var cells = position.Select(c => new Cell(c)).ToList();
+        var cells = position.Select(Cell.FromCode).ToList();
 
         if (AllHasSameColumn())
         {
@@ -93,7 +90,7 @@ internal class Ship
 
         return;
 
-        bool AllHasSameColumn() => cells.All(c => c.HasSameColumn(cells[0]));
-        bool AllHasSameRow() => cells.All(c => c.HasSameRow(cells[0]));
+        bool AllHasSameColumn() => cells.All(c => c.Letter == cells[0].Letter);
+        bool AllHasSameRow() => cells.All(c => c.Digit == cells[0].Digit);
     }
 }

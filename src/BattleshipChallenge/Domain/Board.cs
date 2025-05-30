@@ -1,21 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BattleshipChallenge.Common;
+using BattleshipChallenge.Domain.Base;
 
-namespace BattleshipChallenge;
+namespace BattleshipChallenge.Domain;
 
 /// <summary>
 /// This entity represents a board, its cells and ships it contains.
 /// It keeps track of attacks and can query ships for their state.
 /// The state of board <c>IsGameOver</c> will be <c>true</c>, if all ships are sunk.
 /// </summary>
-internal class Board
+internal class Board : AggregateRoot<Guid>
 {
     public const int DefaultSize = 10;
     public const int MaximumSize = 26;
-
-    // 5 ships, one of each kind, per board
-    public const int ShipAllowance = 5;
+    public const int ShipAllowance = 5; // 5 ships, one of each kind, per board
 
     private static readonly List<char> _letters = Constants.Alphabet.ToList();
 
@@ -25,9 +25,16 @@ internal class Board
 
     public IList<Cell> Cells => _cells.Values.ToList();
     public IList<Ship> Ships => _ships.AsReadOnly();
+    public bool IsReady => _ships.Count == ShipAllowance;
+
+    /// <summary>
+    /// Returns true when all ships are sunk.
+    /// </summary>
+    public bool IsGameOver => _ships.All(s => s.Sunk);
 
     public Board(int size = DefaultSize)
     {
+        Id = Guid.NewGuid();
         if (size is < DefaultSize or > MaximumSize)
         {
             throw new ArgumentException(ErrorMessages.InvalidBoardSize);
@@ -37,13 +44,6 @@ internal class Board
 
         GenerateBoardCells();
     }
-
-    public bool IsReady => _ships.Count == ShipAllowance;
-
-    /// <summary>
-    /// Returns true when all ships are sunk.
-    /// </summary>
-    public bool IsGameOver => _ships.All(s => s.Sunk);
 
     /// <summary>
     /// Adds a ship to the board between the specified bow and stern cells.
@@ -86,11 +86,11 @@ internal class Board
 
     private void GenerateBoardCells()
     {
-        for (var i = 0; i < _boardSize; i++)
+        for (var letterIdx = 0; letterIdx < _boardSize; letterIdx++)
         {
-            for (var j = 1; j <= _boardSize; j++)
+            for (var digit = 1; digit <= _boardSize; digit++)
             {
-                var cell = new Cell(_letters[i], j);
+                var cell = new Cell(_letters[letterIdx], digit);
                 _cells.Add(cell.Code, cell);
             }
         }
@@ -151,7 +151,7 @@ internal class Board
 
     private IEnumerable<Cell> GetShipCells(Cell bow, Cell stern)
     {
-        if (bow == stern)
+        if (bow.Code == stern.Code)
         {
             yield return bow;
             yield break;

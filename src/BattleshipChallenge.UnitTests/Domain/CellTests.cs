@@ -1,33 +1,35 @@
 ﻿using System;
+using BattleshipChallenge.Common;
+using BattleshipChallenge.Domain;
 using FluentAssertions;
 using Xunit;
 
-namespace BattleshipChallenge.UnitTests;
+namespace BattleshipChallenge.UnitTests.Domain;
 
 public class CellTests
 {
     [Theory]
     [MemberData(nameof(ValidCells))]
-    public void Ctor_WhenCreatedWithValidValue(char letter, int digit, string code)
+    public void Ctor_WhenCreatedWithValidValue(char letter, int digit, string expectedCode)
     {
         var cell = new Cell(letter, digit);
         cell.Letter.Should().Be(letter);
         cell.Digit.Should().Be(digit);
-        cell.Code.Should().Be(code);
+        cell.Code.Should().Be(expectedCode);
     }
 
     [Theory]
     [MemberData(nameof(InvalidCells))]
     public void Ctor_WhenCreatedWithInvalidValue_ThrowsException(string code)
     {
-        var act = () => new Cell(code);
+        var act = () => Cell.FromCode(code);
         act.Should().Throw<ArgumentException>().WithMessage(ErrorMessages.InvalidCellCode);
     }
 
     [Fact]
     public void Ctor_SetsStateToClear()
     {
-        var cell = new Cell("A1");
+        var cell = new Cell('A', 1);
 
         cell.State.Should().Be(CellState.Clear);
     }
@@ -35,7 +37,7 @@ public class CellTests
     [Fact]
     public void Assign_WhenCellIsClear_SetsStateToOccupied()
     {
-        var cell = new Cell("A1");
+        var cell = new Cell('A', 1);
 
         cell.Assign(1);
 
@@ -48,7 +50,7 @@ public class CellTests
     [InlineData(-2)]
     public void Assign_WhenShipIdIsLessThanOrEqualZero_ThrowsException(int id)
     {
-        var cell = new Cell("A1");
+        var cell = new Cell('A', 1);
 
         Action act = () => cell.Assign(id);
 
@@ -58,7 +60,7 @@ public class CellTests
     [Fact]
     public void Assign_WhenCellIsOccupied_ThrowsException()
     {
-        var cell = new Cell("A1");
+        var cell = new Cell('A', 1);
         cell.Assign(1);
 
         Action act = () => cell.Assign(2);
@@ -69,7 +71,7 @@ public class CellTests
     [Fact]
     public void Attack_WhenCellIsNotHit_SetsStateToHit()
     {
-        var cell = new Cell("A1");
+        var cell = new Cell('A', 1);
 
         cell.Attack();
 
@@ -79,7 +81,7 @@ public class CellTests
     [Fact]
     public void Attack_WhenCellIsHit_ThrowsException()
     {
-        var cell = new Cell("A1");
+        var cell = new Cell('A', 1);
         cell.Attack();
 
         Action act = () => cell.Attack();

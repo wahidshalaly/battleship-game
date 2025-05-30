@@ -1,23 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace BattleshipChallenge;
-
-/// <summary>
-/// These are the types of ships that can be placed on the board and their sizes.
-/// Destroyer: 2 cells
-/// Submarine: 3 cells
-/// Cruiser: 3 cells
-/// Battleship: 4 cells
-/// Carrier: 5 cells
-/// </summary>
-public enum ShipKind
-{
-    Destroyer = 0,
-    Cruiser = 1,
-    Submarine = 2,
-    Battleship = 3,
-    Carrier = 4,
-}
+namespace BattleshipChallenge.Domain;
 
 public static class ShipKindExtensions
 {
