@@ -1,4 +1,4 @@
-﻿namespace BattleshipChallenge.Domain.Base;
+﻿namespace BattleshipGame.Domain.Entities;
 
 internal abstract class Entity<TId>
     where TId : notnull

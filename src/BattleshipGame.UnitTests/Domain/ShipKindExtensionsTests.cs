@@ -1,8 +1,8 @@
-﻿using BattleshipChallenge.Domain;
+﻿using BattleshipGame.Domain;
 using FluentAssertions;
 using Xunit;
 
-namespace BattleshipChallenge.UnitTests.Domain;
+namespace BattleshipGame.UnitTests.Domain;
 
 public class ShipKindExtensionsTests
 {

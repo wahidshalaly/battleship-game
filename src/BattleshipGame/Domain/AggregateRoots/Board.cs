@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BattleshipChallenge.Common;
-using BattleshipChallenge.Domain.Base;
+using BattleshipGame.Common;
+using BattleshipGame.Domain.Entities;
+using BattleshipGame.Domain.ValueObjects;
 
-namespace BattleshipChallenge.Domain;
+namespace BattleshipGame.Domain.AggregateRoots;
 
 /// <summary>
 /// This entity represents a board, its cells and ships it contains.
@@ -17,7 +18,7 @@ internal class Board : AggregateRoot<Guid>
     public const int MaximumSize = 26;
     public const int ShipAllowance = 5; // 5 ships only, one of each kind, per board
 
-    private static readonly List<char> _letters = [.. Constants.Alphabet];
+    private static readonly List<char> _letters = [.. Constants.ColumnHeaders];
 
     private readonly int _boardSize;
     private readonly Dictionary<string, Cell> _cells = new();

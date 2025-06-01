@@ -1,4 +1,4 @@
-﻿namespace BattleshipChallenge.Domain;
+﻿namespace BattleshipGame.Domain;
 
 /// <summary>
 /// This represents the states of a cell.

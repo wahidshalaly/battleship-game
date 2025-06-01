@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BattleshipChallenge.Common;
-using BattleshipChallenge.Domain.Base;
+using BattleshipGame.Common;
+using BattleshipGame.Domain.ValueObjects;
 
-namespace BattleshipChallenge.Domain;
+namespace BattleshipGame.Domain.Entities;
 
 /// <summary>
 /// This represents a ship on the board, its cells, and any damages it receives.

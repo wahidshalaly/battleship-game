@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace BattleshipChallenge.Domain;
+namespace BattleshipGame.Domain;
 
 public static class ShipKindExtensions
 {

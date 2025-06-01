@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using BattleshipChallenge.Common;
-using BattleshipChallenge.Domain.Base;
+using BattleshipGame.Common;
+using BattleshipGame.Domain.AggregateRoots;
 
-namespace BattleshipChallenge.Domain;
+namespace BattleshipGame.Domain.ValueObjects;
 
 internal class Cell : ValueObject
 {
-    private static readonly HashSet<char> _letters = [.. Constants.Alphabet];
+    private static readonly HashSet<char> _letters = [.. Constants.ColumnHeaders];
 
     public char Letter { get; }
 
@@ -22,12 +21,7 @@ internal class Cell : ValueObject
 
     public Cell(char letter, int digit)
     {
-        if (!_letters.Contains(letter))
-        {
-            throw new ArgumentException(ErrorMessages.InvalidCellCode);
-        }
-
-        if (digit is <= 0 or > Board.MaximumSize)
+        if (!_letters.Contains(letter) || digit is <= 0 or > Board.MaximumSize)
         {
             throw new ArgumentException(ErrorMessages.InvalidCellCode);
         }

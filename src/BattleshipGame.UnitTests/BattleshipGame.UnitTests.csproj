@@ -13,6 +13,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BattleshipChallenge\BattleshipChallenge.csproj" />
+    <ProjectReference Include="..\BattleshipGame\BattleshipGame.csproj" />
   </ItemGroup>
 </Project>

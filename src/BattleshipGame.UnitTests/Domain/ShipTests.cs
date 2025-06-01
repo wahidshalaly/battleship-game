@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
-using BattleshipChallenge.Common;
-using BattleshipChallenge.Domain;
+using BattleshipGame.Common;
+using BattleshipGame.Domain;
+using BattleshipGame.Domain.Entities;
 using FluentAssertions;
 using Xunit;
 
-namespace BattleshipChallenge.UnitTests.Domain;
+namespace BattleshipGame.UnitTests.Domain;
 
 public class ShipTests
 {

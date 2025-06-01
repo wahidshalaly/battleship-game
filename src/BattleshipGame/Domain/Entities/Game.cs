@@ -1,7 +1,7 @@
 ﻿using System;
-using BattleshipChallenge.Domain.Base;
+using BattleshipGame.Domain.AggregateRoots;
 
-namespace BattleshipChallenge.Domain;
+namespace BattleshipGame.Domain.Entities;
 
 /// <summary>
 /// This represents an instance of the Battleship game, and it tracks the state of the game.
@@ -11,13 +11,15 @@ internal class Game : Entity<Guid>
     private readonly Board _ownBoard;
     private readonly Board _oppBoard;
 
-    public GameState State { get; private set; } = GameState.Started;
+    public GameState State { get; private set; }
 
     public Game(int boardSize = Board.DefaultSize)
     {
-        Id = Guid.NewGuid();
         _ownBoard = new Board(boardSize);
         _oppBoard = new Board(boardSize);
+
+        Id = Guid.NewGuid();
+        State = GameState.Started;
     }
 
     public void AddShip(Player player, ShipKind shipKind, string bow, ShipOrientation orientation)

@@ -1,10 +1,12 @@
 ﻿using System;
-using BattleshipChallenge.Common;
-using BattleshipChallenge.Domain;
+using BattleshipGame.Common;
+using BattleshipGame.Domain;
+using BattleshipGame.Domain.AggregateRoots;
+using BattleshipGame.Domain.ValueObjects;
 using FluentAssertions;
 using Xunit;
 
-namespace BattleshipChallenge.UnitTests.Domain;
+namespace BattleshipGame.UnitTests.Domain;
 
 public class CellTests
 {
@@ -95,7 +97,7 @@ public class CellTests
         {
             var data = new TheoryData<char, int, string>();
 
-            foreach (var letter in Constants.Alphabet)
+            foreach (var letter in Constants.ColumnHeaders)
             {
                 for (var digit = 1; digit <= Board.MaximumSize; digit++)
                 {
