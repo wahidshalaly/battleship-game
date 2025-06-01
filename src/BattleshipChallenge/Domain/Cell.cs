@@ -8,7 +8,7 @@ namespace BattleshipChallenge.Domain;
 
 internal class Cell : ValueObject
 {
-    private static readonly List<char> _letters = Constants.Alphabet.ToList();
+    private static readonly HashSet<char> _letters = [.. Constants.Alphabet];
 
     public char Letter { get; }
 
@@ -19,10 +19,6 @@ internal class Cell : ValueObject
     public int? ShipId { get; private set; }
 
     public CellState State { get; private set; } = CellState.Clear;
-
-    public bool HasSameColumn(Cell other) => (Letter == other.Letter);
-
-    public bool HasSameRow(Cell other) => (Digit == other.Digit);
 
     public Cell(char letter, int digit)
     {
@@ -58,7 +54,7 @@ internal class Cell : ValueObject
     {
         if (State == CellState.Hit)
         {
-            throw new ApplicationException(ErrorMessages.InvalidCellToHit);
+            throw new ApplicationException(ErrorMessages.InvalidCellToAttack);
         }
         State = CellState.Hit;
     }
@@ -81,14 +77,8 @@ internal class Cell : ValueObject
     }
 
     // Override Equals
-    public override bool Equals(object obj)
-    {
-        return obj is Cell p && this == p;
-    }
+    public override bool Equals(object obj) => obj is Cell c && Code == c.Code;
 
     // Override GetHashCode
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Letter, Digit);
-    }
+    public override int GetHashCode() => HashCode.Combine(Code);
 }

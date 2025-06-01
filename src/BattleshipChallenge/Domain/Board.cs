@@ -15,9 +15,9 @@ internal class Board : AggregateRoot<Guid>
 {
     public const int DefaultSize = 10;
     public const int MaximumSize = 26;
-    public const int ShipAllowance = 5; // 5 ships, one of each kind, per board
+    public const int ShipAllowance = 5; // 5 ships only, one of each kind, per board
 
-    private static readonly List<char> _letters = Constants.Alphabet.ToList();
+    private static readonly List<char> _letters = [.. Constants.Alphabet];
 
     private readonly int _boardSize;
     private readonly Dictionary<string, Cell> _cells = new();
@@ -143,7 +143,7 @@ internal class Board : AggregateRoot<Guid>
 
         if (cell.State == CellState.Hit)
         {
-            throw new ArgumentException(ErrorMessages.InvalidCellToHit);
+            throw new ArgumentException(ErrorMessages.InvalidCellToAttack);
         }
 
         return cell;

@@ -87,6 +87,27 @@ public class ShipTests
         ship.Sunk.Should().BeTrue();
     }
 
+    [Fact]
+    public void Attack_WhenCellDoesNotBelogTofShip_ThrowsException()
+    {
+        var ship = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
+
+        var act = () => ship.Attack("C5");
+
+        act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidShipAttack);
+    }
+
+    [Fact]
+    public void Attack_WhenCellIsAlreadyHit_ThrowsException()
+    {
+        var ship = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
+        ship.Attack("A1");
+
+        var act = () => ship.Attack("A1");
+
+        act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidCellToAttack);
+    }
+
     public static TheoryData<ShipKind> ShipKinds =>
         [
             ShipKind.Destroyer,

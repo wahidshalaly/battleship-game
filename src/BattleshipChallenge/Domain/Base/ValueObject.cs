@@ -1,3 +1,3 @@
 ﻿namespace BattleshipChallenge.Domain.Base;
 
-internal class ValueObject { }
+internal abstract class ValueObject { }

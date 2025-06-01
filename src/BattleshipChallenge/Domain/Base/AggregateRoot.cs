@@ -1,3 +1,4 @@
 ﻿namespace BattleshipChallenge.Domain.Base;
 
-internal class AggregateRoot<T> : Entity<T> { }
+internal abstract class AggregateRoot<TId> : Entity<TId>
+    where TId : notnull { }

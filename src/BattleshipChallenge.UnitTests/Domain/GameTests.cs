@@ -20,13 +20,13 @@ public class GameTests
     {
         var game = new Game();
 
-        game.AddShip(Player.One, ShipKind.Carrier, "A1", ShipOrientation.Horizontal);
-        game.AddShip(Player.One, ShipKind.Battleship, "A2", ShipOrientation.Horizontal);
-        game.AddShip(Player.One, ShipKind.Destroyer, "A5", ShipOrientation.Horizontal);
+        game.AddShip(Player.Own, ShipKind.Carrier, "A1", ShipOrientation.Horizontal);
+        game.AddShip(Player.Own, ShipKind.Battleship, "A2", ShipOrientation.Horizontal);
+        game.AddShip(Player.Own, ShipKind.Destroyer, "A5", ShipOrientation.Horizontal);
 
         game.Id.Should().NotBeEmpty();
         game.State.Should().Be(GameState.Started);
-        game.IsReady(Player.One).Should().BeFalse();
+        game.IsReady(Player.Own).Should().BeFalse();
     }
 
     [Fact]
@@ -34,27 +34,27 @@ public class GameTests
     {
         var game = new Game();
 
-        game.AddShip(Player.One, ShipKind.Carrier, "A1", ShipOrientation.Horizontal);
-        game.AddShip(Player.One, ShipKind.Battleship, "A2", ShipOrientation.Horizontal);
-        game.AddShip(Player.One, ShipKind.Cruiser, "A3", ShipOrientation.Horizontal);
-        game.AddShip(Player.One, ShipKind.Submarine, "A4", ShipOrientation.Horizontal);
-        game.AddShip(Player.One, ShipKind.Destroyer, "A5", ShipOrientation.Horizontal);
+        game.AddShip(Player.Own, ShipKind.Carrier, "A1", ShipOrientation.Horizontal);
+        game.AddShip(Player.Own, ShipKind.Battleship, "A2", ShipOrientation.Horizontal);
+        game.AddShip(Player.Own, ShipKind.Cruiser, "A3", ShipOrientation.Horizontal);
+        game.AddShip(Player.Own, ShipKind.Submarine, "A4", ShipOrientation.Horizontal);
+        game.AddShip(Player.Own, ShipKind.Destroyer, "A5", ShipOrientation.Horizontal);
 
         game.Id.Should().NotBeEmpty();
         game.State.Should().Be(GameState.Started);
-        game.IsReady(Player.One).Should().BeTrue();
+        game.IsReady(Player.Own).Should().BeTrue();
     }
 
     [Fact]
     public void IsGameOver_WhenAllShipsSunk_IsTrue()
     {
         var game = new Game();
-        game.AddShip(Player.One, ShipKind.Cruiser, "A1", ShipOrientation.Vertical);
-        game.Attack(Player.One, "A1");
-        game.Attack(Player.One, "A2");
-        game.Attack(Player.One, "A3");
+        game.AddShip(Player.Own, ShipKind.Cruiser, "A1", ShipOrientation.Vertical);
+        game.Attack(Player.Own, "A1");
+        game.Attack(Player.Own, "A2");
+        game.Attack(Player.Own, "A3");
 
-        game.IsGameOver(Player.One).Should().BeTrue();
+        game.IsGameOver(Player.Own).Should().BeTrue();
     }
 
     //[Fact]

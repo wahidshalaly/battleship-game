@@ -86,7 +86,7 @@ public class CellTests
 
         Action act = () => cell.Attack();
 
-        act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidCellToHit);
+        act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidCellToAttack);
     }
 
     public static TheoryData<char, int, string> ValidCells

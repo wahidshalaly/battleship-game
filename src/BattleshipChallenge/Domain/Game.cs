@@ -4,20 +4,20 @@ using BattleshipChallenge.Domain.Base;
 namespace BattleshipChallenge.Domain;
 
 /// <summary>
-/// This represents an instance of Ship game, and it tracks the state of the game.
+/// This represents an instance of the Battleship game, and it tracks the state of the game.
 /// </summary>
-public class Game : Entity<Guid>
+internal class Game : Entity<Guid>
 {
-    private readonly Board _player1Board;
-    private readonly Board _player2Board;
+    private readonly Board _ownBoard;
+    private readonly Board _oppBoard;
 
     public GameState State { get; private set; } = GameState.Started;
 
     public Game(int boardSize = Board.DefaultSize)
     {
         Id = Guid.NewGuid();
-        _player1Board = new Board(boardSize);
-        _player2Board = new Board(boardSize);
+        _ownBoard = new Board(boardSize);
+        _oppBoard = new Board(boardSize);
     }
 
     public void AddShip(Player player, ShipKind shipKind, string bow, ShipOrientation orientation)
@@ -56,11 +56,11 @@ public class Game : Entity<Guid>
     {
         return player switch
         {
-            Player.One => _player1Board
+            Player.Own => _ownBoard
                 ?? throw new InvalidOperationException(
                     $"Board for {player} has not been created yet."
                 ),
-            Player.Two => _player2Board
+            Player.Opp => _oppBoard
                 ?? throw new InvalidOperationException(
                     $"Board for {player} has not been created yet."
                 ),

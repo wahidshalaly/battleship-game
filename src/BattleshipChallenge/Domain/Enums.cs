@@ -44,8 +44,8 @@ public enum ShipOrientation
 /// </summary>
 public enum Player
 {
-    One = 1,
-    Two = 2,
+    Own = 1,
+    Opp = 2,
 }
 
 /// <summary>

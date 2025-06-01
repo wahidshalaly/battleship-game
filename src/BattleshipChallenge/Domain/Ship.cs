@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using BattleshipChallenge.Common;
 using BattleshipChallenge.Domain.Base;
@@ -12,6 +11,7 @@ namespace BattleshipChallenge.Domain;
 /// </summary>
 internal class Ship : Entity<int>
 {
+    private readonly HashSet<string> _cells;
     private readonly HashSet<string> _hits = [];
 
     /// <summary>
@@ -22,7 +22,7 @@ internal class Ship : Entity<int>
     /// <summary>
     /// Ship's position, cells it occupies
     /// </summary>
-    public ReadOnlyCollection<string> Position { get; }
+    public IReadOnlyCollection<string> Position => _cells;
 
     public bool Sunk { get; private set; }
 
@@ -38,17 +38,20 @@ internal class Ship : Entity<int>
 
         Id = id;
         Kind = kind;
-        Position = new ReadOnlyCollection<string>(position);
+        _cells = new(position);
     }
 
     public void Attack(string code)
     {
-        if (!Position.Contains(code))
+        if (!_cells.Contains(code))
         {
-            throw new NotImplementedException();
+            throw new ApplicationException(ErrorMessages.InvalidShipAttack);
         }
 
-        _hits.Add(code);
+        if (!_hits.Add(code))
+        {
+            throw new ApplicationException(ErrorMessages.InvalidCellToAttack);
+        }
 
         if (_hits.Count == Kind.ToSize())
         {
@@ -69,18 +72,22 @@ internal class Ship : Entity<int>
 
         if (AllHasSameColumn())
         {
-            var start = cells[0].Digit;
-            if (cells.Any(cell => cell.Digit != start++))
+            for (var i = 0; i < cells.Count; i++)
             {
-                throw new ApplicationException(ErrorMessages.InvalidShipPosition_Alignment);
+                if (cells[i].Digit != cells[0].Digit + i)
+                {
+                    throw new ApplicationException(ErrorMessages.InvalidShipPosition_Alignment);
+                }
             }
         }
         else if (AllHasSameRow())
         {
-            var start = Constants.Alphabet.IndexOf(cells[0].Letter);
-            if (cells.Any(cell => Constants.Alphabet.IndexOf(cell.Letter) != start++))
+            for (var i = 0; i < cells.Count; i++)
             {
-                throw new ApplicationException(ErrorMessages.InvalidShipPosition_Alignment);
+                if (cells[i].Letter != cells[0].Letter + i)
+                {
+                    throw new ApplicationException(ErrorMessages.InvalidShipPosition_Alignment);
+                }
             }
         }
         else
