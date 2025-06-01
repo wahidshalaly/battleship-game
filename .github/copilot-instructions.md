@@ -14,7 +14,7 @@ For latest SDKs documentations, use Context 7.
 - **Database**: SQL Server / PostgreSQL / SQLite
 - **Architecture**: Clean Architecture / Microservices Architecture / Cloud-native Architecture / DDD / TDD / CQRS
 - **Design Patterns**: Repository Pattern / Unit of Work / SOLID /Dependency Injection / Gang of Four Design Patterns
-- **Deployment**: Docker / Kubernetes / Azure / GitOps / GitHub Actions / CI/CD
+- **Deployment**: Docker / Kubernetes / Azure / GitOps / CI/CD
 - **Authentication**: JWT / OAuth2 / OpenID Connect
 
 ## 🔧 General Guidelines
