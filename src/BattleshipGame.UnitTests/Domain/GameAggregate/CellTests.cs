@@ -40,9 +40,9 @@ public class CellTests
     public void Assign_WhenCellIsClear_SetsStateToOccupied()
     {
         var cell = new Cell('A', 1);
-        var shipId1 = Guid.NewGuid();
+        var shipId = Guid.NewGuid();
 
-        cell.Assign(shipId1);
+        cell.Assign(shipId);
 
         cell.ShipId.Should().NotBeEmpty();
         cell.State.Should().Be(CellState.Occupied);
@@ -52,8 +52,8 @@ public class CellTests
     public void Assign_WhenCellIsOccupied_ThrowsException()
     {
         var cell = new Cell('A', 1);
-        var shipId1 = Guid.NewGuid();
-        cell.Assign(shipId1);
+        var shipId = Guid.NewGuid();
+        cell.Assign(shipId);
 
         var shipId2 = Guid.NewGuid();
         Action act = () => cell.Assign(shipId2);

@@ -79,38 +79,4 @@ public class GameTests
 
         game.IsGameOver(BoardSide.Own).Should().BeTrue();
     }
-
-    //[Fact]
-    //public void Attack_WhenNotOccupied_ReturnFalse()
-    //{
-    //    var game = new Game();
-    //    game.Attack(BoardSide.Own, "C5");
-
-    //    Assert.Fail();
-    //}
-
-    //[Fact]
-    //public void Attack_WhenOccupied_ReturnTrue()
-    //{
-    //    var game = new Game();
-    //    game.AddShip(BoardSide.Own, ShipKind.Cruiser, "C3", isVertical: false);
-    //    game.Attack(BoardSide.Own, "C4");
-
-    //    Assert.Fail();
-    //}
-
-    //[Fact]
-    //public void PlayerHasLost_WhenShipsSunk_ReturnTrue()
-    //{
-    //    var game = new Game();
-    //    game.CreateBoard(BoardSide.Own);
-    //    game.AddShip(BoardSide.Own, (Cell)"C3", (Cell)"C5");
-    //    game.Attack(BoardSide.Own, (Cell)"C3");
-    //    game.Attack(BoardSide.Own, (Cell)"C4");
-    //    game.Attack(BoardSide.Own, (Cell)"C5");
-
-    //    var result = game.PlayerHasLost(BoardSide.Own);
-
-    //    Assert.True(result);
-    //}
 }

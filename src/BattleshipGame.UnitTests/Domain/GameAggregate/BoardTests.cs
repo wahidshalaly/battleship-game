@@ -41,8 +41,9 @@ public class BoardTests
     {
         var board = new Board();
 
-        board.AddShip(shipKind, bowPosition, orientation);
+        var shipId = board.AddShip(shipKind, bowPosition, orientation);
 
+        shipId.Should().NotBeEmpty();
         board.Cells.Should().HaveCount(100);
         board.Ships.Should().HaveCount(1);
     }
@@ -97,7 +98,7 @@ public class BoardTests
     }
 
     [Fact]
-    public void IsGameOver_WhenAllShipsAreSunk_ReturnsTrue()
+    public void AreAllShipsSunk_WhenAllShipsAreSunk_ReturnsTrue()
     {
         var board = new Board();
         board.AddShip(ShipKind.Battleship, "A1", ShipOrientation.Vertical);
@@ -114,11 +115,11 @@ public class BoardTests
         board.Ships[0].Sunk.Should().BeFalse(); // Battleship
         board.Ships[1].Sunk.Should().BeTrue(); // Destroyer
 
-        board.IsGameOver.Should().BeFalse();
+        board.AreAllShipsSunk.Should().BeFalse();
     }
 
     [Fact]
-    public void IsGameOver_WhenNotAllShipsAreSunk_ReturnsFalse()
+    public void AreAllShipsSunk_WhenNotAllShipsAreSunk_ReturnsFalse()
     {
         var board = new Board();
         board.AddShip(ShipKind.Battleship, "A1", ShipOrientation.Vertical);
@@ -137,7 +138,7 @@ public class BoardTests
         board.Ships[0].Sunk.Should().BeTrue(); // Battleship
         board.Ships[1].Sunk.Should().BeTrue(); // Destroyer
 
-        board.IsGameOver.Should().BeTrue();
+        board.AreAllShipsSunk.Should().BeTrue();
     }
 
     [Fact]
@@ -158,13 +159,13 @@ public class BoardTests
     public void AddShip_WhenKindAlreadyExists_ThrowsException()
     {
         var board = new Board();
-        board.AddShip(ShipKind.Carrier, "A1", ShipOrientation.Horizontal);
+        var shipId = board.AddShip(ShipKind.Carrier, "A1", ShipOrientation.Horizontal);
 
         var act = () => board.AddShip(ShipKind.Carrier, "A2", ShipOrientation.Horizontal);
 
         act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidShipKind);
 
-        board.Ships.Should().HaveCount(1);
+        board.Ships.Should().ContainSingle(s => s.Id == shipId && s.Kind == ShipKind.Carrier);
     }
 
     [Fact]

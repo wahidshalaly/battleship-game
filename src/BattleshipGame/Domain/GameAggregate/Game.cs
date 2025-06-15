@@ -11,6 +11,7 @@ public sealed class Game : AggregateRoot<Guid>
     private readonly Board _ownBoard;
     private readonly Board _oppBoard;
 
+    public int BoardSize { get; init; }
     public GameState State { get; private set; }
 
     public Game(int boardSize = Board.DefaultSize)
@@ -19,10 +20,11 @@ public sealed class Game : AggregateRoot<Guid>
         _oppBoard = new Board(boardSize);
 
         Id = Guid.NewGuid();
+        BoardSize = boardSize;
         State = GameState.Started;
     }
 
-    public void AddShip(
+    public Guid AddShip(
         BoardSide boardSide,
         ShipKind shipKind,
         string bow,
@@ -30,8 +32,8 @@ public sealed class Game : AggregateRoot<Guid>
     )
     {
         var board = BoardSelector(boardSide);
-
-        board.AddShip(shipKind, bow, orientation);
+        var shipId = board.AddShip(shipKind, bow, orientation);
+        return shipId;
     }
 
     /// <summary>
@@ -50,7 +52,7 @@ public sealed class Game : AggregateRoot<Guid>
     /// </summary>
     /// <param name="boardSide">The boardSide to check</param>
     /// <returns>True if all boardSide's ships have been sunk, false otherwise</returns>
-    public bool IsGameOver(BoardSide boardSide) => BoardSelector(boardSide).IsGameOver;
+    public bool IsGameOver(BoardSide boardSide) => BoardSelector(boardSide).AreAllShipsSunk;
 
     public bool IsReady(BoardSide boardSide) => BoardSelector(boardSide).IsReady;
 

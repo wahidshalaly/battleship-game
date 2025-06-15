@@ -9,13 +9,13 @@ namespace BattleshipGame.Domain.GameAggregate;
 /// <summary>
 /// This entity represents a board, its cells and ships it contains.
 /// It keeps track of attacks and can query ships for their state.
-/// The state of board <c>IsGameOver</c> will be <c>true</c>, if all ships are sunk.
+/// The state of board <c>AreAllShipsSunk</c> will be <c>true</c>, if all ships are sunk.
 /// </summary>
 internal class Board : Entity<Guid>
 {
     public const int DefaultSize = 10;
     public const int MaximumSize = 26;
-    public const int ShipAllowance = 5; // 5 ships only, one of each kind, per board
+    public const int ShipAllowance = 5; // Only 5 ships are allowed, one of each kind, per board
 
     private static readonly List<char> _letters = [.. Constants.ColumnHeaders];
 
@@ -30,7 +30,7 @@ internal class Board : Entity<Guid>
     /// <summary>
     /// Returns true when all ships are sunk.
     /// </summary>
-    public bool IsGameOver => _ships.All(s => s.Sunk);
+    public bool AreAllShipsSunk => _ships.All(s => s.Sunk);
 
     public Board(int size = DefaultSize)
     {
@@ -53,7 +53,7 @@ internal class Board : Entity<Guid>
     /// <param name="bowCode">The bow position of the ship</param>
     /// <param name="orientation">The orientation of the ship</param>
     /// <exception cref="ArgumentException">Thrown when the ship placement is invalid</exception>
-    public void AddShip(ShipKind shipKind, string bowCode, ShipOrientation orientation)
+    public Guid AddShip(ShipKind shipKind, string bowCode, ShipOrientation orientation)
     {
         ValidateBeforeAddShip(shipKind, bowCode, orientation, out var bow, out var stern);
 
@@ -67,6 +67,8 @@ internal class Board : Entity<Guid>
         var position = cells.Select(c => c.Code).ToList();
         var ship = new Ship(shipId, shipKind, position);
         _ships.Add(ship);
+
+        return shipId;
     }
 
     /// <summary>
