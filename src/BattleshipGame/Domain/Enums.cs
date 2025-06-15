@@ -42,7 +42,7 @@ public enum ShipOrientation
 /// <summary>
 /// Represents a player in the game.
 /// </summary>
-public enum Player
+public enum BoardSide
 {
     Own = 1,
     Opp = 2,

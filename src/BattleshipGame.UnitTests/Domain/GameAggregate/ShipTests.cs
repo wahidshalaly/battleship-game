@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using BattleshipGame.Common;
 using BattleshipGame.Domain;
-using BattleshipGame.Domain.Entities;
+using BattleshipGame.Domain.GameAggregate;
 using FluentAssertions;
 using Xunit;
 
-namespace BattleshipGame.UnitTests.Domain;
+namespace BattleshipGame.UnitTests.Domain.GameAggregate;
 
 public class ShipTests
 {
-    private const int ShipId = 3;
+    private readonly Guid _shipId = Guid.NewGuid();
 
     [Theory]
     [MemberData(nameof(ShipKinds))]
@@ -25,8 +25,8 @@ public class ShipTests
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
-        var ship = new Ship(ShipId, kind, position);
-        ship.Id.Should().Be(ShipId);
+        var ship = new Ship(_shipId, kind, position);
+        ship.Id.Should().Be(_shipId);
         ship.Kind.Should().Be(kind);
         ship.Position.Should().BeEquivalentTo(position);
     }
@@ -36,7 +36,7 @@ public class ShipTests
     {
         List<string> position = ["A1"];
 
-        var act = () => new Ship(ShipId, ShipKind.Cruiser, position);
+        var act = () => new Ship(_shipId, ShipKind.Cruiser, position);
 
         act.Should()
             .Throw<ApplicationException>()
@@ -47,7 +47,7 @@ public class ShipTests
     public void Ctor_WhenCellsDoesNotHaveTheSameColumnOrRow_ThrowsException()
     {
         List<string> position = ["A1", "B2", "C3", "A4"];
-        var act = () => new Ship(ShipId, ShipKind.Battleship, position);
+        var act = () => new Ship(_shipId, ShipKind.Battleship, position);
         act.Should()
             .Throw<ApplicationException>()
             .WithMessage(ErrorMessages.InvalidShipPosition_Alignment);
@@ -57,7 +57,7 @@ public class ShipTests
     [MemberData(nameof(NonadjacentPosition))]
     public void Ctor_WhenCellsAreNonadjacent_ThrowsException(List<string> position)
     {
-        var act = () => new Ship(ShipId, ShipKind.Cruiser, position);
+        var act = () => new Ship(_shipId, ShipKind.Cruiser, position);
         act.Should()
             .Throw<ApplicationException>()
             .WithMessage(ErrorMessages.InvalidShipPosition_Alignment);
@@ -66,7 +66,7 @@ public class ShipTests
     [Fact]
     public void Attack_WhenNotAllCellsAttacked_SunkIsFalse()
     {
-        var ship = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
+        var ship = new Ship(_shipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
 
         ship.Attack("A1");
         ship.Attack("A2");
@@ -78,7 +78,7 @@ public class ShipTests
     [Fact]
     public void Attack_WhenAllCellsAttacked_SunkIsTrue()
     {
-        var ship = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
+        var ship = new Ship(_shipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
 
         ship.Attack("A1");
         ship.Attack("A2");
@@ -89,9 +89,9 @@ public class ShipTests
     }
 
     [Fact]
-    public void Attack_WhenCellDoesNotBelogTofShip_ThrowsException()
+    public void Attack_WhenCellDoesNotBelongTofShip_ThrowsException()
     {
-        var ship = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
+        var ship = new Ship(_shipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
 
         var act = () => ship.Attack("C5");
 
@@ -101,7 +101,7 @@ public class ShipTests
     [Fact]
     public void Attack_WhenCellIsAlreadyHit_ThrowsException()
     {
-        var ship = new Ship(ShipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
+        var ship = new Ship(_shipId, ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
         ship.Attack("A1");
 
         var act = () => ship.Attack("A1");

@@ -1,12 +1,11 @@
 ﻿using System;
 using BattleshipGame.Common;
 using BattleshipGame.Domain;
-using BattleshipGame.Domain.AggregateRoots;
-using BattleshipGame.Domain.ValueObjects;
+using BattleshipGame.Domain.GameAggregate;
 using FluentAssertions;
 using Xunit;
 
-namespace BattleshipGame.UnitTests.Domain;
+namespace BattleshipGame.UnitTests.Domain.GameAggregate;
 
 public class CellTests
 {
@@ -25,6 +24,7 @@ public class CellTests
     public void Ctor_WhenCreatedWithInvalidValue_ThrowsException(string code)
     {
         var act = () => Cell.FromCode(code);
+
         act.Should().Throw<ArgumentException>().WithMessage(ErrorMessages.InvalidCellCode);
     }
 
@@ -40,32 +40,23 @@ public class CellTests
     public void Assign_WhenCellIsClear_SetsStateToOccupied()
     {
         var cell = new Cell('A', 1);
+        var shipId1 = Guid.NewGuid();
 
-        cell.Assign(1);
+        cell.Assign(shipId1);
 
-        cell.ShipId.Should().Be(1);
+        cell.ShipId.Should().NotBeEmpty();
         cell.State.Should().Be(CellState.Occupied);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-2)]
-    public void Assign_WhenShipIdIsLessThanOrEqualZero_ThrowsException(int id)
-    {
-        var cell = new Cell('A', 1);
-
-        Action act = () => cell.Assign(id);
-
-        act.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("shipId");
     }
 
     [Fact]
     public void Assign_WhenCellIsOccupied_ThrowsException()
     {
         var cell = new Cell('A', 1);
-        cell.Assign(1);
+        var shipId1 = Guid.NewGuid();
+        cell.Assign(shipId1);
 
-        Action act = () => cell.Assign(2);
+        var shipId2 = Guid.NewGuid();
+        Action act = () => cell.Assign(shipId2);
 
         act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidCellToAssign);
     }

@@ -2,7 +2,7 @@
 using FluentAssertions;
 using Xunit;
 
-namespace BattleshipGame.UnitTests.Domain;
+namespace BattleshipGame.UnitTests.Domain.GameAggregate;
 
 public class ShipKindExtensionsTests
 {

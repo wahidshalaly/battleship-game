@@ -1,6 +1,6 @@
 namespace BattleshipGame.Common;
 
-public static class ErrorMessages
+internal static class ErrorMessages
 {
     // Cell Error Messages
     public const string InvalidCellCode =

@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BattleshipGame.Common;
-using BattleshipGame.Domain.ValueObjects;
+using BattleshipGame.Domain.Common;
 
-namespace BattleshipGame.Domain.Entities;
+namespace BattleshipGame.Domain.GameAggregate;
 
 /// <summary>
 /// This represents a ship on the board, its cells, and any damages it receives.
 /// </summary>
-internal class Ship : Entity<int>
+internal class Ship : Entity<Guid>
 {
     private readonly HashSet<string> _cells;
     private readonly HashSet<string> _hits = [];
@@ -32,7 +32,7 @@ internal class Ship : Entity<int>
     /// <param name="id">The unique identifier for this ship</param>
     /// <param name="kind">The type of ship</param>
     /// <param name="position">The ship position, cells it occupies</param>
-    public Ship(int id, ShipKind kind, List<string> position)
+    public Ship(Guid id, ShipKind kind, List<string> position)
     {
         ValidatePosition(kind, position);
 

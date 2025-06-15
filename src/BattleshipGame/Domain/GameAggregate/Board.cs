@@ -2,17 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BattleshipGame.Common;
-using BattleshipGame.Domain.Entities;
-using BattleshipGame.Domain.ValueObjects;
+using BattleshipGame.Domain.Common;
 
-namespace BattleshipGame.Domain.AggregateRoots;
+namespace BattleshipGame.Domain.GameAggregate;
 
 /// <summary>
 /// This entity represents a board, its cells and ships it contains.
 /// It keeps track of attacks and can query ships for their state.
 /// The state of board <c>IsGameOver</c> will be <c>true</c>, if all ships are sunk.
 /// </summary>
-internal class Board : AggregateRoot<Guid>
+internal class Board : Entity<Guid>
 {
     public const int DefaultSize = 10;
     public const int MaximumSize = 26;
@@ -58,7 +57,7 @@ internal class Board : AggregateRoot<Guid>
     {
         ValidateBeforeAddShip(shipKind, bowCode, orientation, out var bow, out var stern);
 
-        var shipId = _ships.Count + 1;
+        var shipId = Guid.NewGuid();
         var cells = GetShipCells(bow, stern).ToList();
         foreach (var cell in cells)
         {
@@ -78,9 +77,9 @@ internal class Board : AggregateRoot<Guid>
     public void Attack(string code)
     {
         var cell = ValidateBeforeAttack(code);
-        if (cell.State == CellState.Occupied)
+        if (cell.State == CellState.Occupied && cell.ShipId.HasValue)
         {
-            Ships.First(s => s.Id == cell.ShipId).Attack(code);
+            Ships.First(s => s.Id == cell.ShipId.Value).Attack(code);
         }
         cell.Attack();
     }

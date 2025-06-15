@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
-using BattleshipGame.Domain.Events;
+using BattleshipGame.Domain.Common;
 using Microsoft.Extensions.Logging;
 
-namespace BattleshipGame.Domain.EventHandlers;
+namespace BattleshipGame.Domain.GameAggregate;
 
 internal class GameStartedHandler : IDomainEventHandler<GameStarted>
 {

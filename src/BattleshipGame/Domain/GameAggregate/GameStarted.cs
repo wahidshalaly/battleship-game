@@ -1,6 +1,7 @@
 ﻿using System;
+using BattleshipGame.Domain.Common;
 
-namespace BattleshipGame.Domain.Events;
+namespace BattleshipGame.Domain.GameAggregate;
 
 internal class GameStarted : DomainEvent<GameStarted>
 {

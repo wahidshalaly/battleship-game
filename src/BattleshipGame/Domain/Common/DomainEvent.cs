@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace BattleshipGame.Domain.Events;
+namespace BattleshipGame.Domain.Common;
 
-internal abstract class DomainEvent<T> : IDomainEvent
+public abstract class DomainEvent<T> : IDomainEvent
     where T : class
 {
     public Guid EventId { get; init; } = Guid.NewGuid();

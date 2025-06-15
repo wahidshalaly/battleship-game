@@ -2,11 +2,11 @@ using System;
 using System.Linq;
 using BattleshipGame.Common;
 using BattleshipGame.Domain;
-using BattleshipGame.Domain.AggregateRoots;
+using BattleshipGame.Domain.GameAggregate;
 using FluentAssertions;
 using Xunit;
 
-namespace BattleshipGame.UnitTests.Domain;
+namespace BattleshipGame.UnitTests.Domain.GameAggregate;
 
 public class BoardTests
 {
