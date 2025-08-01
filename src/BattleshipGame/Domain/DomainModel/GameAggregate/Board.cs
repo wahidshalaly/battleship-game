@@ -1,17 +1,22 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using BattleshipGame.Common;
 using BattleshipGame.Domain.Common;
+using BattleshipGame.Domain.DomainModel.Common;
 
-namespace BattleshipGame.Domain.GameAggregate;
+namespace BattleshipGame.Domain.DomainModel.GameAggregate;
+
+/// <summary>
+/// Represents the unique identifier for a board entity.
+/// </summary>
+/// <remarks>This type is a value object that encapsulates a <see cref="Guid"/> to uniquely identify a board. It
+/// is used to ensure type safety and clarity when working with board-related operations.</remarks>
+/// <param name="Value"></param>
+public record BoardId(Guid Value) : EntityId(Value);
 
 /// <summary>
 /// This entity represents a board, its cells and ships it contains.
 /// It keeps track of attacks and can query ships for their state.
-/// The state of board <c>AreAllShipsSunk</c> will be <c>true</c>, if all ships are sunk.
+/// The state of board <c>IsGameOver</c> will be <c>true</c>, if all ships are sunk.
 /// </summary>
-internal class Board : Entity<Guid>
+internal class Board : Entity<BoardId>
 {
     public const int DefaultSize = 10;
     public const int MaximumSize = 26;
@@ -21,20 +26,23 @@ internal class Board : Entity<Guid>
 
     private readonly int _boardSize;
     private readonly Dictionary<string, Cell> _cells = new();
-    private readonly List<Ship> _ships = new(5);
+    private readonly List<Ship> _ships = new(ShipAllowance);
 
     public IList<Cell> Cells => _cells.Values.ToList();
     public IList<Ship> Ships => _ships.AsReadOnly();
+
+    /// <summary>
+    /// Gets a value indicating whether the current state satisfies the readiness condition.
+    /// </summary>
     public bool IsReady => _ships.Count == ShipAllowance;
 
     /// <summary>
     /// Returns true when all ships are sunk.
     /// </summary>
-    public bool AreAllShipsSunk => _ships.All(s => s.Sunk);
+    public bool IsGameOver => _ships.All(s => s.Sunk);
 
     public Board(int size = DefaultSize)
     {
-        Id = Guid.NewGuid();
         if (size is < DefaultSize or > MaximumSize)
         {
             throw new ArgumentException(ErrorMessages.InvalidBoardSize);
@@ -50,25 +58,25 @@ internal class Board : Entity<Guid>
     /// Validates that the ship follows standard Battleship rules and doesn't overlap with existing ships.
     /// </summary>
     /// <param name="shipKind"></param>
-    /// <param name="bowCode">The bow position of the ship</param>
     /// <param name="orientation">The orientation of the ship</param>
+    /// <param name="bowCode">The bow position of the ship</param>
     /// <exception cref="ArgumentException">Thrown when the ship placement is invalid</exception>
-    public Guid AddShip(ShipKind shipKind, string bowCode, ShipOrientation orientation)
+    public ShipId AddShip(ShipKind shipKind, ShipOrientation orientation, string bowCode)
     {
-        ValidateBeforeAddShip(shipKind, bowCode, orientation, out var bow, out var stern);
+        ValidateBeforeAddShip(shipKind, orientation, bowCode, out var bow, out var stern);
 
-        var shipId = Guid.NewGuid();
+        //var shipId = ShipId.New().Value;
         var cells = GetShipCells(bow, stern).ToList();
+        var position = cells.Select(c => c.Code).ToList();
+        var ship = new Ship(shipKind, position);
         foreach (var cell in cells)
         {
-            cell.Assign(shipId);
+            cell.Assign(ship.Id);
         }
 
-        var position = cells.Select(c => c.Code).ToList();
-        var ship = new Ship(shipId, shipKind, position);
         _ships.Add(ship);
 
-        return shipId;
+        return ship.Id;
     }
 
     /// <summary>
@@ -79,9 +87,9 @@ internal class Board : Entity<Guid>
     public void Attack(string code)
     {
         var cell = ValidateBeforeAttack(code);
-        if (cell.State == CellState.Occupied && cell.ShipId.HasValue)
+        if (cell is { State: CellState.Occupied, ShipId: not null })
         {
-            Ships.First(s => s.Id == cell.ShipId.Value).Attack(code);
+            Ships.First(s => s.Id == cell.ShipId).Attack(code);
         }
         cell.Attack();
     }
@@ -100,8 +108,8 @@ internal class Board : Entity<Guid>
 
     private void ValidateBeforeAddShip(
         ShipKind shipKind,
-        string bowCode,
         ShipOrientation orientation,
+        string bowCode,
         out Cell bow,
         out Cell stern
     )
@@ -109,7 +117,7 @@ internal class Board : Entity<Guid>
         ArgumentException.ThrowIfNullOrWhiteSpace(bowCode);
 
         var shipSize = shipKind.ToSize();
-        var bowIsValid = _cells.TryGetValue(bowCode, out bow);
+        var bowIsValid = _cells.TryGetValue(bowCode, out bow!);
         if (!bowIsValid)
             throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
 
@@ -119,7 +127,7 @@ internal class Board : Entity<Guid>
                 ? $"{bow.Letter}{bow.Digit + shipSize - 1}"
                 : $"{_letters[_letters.IndexOf(bow.Letter) + shipSize - 1]}{bow.Digit}";
 
-        var sternIsValid = _cells.TryGetValue(sternCode, out stern);
+        var sternIsValid = _cells.TryGetValue(sternCode, out stern!);
         if (!sternIsValid)
             throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
 

@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
-using BattleshipGame.Common;
-using BattleshipGame.Domain;
-using BattleshipGame.Domain.GameAggregate;
+using BattleshipGame.Domain.Common;
+using BattleshipGame.Domain.DomainModel.Common;
+using BattleshipGame.Domain.DomainModel.GameAggregate;
 using FluentAssertions;
 using Xunit;
 
-namespace BattleshipGame.UnitTests.Domain.GameAggregate;
+namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate;
 
 public class BoardTests
 {
@@ -41,9 +41,9 @@ public class BoardTests
     {
         var board = new Board();
 
-        var shipId = board.AddShip(shipKind, bowPosition, orientation);
+        var shipId = board.AddShip(shipKind, orientation, bowPosition);
 
-        shipId.Should().NotBeEmpty();
+        shipId.Should().NotBe(Guid.Empty);
         board.Cells.Should().HaveCount(100);
         board.Ships.Should().HaveCount(1);
     }
@@ -58,7 +58,7 @@ public class BoardTests
     {
         var board = new Board();
 
-        var act = () => board.AddShip(shipKind, bowPosition, orientation);
+        var act = () => board.AddShip(shipKind, orientation, bowPosition);
 
         act.Should()
             .Throw<ArgumentException>()
@@ -71,9 +71,9 @@ public class BoardTests
     public void AddShip_WhenShipPositionIntersectWithOccupiedCells_ThrowsException()
     {
         var board = new Board();
-        board.AddShip(ShipKind.Destroyer, "A1", ShipOrientation.Horizontal);
+        board.AddShip(ShipKind.Destroyer, ShipOrientation.Horizontal, "A1");
 
-        var act = () => board.AddShip(ShipKind.Battleship, "B1", ShipOrientation.Horizontal);
+        var act = () => board.AddShip(ShipKind.Battleship, ShipOrientation.Horizontal, "B1");
 
         act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidCellToAssign);
     }
@@ -82,7 +82,7 @@ public class BoardTests
     public void Attack_WhenCellIsValid()
     {
         var board = new Board();
-        board.AddShip(ShipKind.Battleship, "A1", ShipOrientation.Vertical);
+        board.AddShip(ShipKind.Battleship, ShipOrientation.Vertical, "A1");
 
         board.Attack("A1"); // Attack the bow of the ship
         board.Attack("A2"); // Attack a clear cell
@@ -98,11 +98,11 @@ public class BoardTests
     }
 
     [Fact]
-    public void AreAllShipsSunk_WhenAllShipsAreSunk_ReturnsTrue()
+    public void AreAllShipsSunk_WhenNotAllShipsAreSunk_ReturnsFalse()
     {
         var board = new Board();
-        board.AddShip(ShipKind.Battleship, "A1", ShipOrientation.Vertical);
-        board.AddShip(ShipKind.Destroyer, "B1", ShipOrientation.Vertical);
+        board.AddShip(ShipKind.Battleship, ShipOrientation.Vertical, "A1");
+        board.AddShip(ShipKind.Destroyer, ShipOrientation.Vertical, "B1");
 
         // Attacking the Battleship
         board.Attack("A1");
@@ -115,15 +115,15 @@ public class BoardTests
         board.Ships[0].Sunk.Should().BeFalse(); // Battleship
         board.Ships[1].Sunk.Should().BeTrue(); // Destroyer
 
-        board.AreAllShipsSunk.Should().BeFalse();
+        board.IsGameOver.Should().BeFalse();
     }
 
     [Fact]
-    public void AreAllShipsSunk_WhenNotAllShipsAreSunk_ReturnsFalse()
+    public void AreAllShipsSunk_WhenAllShipsAreSunk_ReturnsTrue()
     {
         var board = new Board();
-        board.AddShip(ShipKind.Battleship, "A1", ShipOrientation.Vertical);
-        board.AddShip(ShipKind.Destroyer, "B1", ShipOrientation.Vertical);
+        board.AddShip(ShipKind.Battleship, ShipOrientation.Vertical, "A1");
+        board.AddShip(ShipKind.Destroyer, ShipOrientation.Vertical, "B1");
 
         // Sinking the Battleship
         board.Attack("A1");
@@ -138,18 +138,18 @@ public class BoardTests
         board.Ships[0].Sunk.Should().BeTrue(); // Battleship
         board.Ships[1].Sunk.Should().BeTrue(); // Destroyer
 
-        board.AreAllShipsSunk.Should().BeTrue();
+        board.IsGameOver.Should().BeTrue();
     }
 
     [Fact]
     public void IsReady_WhenShipsCountReachAllowance_ReturnsTrue()
     {
         var board = new Board();
-        board.AddShip(ShipKind.Carrier, "A1", ShipOrientation.Horizontal);
-        board.AddShip(ShipKind.Battleship, "A2", ShipOrientation.Horizontal);
-        board.AddShip(ShipKind.Cruiser, "A3", ShipOrientation.Horizontal);
-        board.AddShip(ShipKind.Submarine, "A4", ShipOrientation.Horizontal);
-        board.AddShip(ShipKind.Destroyer, "A5", ShipOrientation.Horizontal);
+        board.AddShip(ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
+        board.AddShip(ShipKind.Battleship, ShipOrientation.Horizontal, "A2");
+        board.AddShip(ShipKind.Cruiser, ShipOrientation.Horizontal, "A3");
+        board.AddShip(ShipKind.Submarine, ShipOrientation.Horizontal, "A4");
+        board.AddShip(ShipKind.Destroyer, ShipOrientation.Horizontal, "A5");
 
         board.IsReady.Should().BeTrue();
         Board.ShipAllowance.Should().Be(5);
@@ -159,9 +159,9 @@ public class BoardTests
     public void AddShip_WhenKindAlreadyExists_ThrowsException()
     {
         var board = new Board();
-        var shipId = board.AddShip(ShipKind.Carrier, "A1", ShipOrientation.Horizontal);
+        var shipId = board.AddShip(ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
 
-        var act = () => board.AddShip(ShipKind.Carrier, "A2", ShipOrientation.Horizontal);
+        var act = () => board.AddShip(ShipKind.Carrier, ShipOrientation.Horizontal, "A2");
 
         act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidShipKind);
 
@@ -172,8 +172,8 @@ public class BoardTests
     public void IsReady_WhenShipsCountLessThenMax_ReturnsTrue()
     {
         var board = new Board();
-        board.AddShip(ShipKind.Battleship, "A1", ShipOrientation.Horizontal);
-        board.AddShip(ShipKind.Destroyer, "A2", ShipOrientation.Horizontal);
+        board.AddShip(ShipKind.Battleship, ShipOrientation.Horizontal, "A1");
+        board.AddShip(ShipKind.Destroyer, ShipOrientation.Horizontal, "A2");
 
         board.IsReady.Should().BeFalse();
     }

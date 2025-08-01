@@ -1,15 +1,20 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using BattleshipGame.Common;
 using BattleshipGame.Domain.Common;
+using BattleshipGame.Domain.DomainModel.Common;
 
-namespace BattleshipGame.Domain.GameAggregate;
+namespace BattleshipGame.Domain.DomainModel.GameAggregate;
+
+/// <summary>
+/// Represents the unique identifier for a ship.
+/// </summary>
+/// <remarks>This type is a strongly-typed identifier for ships, encapsulating a <see cref="Guid"/> value. It is
+/// used to ensure type safety and clarity when working with ship-related entities.</remarks>
+/// <param name="Value"></param>
+public record ShipId(Guid Value) : EntityId(Value);
 
 /// <summary>
 /// This represents a ship on the board, its cells, and any damages it receives.
 /// </summary>
-internal class Ship : Entity<Guid>
+internal class Ship : Entity<ShipId>
 {
     private readonly HashSet<string> _cells;
     private readonly HashSet<string> _hits = [];
@@ -24,21 +29,19 @@ internal class Ship : Entity<Guid>
     /// </summary>
     public IReadOnlyCollection<string> Position => _cells;
 
-    public bool Sunk { get; private set; }
+    public bool Sunk => _cells.Count == _hits.Count;
 
     /// <summary>
     /// Creates a new battleship with the specified ID, type, and cells
     /// </summary>
-    /// <param name="id">The unique identifier for this ship</param>
     /// <param name="kind">The type of ship</param>
     /// <param name="position">The ship position, cells it occupies</param>
-    public Ship(Guid id, ShipKind kind, List<string> position)
+    public Ship(ShipKind kind, List<string> position)
     {
         ValidatePosition(kind, position);
 
-        Id = id;
         Kind = kind;
-        _cells = new(position);
+        _cells = [.. position];
     }
 
     public void Attack(string code)
@@ -51,11 +54,6 @@ internal class Ship : Entity<Guid>
         if (!_hits.Add(code))
         {
             throw new ApplicationException(ErrorMessages.InvalidCellToAttack);
-        }
-
-        if (_hits.Count == Kind.ToSize())
-        {
-            Sunk = true;
         }
     }
 

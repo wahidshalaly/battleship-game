@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace BattleshipGame.Domain.Common;
+﻿namespace BattleshipGame.Domain.DomainModel.Common;
 
 public interface IDomainEvent
 {

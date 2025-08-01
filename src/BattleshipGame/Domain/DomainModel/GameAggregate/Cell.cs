@@ -1,9 +1,7 @@
-using System;
-using System.Collections.Generic;
-using BattleshipGame.Common;
 using BattleshipGame.Domain.Common;
+using BattleshipGame.Domain.DomainModel.Common;
 
-namespace BattleshipGame.Domain.GameAggregate;
+namespace BattleshipGame.Domain.DomainModel.GameAggregate;
 
 internal class Cell : ValueObject
 {
@@ -15,7 +13,7 @@ internal class Cell : ValueObject
 
     public string Code { get; }
 
-    public Guid? ShipId { get; private set; }
+    public ShipId? ShipId { get; private set; }
 
     public CellState State { get; private set; } = CellState.Clear;
 
@@ -31,9 +29,9 @@ internal class Cell : ValueObject
         Code = $"{letter}{digit}";
     }
 
-    public void Assign(Guid shipId)
+    public void Assign(ShipId shipId)
     {
-        ArgumentOutOfRangeException.ThrowIfEqual(shipId, Guid.Empty);
+        ArgumentOutOfRangeException.ThrowIfEqual(shipId.Value, Guid.Empty);
 
         if (State != CellState.Clear)
             throw new ApplicationException(ErrorMessages.InvalidCellToAssign);
@@ -73,7 +71,7 @@ internal class Cell : ValueObject
         yield return Code;
     }
 
-    public override bool Equals(object obj) => obj is Cell c && Code == c.Code;
+    public override bool Equals(object? obj) => obj is Cell c && Code == c.Code;
 
     public override int GetHashCode() => HashCode.Combine(Code);
 }

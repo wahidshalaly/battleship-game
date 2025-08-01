@@ -1,11 +1,11 @@
 ﻿using System;
-using BattleshipGame.Common;
-using BattleshipGame.Domain;
-using BattleshipGame.Domain.GameAggregate;
+using BattleshipGame.Domain.Common;
+using BattleshipGame.Domain.DomainModel.Common;
+using BattleshipGame.Domain.DomainModel.GameAggregate;
 using FluentAssertions;
 using Xunit;
 
-namespace BattleshipGame.UnitTests.Domain.GameAggregate;
+namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate;
 
 public class CellTests
 {
@@ -42,9 +42,9 @@ public class CellTests
         var cell = new Cell('A', 1);
         var shipId = Guid.NewGuid();
 
-        cell.Assign(shipId);
+        cell.Assign(new ShipId(shipId));
 
-        cell.ShipId.Should().NotBeEmpty();
+        cell.ShipId.Should().NotBe(Guid.Empty);
         cell.State.Should().Be(CellState.Occupied);
     }
 
@@ -53,10 +53,10 @@ public class CellTests
     {
         var cell = new Cell('A', 1);
         var shipId = Guid.NewGuid();
-        cell.Assign(shipId);
+        cell.Assign(new ShipId(shipId));
 
         var shipId2 = Guid.NewGuid();
-        Action act = () => cell.Assign(shipId2);
+        Action act = () => cell.Assign(new ShipId(shipId2));
 
         act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidCellToAssign);
     }

@@ -1,4 +1,4 @@
-namespace BattleshipGame.Common;
+namespace BattleshipGame.Domain.Common;
 
 internal static class ErrorMessages
 {

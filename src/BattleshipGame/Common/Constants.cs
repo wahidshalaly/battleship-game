@@ -1,4 +1,4 @@
-namespace BattleshipGame.Common;
+namespace BattleshipGame.Domain.Common;
 
 public static class Constants
 {

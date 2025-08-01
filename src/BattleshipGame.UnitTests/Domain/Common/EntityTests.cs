@@ -1,5 +1,5 @@
 ﻿using System;
-using BattleshipGame.Domain.Common;
+using BattleshipGame.Domain.DomainModel.Common;
 using FluentAssertions;
 using Xunit;
 
@@ -43,18 +43,16 @@ public class EntityTests
     }
 }
 
-internal class TestEntity : Entity<Guid>
+internal class TestEntity : Entity<TestEntityId>
 {
-    private static readonly Guid uuid = Guid.NewGuid();
-
     public TestEntity(Guid id)
-    {
-        Id = id;
-    }
+        : base(id) { }
 
-    public Guid Value1 { get; } = uuid;
+    public Guid Value1 { get; } = Guid.NewGuid();
     public int Value2 { get; } = Random.Shared.Next();
-    public string Value3 { get; } = uuid.ToString("N");
+    public string Value3 { get; } = DateTime.UtcNow.ToString("O");
     public DateTime Value4 { get; } = DateTime.UtcNow;
     public object Value5 { get; } = new();
 }
+
+internal record TestEntityId(Guid Value) : EntityId(Value);

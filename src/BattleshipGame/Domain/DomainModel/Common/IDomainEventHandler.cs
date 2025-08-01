@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace BattleshipGame.Domain.Common;
+﻿namespace BattleshipGame.Domain.DomainModel.Common;
 
 public interface IDomainEventHandler<in T>
     where T : IDomainEvent

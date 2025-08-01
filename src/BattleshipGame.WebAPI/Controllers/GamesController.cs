@@ -1,5 +1,6 @@
-using BattleshipGame.Domain;
-using BattleshipGame.Domain.GameAggregate;
+using BattleshipGame.Domain.DomainModel.Common;
+using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BattleshipGame.WebAPI.Controllers;
@@ -16,9 +17,9 @@ public class GamesController : ControllerBase
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(GameModel), 201)]
-    public ActionResult<GameModel> CreateGame([FromBody] CreateGameRequest? request)
+    public ActionResult<GameModel> CreateGame([FromBody] CreateGameRequest request)
     {
-        var game = new Game(request?.BoardSize ?? 10);
+        var game = new Game(request.PlayerId, request.BoardSize ?? 10);
         _games[game.Id] = game;
         return CreatedAtAction(nameof(GetGame), new { id = game.Id }, GameModel.From(game));
     }
@@ -52,8 +53,8 @@ public class GamesController : ControllerBase
             var shipId = game.AddShip(
                 request.Side,
                 request.ShipKind,
-                request.Bow,
-                request.Orientation
+                request.Orientation,
+                request.Bow
             );
             return Ok(shipId);
         }
@@ -103,19 +104,19 @@ public class GamesController : ControllerBase
         if (!_games.TryGetValue(id, out var game))
             return NotFound();
 
-        // For demo, winner is null unless state is Complete
-        var winner = game.State == GameState.Complete ? game.Id : (Guid?)null;
-        return new GameStateModel(game.State.ToString(), winner);
+        // For demo, winner is null unless state is GameOver
+        var winner = game.State == GameState.GameOver ? game.Id : null;
+        return new GameStateModel(game.State.ToString(), winner!);
     }
 
     // DTOs and request models
-    public record CreateGameRequest(int? BoardSize = 10);
+    public record CreateGameRequest(PlayerId PlayerId, int? BoardSize = 10);
 
     public record AddShipRequest(
         BoardSide Side,
         ShipKind ShipKind,
-        string Bow,
-        ShipOrientation Orientation
+        ShipOrientation Orientation,
+        string Bow
     );
 
     public record GameModel(Guid Id, string State, int BoardSize)

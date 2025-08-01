@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace BattleshipGame.Domain.Common;
+﻿namespace BattleshipGame.Domain.DomainModel.Common;
 
 public abstract class ValueObject
 {
@@ -11,12 +8,12 @@ public abstract class ValueObject
         {
             return false;
         }
-        return ReferenceEquals(left, right) || left.Equals(right);
+        return ReferenceEquals(left, right) || left!.Equals(right);
     }
 
     private static bool NotEqualOperator(ValueObject left, ValueObject right)
     {
-        return !(EqualOperator(left, right));
+        return !EqualOperator(left, right);
     }
 
     public static bool operator ==(ValueObject one, ValueObject two)
@@ -31,7 +28,7 @@ public abstract class ValueObject
 
     protected abstract IEnumerable<object> GetEqualityComponents();
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj == null || obj.GetType() != GetType())
         {
@@ -40,7 +37,7 @@ public abstract class ValueObject
 
         var other = (ValueObject)obj;
 
-        return this.GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
+        return GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
     }
 
     public override int GetHashCode()
@@ -49,5 +46,4 @@ public abstract class ValueObject
             .Select(x => x != null ? x.GetHashCode() : 0)
             .Aggregate((x, y) => x ^ y);
     }
-    // Other utility methods
 }

@@ -1,4 +1,4 @@
-﻿namespace BattleshipGame.Domain;
+﻿namespace BattleshipGame.Domain.DomainModel.Common;
 
 /// <summary>
 /// This represents the states of a cell.
@@ -53,8 +53,9 @@ public enum BoardSide
 /// </summary>
 public enum GameState
 {
-    Started = 0,
-    Ready = 1,
-    Active = 2,
-    Complete = 3,
+    None = 0,
+    Started = 1,
+    BoardsAreReady = 2,
+    InProgress = 3,
+    GameOver = 4,
 }
