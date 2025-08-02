@@ -9,4 +9,7 @@
       <_Parameter1>BattleshipGame.UnitTests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.5.0" />
+  </ItemGroup>
 </Project>

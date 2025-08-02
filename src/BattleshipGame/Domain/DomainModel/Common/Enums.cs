@@ -8,6 +8,7 @@
 /// </summary>
 public enum CellState
 {
+    None = 0,
     Clear,
     Occupied,
     Hit,
@@ -23,6 +24,7 @@ public enum CellState
 /// </summary>
 public enum ShipKind
 {
+    None = 0,
     Destroyer = 0,
     Cruiser = 1,
     Submarine = 2,
@@ -35,8 +37,9 @@ public enum ShipKind
 /// </summary>
 public enum ShipOrientation
 {
-    Vertical,
-    Horizontal,
+    None = 0,
+    Vertical = 1,
+    Horizontal = 2,
 }
 
 /// <summary>
@@ -44,6 +47,7 @@ public enum ShipOrientation
 /// </summary>
 public enum BoardSide
 {
+    None = 0,
     Own = 1,
     Opp = 2,
 }
