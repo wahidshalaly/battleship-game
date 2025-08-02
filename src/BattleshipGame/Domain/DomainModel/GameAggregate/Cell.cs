@@ -42,11 +42,25 @@ internal class Cell : ValueObject
 
     public void Attack()
     {
-        if (State == CellState.Hit)
+        if (State is CellState.Hit or CellState.Miss)
         {
             throw new ApplicationException(ErrorMessages.InvalidCellToAttack);
         }
-        State = CellState.Hit;
+        //State = (State is CellState.Clear or CellState.Occupied) CellState.Hit;
+        switch (State)
+        {
+            case CellState.Clear:
+                State = CellState.Miss;
+                break;
+            case CellState.Occupied:
+                State = CellState.Hit;
+                break;
+            case CellState.Hit:
+            case CellState.Miss:
+                throw new ApplicationException(ErrorMessages.InvalidCellToAttack);
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
     }
 
     public static (char Letter, int Digit) FromCode(string code)

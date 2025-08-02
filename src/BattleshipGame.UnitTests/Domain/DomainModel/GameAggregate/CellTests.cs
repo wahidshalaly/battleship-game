@@ -62,9 +62,21 @@ public class CellTests
     }
 
     [Fact]
-    public void Attack_WhenCellIsNotHit_SetsStateToHit()
+    public void Attack_WhenCellIsClear_SetsStateToMiss()
     {
         var cell = new Cell('A', 1);
+
+        cell.Attack();
+
+        cell.State.Should().Be(CellState.Miss);
+    }
+
+    [Fact]
+    public void Attack_WhenCellIsOccupied_SetsStateToHit()
+    {
+        var cell = new Cell('A', 1);
+        var shipId = new ShipId(Guid.NewGuid());
+        cell.Assign(shipId);
 
         cell.Attack();
 
