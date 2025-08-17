@@ -15,6 +15,7 @@ public class InMemoryPlayerRepository : IPlayerRepository
     public Task<Player?> GetByIdAsync(PlayerId playerId, CancellationToken ct = default)
     {
         _players.TryGetValue(playerId, out var player);
+
         return Task.FromResult(player);
     }
 
@@ -22,6 +23,7 @@ public class InMemoryPlayerRepository : IPlayerRepository
     public Task<PlayerId> SaveAsync(Player player, CancellationToken ct = default)
     {
         _players.AddOrUpdate(player.Id, player, (playerId, oldValue) => player);
+
         return Task.FromResult(player.Id);
     }
 

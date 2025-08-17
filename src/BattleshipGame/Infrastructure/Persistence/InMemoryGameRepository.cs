@@ -20,10 +20,10 @@ public class InMemoryGameRepository : IGameRepository
     }
 
     /// <inheritdoc />
-    public Task<GameId> SaveAsync(Game game, CancellationToken ct = default)
+    public Task SaveAsync(Game game, CancellationToken ct = default)
     {
-        _games.AddOrUpdate(game.Id, game, (key, oldValue) => game);
-        return Task.FromResult(game.Id);
+        _games.AddOrUpdate(game.Id, game, (_, _) => game);
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
@@ -47,11 +47,11 @@ public class InMemoryGameRepository : IGameRepository
     /// <inheritdoc />
     public Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken ct = default)
     {
-        var activeGame = _games.Values
-            .FirstOrDefault(game =>
+        var game = _games.Values
+            .LastOrDefault(game =>
                 game.PlayerId == playerId &&
                 game.State != Domain.DomainModel.Common.GameState.GameOver);
 
-        return Task.FromResult(activeGame);
+        return Task.FromResult(game);
     }
 }

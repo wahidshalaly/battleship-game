@@ -1,0 +1,82 @@
+using BattleshipGame.Domain.DomainModel.Common;
+using MediatR;
+using Microsoft.Extensions.Logging;
+
+namespace BattleshipGame.Application.Common.Services;
+
+/// <summary>
+/// Service responsible for dispatching domain events through MediatR.
+/// </summary>
+public class DomainEventDispatcher : IDomainEventDispatcher
+{
+    private readonly IMediator _mediator;
+    private readonly ILogger<DomainEventDispatcher> _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the DomainEventDispatcher class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="mediator">The MediatR mediator instance.</param>
+    public DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMediator mediator)
+    {
+        _mediator = mediator;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Dispatches all domain events from the given aggregate root.
+    /// </summary>
+    /// <param name="aggregateRoot">The aggregate root containing domain events.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task DispatchEventsAsync<TId>(AggregateRoot<TId> aggregateRoot, CancellationToken cancellationToken = default)
+        where TId : EntityId
+    {
+        var domainEvents = aggregateRoot.DomainEvents.ToList();
+
+        _logger.LogInformation(
+            "Dispatching {EventCount} domain events for aggregate {AggregateId}",
+            domainEvents.Count, aggregateRoot.Id);
+
+        foreach (var domainEvent in domainEvents)
+        {
+            try
+            {
+                _logger.LogDebug(
+                    "Publishing domain event {EventType} for aggregate {AggregateId}",
+                    domainEvent.GetType().Name, aggregateRoot.Id);
+
+                await _mediator.Publish(domainEvent, cancellationToken);
+
+                _logger.LogDebug(
+                    "Successfully published domain event {EventType}",
+                    domainEvent.GetType().Name);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "Failed to publish domain event {EventType} for aggregate {AggregateId}",
+                    domainEvent.GetType().Name,
+                    aggregateRoot.Id);
+
+                throw;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Dispatches domain events from multiple aggregate roots.
+    /// </summary>
+    /// <param name="aggregateRoots">The collection of aggregate roots.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task DispatchEventsAsync<TId>(IEnumerable<AggregateRoot<TId>> aggregateRoots, CancellationToken cancellationToken = default)
+        where TId : EntityId
+    {
+        foreach (var aggregateRoot in aggregateRoots)
+        {
+            await DispatchEventsAsync(aggregateRoot, cancellationToken);
+        }
+    }
+}

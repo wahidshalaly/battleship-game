@@ -1,6 +1,8 @@
-﻿namespace BattleshipGame.Domain.DomainModel.Common;
+﻿using MediatR;
 
-public interface IDomainEvent
+namespace BattleshipGame.Domain.DomainModel.Common;
+
+public interface IDomainEvent : INotification
 {
     Guid EventId { get; init; }
     DateTime OccurredOn { get; init; }

@@ -4,6 +4,7 @@ using BattleshipGame.Domain.DomainModel.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using FluentAssertions;
 using Xunit;
+using static BattleshipGame.Domain.Common.Constants;
 
 namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate;
 
@@ -58,17 +59,17 @@ public class CellTests
         var shipId2 = Guid.NewGuid();
         Action act = () => cell.Assign(new ShipId(shipId2));
 
-        act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidCellToAssign);
+        act.Should().Throw<InvalidOperationException>().WithMessage(ErrorMessages.InvalidCellToAssign);
     }
 
     [Fact]
-    public void Attack_WhenCellIsClear_SetsStateToMiss()
+    public void Attack_WhenCellIsClear_SetsStateToMissed()
     {
         var cell = new Cell('A', 1);
 
         cell.Attack();
 
-        cell.State.Should().Be(CellState.Miss);
+        cell.State.Should().Be(CellState.Missed);
     }
 
     [Fact]
@@ -91,7 +92,7 @@ public class CellTests
 
         Action act = () => cell.Attack();
 
-        act.Should().Throw<ApplicationException>().WithMessage(ErrorMessages.InvalidCellToAttack);
+        act.Should().Throw<InvalidOperationException>().WithMessage(ErrorMessages.InvalidCellToAttack);
     }
 
     public static TheoryData<char, int, string> ValidCells
@@ -100,9 +101,9 @@ public class CellTests
         {
             var data = new TheoryData<char, int, string>();
 
-            foreach (var letter in Constants.ColumnHeaders)
+            foreach (var letter in ColumnHeaders)
             {
-                for (var digit = 1; digit <= Board.MaximumSize; digit++)
+                for (var digit = 1; digit <= MaximumBoardSize; digit++)
                 {
                     var code = $"{letter}{digit}";
                     data.Add(letter, digit, code);
@@ -113,5 +114,5 @@ public class CellTests
         }
     }
 
-    public static TheoryData<string> InvalidCells => ["A0", "A27", "a1", "", null];
+    public static TheoryData<string> InvalidCells => ["A0", "A27", "a1", "", null!];
 }

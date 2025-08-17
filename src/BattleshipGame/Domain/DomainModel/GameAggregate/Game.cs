@@ -1,5 +1,8 @@
-﻿using BattleshipGame.Domain.DomainModel.Common;
+﻿using BattleshipGame.Domain.Common;
+using BattleshipGame.Domain.DomainModel.Common;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
+using static BattleshipGame.Domain.Common.Constants;
 
 namespace BattleshipGame.Domain.DomainModel.GameAggregate;
 
@@ -23,9 +26,10 @@ public sealed class Game : AggregateRoot<GameId>
     public PlayerId PlayerId { get; init; }
 
     public int BoardSize { get; init; }
+
     public GameState State { get; private set; }
 
-    public Game(PlayerId playerId, int boardSize = Board.DefaultSize)
+    public Game(PlayerId playerId, int boardSize = DefaultBoardSize)
     {
         PlayerId = playerId;
         BoardSize = boardSize;
@@ -36,14 +40,27 @@ public sealed class Game : AggregateRoot<GameId>
     }
 
     public ShipId AddShip(
-        BoardSide boardSide,
-        ShipKind shipKind,
+        BoardSide side,
+        ShipKind kind,
         ShipOrientation orientation,
         string bowCode
     )
     {
-        var board = BoardSelector(boardSide);
-        var shipId = board.AddShip(shipKind, orientation, bowCode);
+        var board = BoardSelector(side);
+        var shipId = board.AddShip(kind, orientation, bowCode);
+
+        if (BoardSelector(side).IsReady)
+        {
+            AddDomainEvent(new BoardSideReadyEvent(Id, side));
+        }
+
+        // Check if both boards are now ready and raise event
+        if (IsReady)
+        {
+            State = GameState.BoardsAreReady;
+            AddDomainEvent(new BoardsReadyEvent(Id));
+        }
+
         return shipId;
     }
 
@@ -51,11 +68,33 @@ public sealed class Game : AggregateRoot<GameId>
     /// Attacks a cell on the specified boardSide's board
     /// </summary>
     /// <param name="boardSide">The boardSide whose board to attack</param>
-    /// <param name="cell">The cell to attack</param>
+    /// <param name="cellCode">The cell to attack</param>
     /// <returns>True if the attack hit a ship, false otherwise</returns>
-    public void Attack(BoardSide boardSide, string cell)
+    public CellState Attack(BoardSide boardSide, string cellCode)
     {
-        BoardSelector(boardSide).Attack(cell);
+        var board = BoardSelector(boardSide);
+        var (cellState, shipId, shipSunk) = board.Attack(cellCode);
+
+        // Raise domain event for cell attack
+        AddDomainEvent(new CellAttackedEvent(Id, cellCode, cellState));
+        if (cellState != CellState.Hit) return cellState;
+
+        // Check if the cell belongs to a ship that was sunk
+        if (shipId is not null && shipSunk)
+        {
+            // Raise domain event if a ship was sunk
+            AddDomainEvent(new ShipSunkEvent(Id, shipId, boardSide));
+        }
+
+        // Check if the game is over for the attacked boardSide
+        if (IsGameOver(boardSide))
+        {
+            // Raise domain event if a game is over
+            State = GameState.GameOver;
+            AddDomainEvent(new GameOverEvent(Id, boardSide));
+        }
+
+        return cellState;
     }
 
     /// <summary>
@@ -65,26 +104,32 @@ public sealed class Game : AggregateRoot<GameId>
     /// <returns>True if all boardSide's ships have been sunk, false otherwise</returns>
     public bool IsGameOver(BoardSide boardSide) => BoardSelector(boardSide).IsGameOver;
 
-    public bool IsReady(BoardSide boardSide) => BoardSelector(boardSide).IsReady;
+    public bool IsBoardReady(BoardSide boardSide) => BoardSelector(boardSide).IsReady;
+
+    public bool IsReady => IsBoardReady(BoardSide.Own) && IsBoardReady(BoardSide.Opp);
+
+    public IReadOnlyCollection<ShipId> GetShips(BoardSide boardSide)
+    {
+        return BoardSelector(boardSide).Ships.Select(s => s.Id).ToList().AsReadOnly();
+    }
+
+    public IReadOnlyCollection<string> GetShipPosition(BoardSide boardSide, ShipId shipId)
+    {
+        return BoardSelector(boardSide).Ships.First(s => s.Id == shipId).Position;
+    }
 
     /// <summary>
-    /// Gets the board for the specified boardSide
+    /// Gets the board for the specified side
     /// </summary>
-    /// <param name="boardSide">The boardSide whose board to get</param>
-    /// <returns>The boardSide's board</returns>
-    private Board BoardSelector(BoardSide boardSide)
+    /// <param name="side">The side whose board to get</param>
+    /// <returns>The side's board</returns>
+    private Board BoardSelector(BoardSide side)
     {
-        return boardSide switch
+        return side switch
         {
-            BoardSide.Own => _ownBoard
-                ?? throw new InvalidOperationException(
-                    $"Board for {boardSide} has not been created yet."
-                ),
-            BoardSide.Opp => _oppBoard
-                ?? throw new InvalidOperationException(
-                    $"Board for {boardSide} has not been created yet."
-                ),
-            _ => throw new ArgumentOutOfRangeException(nameof(boardSide), boardSide, null),
+            BoardSide.Own => _ownBoard,
+            BoardSide.Opp => _oppBoard,
+            _ => throw new ArgumentOutOfRangeException(nameof(side), side, ErrorMessages.InvalidBoardSide)
         };
     }
 }

@@ -17,7 +17,7 @@ public record ShipId(Guid Value) : EntityId(Value);
 internal class Ship : Entity<ShipId>
 {
     private readonly HashSet<string> _cells;
-    private readonly HashSet<string> _hits = [];
+    private readonly HashSet<string> _hits;
 
     /// <summary>
     /// Gets the type of this ship
@@ -42,18 +42,19 @@ internal class Ship : Entity<ShipId>
 
         Kind = kind;
         _cells = [.. position];
+        _hits = [];
     }
 
     public void Attack(string code)
     {
         if (!_cells.Contains(code))
         {
-            throw new ApplicationException(ErrorMessages.InvalidShipAttack);
+            throw new InvalidOperationException(ErrorMessages.InvalidShipAttack);
         }
 
         if (!_hits.Add(code))
         {
-            throw new ApplicationException(ErrorMessages.InvalidCellToAttack);
+            throw new InvalidOperationException(ErrorMessages.InvalidCellToAttack);
         }
     }
 
@@ -63,7 +64,7 @@ internal class Ship : Entity<ShipId>
 
         if (position.Count != kind.ToSize())
         {
-            throw new ApplicationException(ErrorMessages.InvalidShipPosition_Count);
+            throw new InvalidOperationException(ErrorMessages.InvalidShipPosition_Count);
         }
 
         var cells = position.Select(Cell.FromCode).ToList();
@@ -74,7 +75,7 @@ internal class Ship : Entity<ShipId>
             {
                 if (cells[i].Digit != cells[0].Digit + i)
                 {
-                    throw new ApplicationException(ErrorMessages.InvalidShipPosition_Alignment);
+                    throw new InvalidOperationException(ErrorMessages.InvalidShipPosition_Alignment);
                 }
             }
         }
@@ -84,13 +85,13 @@ internal class Ship : Entity<ShipId>
             {
                 if (cells[i].Letter != cells[0].Letter + i)
                 {
-                    throw new ApplicationException(ErrorMessages.InvalidShipPosition_Alignment);
+                    throw new InvalidOperationException(ErrorMessages.InvalidShipPosition_Alignment);
                 }
             }
         }
         else
         {
-            throw new ApplicationException(ErrorMessages.InvalidShipPosition_Alignment);
+            throw new InvalidOperationException(ErrorMessages.InvalidShipPosition_Alignment);
         }
 
         return;

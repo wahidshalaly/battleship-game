@@ -8,7 +8,7 @@ public abstract class AggregateRoot<TId> : Entity<TId>
     /// <summary>
     /// Initializes a new instance with a new identifier.
     /// </summary>
-    protected AggregateRoot() : base()
+    protected AggregateRoot()
     {
     }
 
@@ -23,7 +23,7 @@ public abstract class AggregateRoot<TId> : Entity<TId>
     /// <summary>
     /// Gets the domain events that have been raised by this aggregate.
     /// </summary>
-    public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.ToList().AsReadOnly();
 
     /// <summary>
     /// Adds a domain event to be published.

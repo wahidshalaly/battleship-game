@@ -1,45 +1,24 @@
 using BattleshipGame.Domain.DomainModel.Common;
-using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 
 namespace BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 
 /// <summary>
 /// Domain event raised when a game is finished.
 /// </summary>
-public class GameOverEvent : DomainEvent<GameOverEvent>
+/// <remarks>
+/// Initializes a new instance of the GameOverEvent class.
+/// </remarks>
+/// <param name="gameId">The game identifier.</param>
+/// <param name="winnerSide">The winner's player identifier.</param>
+public class GameOverEvent(GameId gameId, BoardSide winnerSide) : DomainEvent<GameOverEvent>
 {
     /// <summary>
     /// Gets the game identifier.
     /// </summary>
-    public GameId GameId { get; }
+    public GameId GameId { get; } = gameId;
 
     /// <summary>
-    /// Gets the winner's player identifier.
+    /// Gets the winner's board side.
     /// </summary>
-    public PlayerId WinnerId { get; }
-
-    /// <summary>
-    /// Gets the loser's player identifier.
-    /// </summary>
-    public PlayerId LoserId { get; }
-
-    /// <summary>
-    /// Gets the timestamp when the game ended.
-    /// </summary>
-    public DateTimeOffset EndedAt { get; }
-
-    /// <summary>
-    /// Initializes a new instance of the GameOverEvent class.
-    /// </summary>
-    /// <param name="gameId">The game identifier.</param>
-    /// <param name="winnerId">The winner's player identifier.</param>
-    /// <param name="loserId">The loser's player identifier.</param>
-    /// <param name="endedAt">The timestamp when the game ended.</param>
-    public GameOverEvent(GameId gameId, PlayerId winnerId, PlayerId loserId, DateTimeOffset endedAt)
-    {
-        GameId = gameId;
-        WinnerId = winnerId;
-        LoserId = loserId;
-        EndedAt = endedAt;
-    }
+    public BoardSide WinnerSide { get; } = winnerSide;
 }

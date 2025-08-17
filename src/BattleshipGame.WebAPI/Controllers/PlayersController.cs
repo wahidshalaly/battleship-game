@@ -1,6 +1,5 @@
-using BattleshipGame.Application.Features.Players.Commands.CreatePlayer;
-using BattleshipGame.Application.Features.Players.Queries.GetPlayer;
-using BattleshipGame.Application.Features.Players.Queries.GetPlayerByUsername;
+using BattleshipGame.Application.Features.Players.Commands;
+using BattleshipGame.Application.Features.Players.Queries;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -47,11 +46,11 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
             var result = await mediator.Send(command, cancellationToken);
 
            logger.LogInformation("Player created with ID: {PlayerId}, Username: {Username}",
-                result.PlayerId.Value, result.Username);
+                result.PlayerId.Value, command.Username);
 
             var response = new PlayerModel(
                 result.PlayerId.Value,
-                result.Username,
+                command.Username,
                 null, // No active game initially
                 0     // No games played initially
             );

@@ -1,11 +1,12 @@
 using BattleshipGame.Domain.Common;
 using BattleshipGame.Domain.DomainModel.Common;
+using static BattleshipGame.Domain.Common.Constants;
 
 namespace BattleshipGame.Domain.DomainModel.GameAggregate;
 
 internal class Cell : ValueObject
 {
-    private static readonly HashSet<char> _letters = [.. Constants.ColumnHeaders];
+    private static readonly HashSet<char> _letters = [.. ColumnHeaders];
 
     public char Letter { get; }
 
@@ -19,7 +20,7 @@ internal class Cell : ValueObject
 
     public Cell(char letter, int digit)
     {
-        if (!_letters.Contains(letter) || digit is <= 0 or > Board.MaximumSize)
+        if (!_letters.Contains(letter) || digit is <= 0 or > MaximumBoardSize)
         {
             throw new ArgumentException(ErrorMessages.InvalidCellCode);
         }
@@ -34,7 +35,7 @@ internal class Cell : ValueObject
         ArgumentOutOfRangeException.ThrowIfEqual(shipId.Value, Guid.Empty);
 
         if (State != CellState.Clear)
-            throw new ApplicationException(ErrorMessages.InvalidCellToAssign);
+            throw new InvalidOperationException(ErrorMessages.InvalidCellToAssign);
 
         ShipId = shipId;
         State = CellState.Occupied;
@@ -42,25 +43,13 @@ internal class Cell : ValueObject
 
     public void Attack()
     {
-        if (State is CellState.Hit or CellState.Miss)
+        State = State switch
         {
-            throw new ApplicationException(ErrorMessages.InvalidCellToAttack);
-        }
-        //State = (State is CellState.Clear or CellState.Occupied) CellState.Hit;
-        switch (State)
-        {
-            case CellState.Clear:
-                State = CellState.Miss;
-                break;
-            case CellState.Occupied:
-                State = CellState.Hit;
-                break;
-            case CellState.Hit:
-            case CellState.Miss:
-                throw new ApplicationException(ErrorMessages.InvalidCellToAttack);
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
+            CellState.Clear => CellState.Missed,
+            CellState.Occupied => CellState.Hit,
+            CellState.Hit or CellState.Missed => throw new InvalidOperationException(ErrorMessages.InvalidCellToAttack),
+            _ => throw new ArgumentOutOfRangeException(nameof(State), State, null)
+        };
     }
 
     public static (char Letter, int Digit) FromCode(string code)
@@ -72,7 +61,7 @@ internal class Cell : ValueObject
 
         var letter = code[0];
         _ = int.TryParse(code[1..], out var digit);
-        if (!_letters.Contains(letter) || digit is <= 0 or > Board.MaximumSize)
+        if (!_letters.Contains(letter) || digit is <= 0 or > MaximumBoardSize)
         {
             throw new ArgumentException(ErrorMessages.InvalidCellCode);
         }

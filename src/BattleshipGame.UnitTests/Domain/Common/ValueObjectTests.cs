@@ -13,9 +13,9 @@ public class ValueObjectTests
     [InlineData(false, false)]
     public void Equals_WhenSameInstanceOrNot(bool areSame, bool expectedResult)
     {
-        var (subject, subject2) = CreateSubject(areSame);
+        var (valueObject1, valueObject2) = CreateSubject(areSame);
 
-        subject.Equals(subject2).Should().Be(expectedResult);
+        valueObject1.Equals(valueObject2).Should().Be(expectedResult);
     }
 
     [Theory]
@@ -23,9 +23,9 @@ public class ValueObjectTests
     [InlineData(false, false)]
     public void EqualOperator_WhenSameInstanceOrNot(bool areSame, bool expectedResult)
     {
-        var (subject, subject2) = CreateSubject(areSame);
+        var (valueObject1, valueObject2) = CreateSubject(areSame);
 
-        (subject == subject2).Should().Be(expectedResult);
+        (valueObject1 == valueObject2).Should().Be(expectedResult);
     }
 
     [Theory]
@@ -33,16 +33,16 @@ public class ValueObjectTests
     [InlineData(false, true)]
     public void NotEqualOperator_WhenSameInstanceOrNot(bool areSame, bool expectedResult)
     {
-        var (subject, subject2) = CreateSubject(areSame);
+        var (valueObject1, valueObject2) = CreateSubject(areSame);
 
-        (subject != subject2).Should().Be(expectedResult);
+        (valueObject1 != valueObject2).Should().Be(expectedResult);
     }
 
     private static (TestValueObject, TestValueObject) CreateSubject(bool areSame)
     {
-        var subject = new TestValueObject();
-        var subject2 = areSame ? subject : new TestValueObject();
-        return (subject, subject2);
+        var valueObject1 = new TestValueObject();
+        var valueObject2 = areSame ? valueObject1 : new TestValueObject();
+        return (valueObject1, valueObject2);
     }
 }
 

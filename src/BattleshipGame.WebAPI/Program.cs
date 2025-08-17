@@ -1,6 +1,6 @@
 using BattleshipGame.Application.Contracts.Persistence;
+using BattleshipGame.Application.Features.Players.Commands;
 using BattleshipGame.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Routing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +20,7 @@ builder.Services.AddSwaggerGen();
 
 // Register MediatR
 builder.Services.AddMediatR(cfg => {
-    cfg.RegisterServicesFromAssembly(typeof(BattleshipGame.Application.Features.Players.Commands.CreatePlayer.CreatePlayerCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(CreatePlayerCommand).Assembly);
 });
 
 // Register repositories

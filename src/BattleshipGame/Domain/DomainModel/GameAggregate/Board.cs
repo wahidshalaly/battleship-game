@@ -1,5 +1,6 @@
 using BattleshipGame.Domain.Common;
 using BattleshipGame.Domain.DomainModel.Common;
+using static BattleshipGame.Domain.Common.Constants;
 
 namespace BattleshipGame.Domain.DomainModel.GameAggregate;
 
@@ -18,17 +19,13 @@ public record BoardId(Guid Value) : EntityId(Value);
 /// </summary>
 internal class Board : Entity<BoardId>
 {
-    public const int DefaultSize = 10;
-    public const int MaximumSize = 26;
-    public const int ShipAllowance = 5; // Only 5 ships are allowed, one of each kind, per board
-
-    private static readonly List<char> _letters = [.. Constants.ColumnHeaders];
+    private static readonly List<char> _letters = [.. ColumnHeaders];
 
     private readonly int _boardSize;
-    private readonly Dictionary<string, Cell> _cells = new();
+    private readonly Dictionary<string, Cell> _grid = [];
     private readonly List<Ship> _ships = new(ShipAllowance);
 
-    public IList<Cell> Cells => _cells.Values.ToList();
+    public IList<Cell> Cells => _grid.Values.ToList().AsReadOnly();
     public IList<Ship> Ships => _ships.AsReadOnly();
 
     /// <summary>
@@ -39,11 +36,11 @@ internal class Board : Entity<BoardId>
     /// <summary>
     /// Returns true when all ships are sunk.
     /// </summary>
-    public bool IsGameOver => _ships.All(s => s.Sunk);
+    public bool IsGameOver => _ships.Count > 0 && _ships.All(s => s.Sunk);
 
-    public Board(int size = DefaultSize)
+    public Board(int size = DefaultBoardSize)
     {
-        if (size is < DefaultSize or > MaximumSize)
+        if (size is < DefaultBoardSize or > MaximumBoardSize)
         {
             throw new ArgumentException(ErrorMessages.InvalidBoardSize);
         }
@@ -65,7 +62,6 @@ internal class Board : Entity<BoardId>
     {
         ValidateBeforeAddShip(shipKind, orientation, bowCode, out var bow, out var stern);
 
-        //var shipId = ShipId.New().Value;
         var cells = GetShipCells(bow, stern).ToList();
         var position = cells.Select(c => c.Code).ToList();
         var ship = new Ship(shipKind, position);
@@ -84,14 +80,21 @@ internal class Board : Entity<BoardId>
     /// </summary>
     /// <param name="code">A valid cell on the board</param>
     /// <exception cref="ArgumentException">If an invalid cell, it'll throw an Argument exception</exception>
-    public void Attack(string code)
+    public (CellState, ShipId?, bool) Attack(string code)
     {
         var cell = ValidateBeforeAttack(code);
-        if (cell is { State: CellState.Occupied, ShipId: not null })
-        {
-            Ships.First(s => s.Id == cell.ShipId).Attack(code);
-        }
+        var shipSunk = false;
+
         cell.Attack();
+
+        if (cell.State == CellState.Hit)
+        {
+            var ship = _ships.First(s => s.Id == cell.ShipId);
+            ship.Attack(code);
+            shipSunk = ship.Sunk;
+        }
+
+        return (cell.State, cell.ShipId, shipSunk);
     }
 
     private void GenerateBoardCells()
@@ -101,13 +104,13 @@ internal class Board : Entity<BoardId>
             for (var digit = 1; digit <= _boardSize; digit++)
             {
                 var cell = new Cell(_letters[letterIdx], digit);
-                _cells.Add(cell.Code, cell);
+                _grid.Add(cell.Code, cell);
             }
         }
     }
 
     private void ValidateBeforeAddShip(
-        ShipKind shipKind,
+        ShipKind kind,
         ShipOrientation orientation,
         string bowCode,
         out Cell bow,
@@ -116,10 +119,15 @@ internal class Board : Entity<BoardId>
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(bowCode);
 
-        var shipSize = shipKind.ToSize();
-        var bowIsValid = _cells.TryGetValue(bowCode, out bow!);
+        var shipSize = kind.ToSize();
+        var bowIsValid = _grid.TryGetValue(bowCode, out bow!);
         if (!bowIsValid)
             throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
+
+        if (orientation == ShipOrientation.None)
+        {
+            throw new ArgumentException(ErrorMessages.InvalidShipOrientation);
+        }
 
         // Calculate the stern cell based on ship size and orientation
         var sternCode =
@@ -127,18 +135,18 @@ internal class Board : Entity<BoardId>
                 ? $"{bow.Letter}{bow.Digit + shipSize - 1}"
                 : $"{_letters[_letters.IndexOf(bow.Letter) + shipSize - 1]}{bow.Digit}";
 
-        var sternIsValid = _cells.TryGetValue(sternCode, out stern!);
+        var sternIsValid = _grid.TryGetValue(sternCode, out stern!);
         if (!sternIsValid)
             throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
 
-        if (_ships.Any(s => s.Kind.ToString() == shipKind.ToString()))
+        if (_ships.Any(s => s.Kind.ToString() == kind.ToString()))
         {
-            throw new ApplicationException(ErrorMessages.InvalidShipKind);
+            throw new InvalidOperationException(ErrorMessages.InvalidShipKindAlreadyExists);
         }
 
         if (_ships.Count == ShipAllowance)
         {
-            throw new ApplicationException(ErrorMessages.InvalidShipAddition);
+            throw new InvalidOperationException(ErrorMessages.InvalidShipAddition);
         }
     }
 
@@ -146,14 +154,9 @@ internal class Board : Entity<BoardId>
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
 
-        if (!_cells.TryGetValue(code, out var cell))
+        if (!_grid.TryGetValue(code, out var cell))
         {
-            throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);
-        }
-
-        if (cell.State == CellState.Hit)
-        {
-            throw new ArgumentException(ErrorMessages.InvalidCellToAttack);
+            throw new ArgumentException(ErrorMessages.InvalidCellCode);
         }
 
         return cell;
@@ -174,7 +177,7 @@ internal class Board : Entity<BoardId>
 
             for (var digit = minDigit; digit <= maxDigit; digit++)
             {
-                yield return _cells[$"{bow.Letter}{digit}"];
+                yield return _grid[$"{bow.Letter}{digit}"];
             }
         }
         else
@@ -190,7 +193,7 @@ internal class Board : Entity<BoardId>
 
             for (var idx = minLetterIndex; idx <= maxLetterIndex; idx++)
             {
-                yield return _cells[$"{_letters[idx]}{bow.Digit}"];
+                yield return _grid[$"{_letters[idx]}{bow.Digit}"];
             }
         }
     }

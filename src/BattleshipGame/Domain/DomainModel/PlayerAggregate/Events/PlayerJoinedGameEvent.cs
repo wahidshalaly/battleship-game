@@ -24,22 +24,15 @@ public class PlayerJoinedGameEvent : DomainEvent<PlayerJoinedGameEvent>
     public string Username { get; }
 
     /// <summary>
-    /// Gets the timestamp when the player joined.
-    /// </summary>
-    public DateTimeOffset JoinedAt { get; }
-
-    /// <summary>
     /// Initializes a new instance of the PlayerJoinedGameEvent class.
     /// </summary>
     /// <param name="playerId">The player identifier.</param>
     /// <param name="gameId">The game identifier.</param>
     /// <param name="username">The player's username.</param>
-    /// <param name="joinedAt">The timestamp when the player joined.</param>
-    public PlayerJoinedGameEvent(PlayerId playerId, GameId gameId, string username, DateTimeOffset? joinedAt = null)
+    public PlayerJoinedGameEvent(PlayerId playerId, GameId gameId, string username)
     {
         PlayerId = playerId;
         GameId = gameId;
         Username = username;
-        JoinedAt = joinedAt ?? DateTimeOffset.UtcNow;
     }
 }

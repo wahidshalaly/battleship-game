@@ -1,6 +1,7 @@
 using BattleshipGame.Application.Contracts.Persistence;
-using BattleshipGame.Application.Features.Games.Commands.CreateGame;
-using BattleshipGame.Application.Features.Games.Queries.GetGame;
+using BattleshipGame.Application.Exceptions;
+using BattleshipGame.Application.Features.Games.Commands;
+using BattleshipGame.Application.Features.Games.Queries;
 using BattleshipGame.Domain.DomainModel.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
@@ -28,18 +29,16 @@ public class GamesController(
     [HttpPost]
     [ProducesResponseType(typeof(GameModel), 201)]
     [ProducesResponseType(typeof(ProblemDetails), 400)]
-    public async Task<ActionResult<GameModel>> CreateGame(
+    public async Task<ActionResult<Guid>> CreateGame(
         [FromBody] CreateGameRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken ct = default)
     {
         var command = new CreateGameCommand(new PlayerId(request.PlayerId), request.BoardSize);
-        var result = await mediator.Send(command, cancellationToken);
+        var result = await mediator.Send(command, ct);
 
-        logger.LogInformation("Game created with ID: {GameId}, Player: {PlayerId}",
-            result.GameId.Value, result.PlayerId.Value);
+        logger.LogInformation("New Game: {GameId} for Player: {PlayerId}", result.GameId, request.PlayerId);
 
-        var gameModel = new GameModel(result.GameId.Value, result.State, result.BoardSize);
-        return CreatedAtAction(nameof(GetGame), new { id = result.GameId.Value }, gameModel);
+        return CreatedAtAction(nameof(GetGame), new { id = result.GameId });
     }
 
     /// <summary>
@@ -47,14 +46,14 @@ public class GamesController(
     /// </summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(GameModel), 200)]
+    [ProducesResponseType(typeof(ProblemDetails), 400)]
     [ProducesResponseType(typeof(ProblemDetails), 404)]
-    public async Task<ActionResult<GameModel>> GetGame(
+    public async Task<ActionResult<GetGameResult>> GetGame(
         [FromRoute] Guid id,
-        CancellationToken cancellationToken = default)
+        CancellationToken ct = default)
     {
         var query = new GetGameQuery(new GameId(id));
-        var result = await mediator.Send(query, cancellationToken);
-
+        var result = await mediator.Send(query, ct);
         if (result is null)
         {
             return NotFound(new ProblemDetails
@@ -65,8 +64,7 @@ public class GamesController(
             });
         }
 
-        var gameModel = new GameModel(result.GameId.Value, result.State, result.BoardSize);
-        return Ok(gameModel);
+        return Ok(result);
     }
 
     /// <summary>
@@ -79,11 +77,23 @@ public class GamesController(
     public async Task<ActionResult<Guid>> AddShip(
         [FromRoute] Guid id,
         [FromBody] AddShipRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken ct = default)
     {
-        var game = await gameRepository.GetByIdAsync(new GameId(id), cancellationToken);
+        try
+        {
+            var addShipCommand = new AddShipCommand(
+                new GameId(id),
+                request.Side,
+                request.ShipKind,
+                request.Orientation,
+                request.BowCode
+            );
 
-        if (game is null)
+            var result = await mediator.Send(addShipCommand, ct);
+
+            return Ok(result.ShipId);
+        }
+        catch (GameNotFoundException)
         {
             return NotFound(new ProblemDetails
             {
@@ -92,21 +102,7 @@ public class GamesController(
                 Status = StatusCodes.Status404NotFound
             });
         }
-
-        try
-        {
-            var shipId = game.AddShip(
-                request.Side,
-                request.ShipKind,
-                request.Orientation,
-                request.BowCode
-            );
-
-            await gameRepository.SaveAsync(game, cancellationToken);
-
-            return Ok(shipId.Value);
-        }
-        catch (ApplicationException exception)
+        catch (InvalidOperationException exception)
         {
             return BadRequest(new ProblemDetails
             {

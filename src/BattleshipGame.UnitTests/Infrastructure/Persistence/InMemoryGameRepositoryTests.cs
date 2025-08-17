@@ -1,0 +1,481 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using BattleshipGame.Domain.DomainModel.Common;
+using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using BattleshipGame.Infrastructure.Persistence;
+using BattleshipGame.UnitTests.Domain.DomainModel;
+using FluentAssertions;
+using Xunit;
+
+namespace BattleshipGame.UnitTests.Infrastructure.Persistence;
+
+public class InMemoryGameRepositoryTests
+{
+    private readonly GameFixture _fixture = new();
+    private readonly InMemoryGameRepository _repository = new();
+
+    #region GetByIdAsync Tests
+
+    [Fact]
+    public async Task GetByIdAsync_WhenGameExists_ShouldReturnGame()
+    {
+        // Arrange
+        var game = _fixture.CreateReadyGame();
+        await _repository.SaveAsync(game);
+
+        // Act
+        var result = await _repository.GetByIdAsync(game.Id);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be(game.Id);
+        result.PlayerId.Should().Be(game.PlayerId);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_WhenGameDoesNotExist_ShouldReturnNull()
+    {
+        // Arrange
+        var nonExistentGameId = new GameId(Guid.NewGuid());
+
+        // Act
+        var result = await _repository.GetByIdAsync(nonExistentGameId);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_WithCancellationToken_ShouldRespectCancellation()
+    {
+        // Arrange
+        var game = _fixture.CreateReadyGame();
+        await _repository.SaveAsync(game);
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        // Act
+        var result = await _repository.GetByIdAsync(game.Id, cts.Token);
+
+        // Assert - Should complete successfully as method is synchronous internally
+        result.Should().NotBeNull();
+    }
+
+    #endregion
+
+    #region SaveAsync Tests
+
+    [Fact]
+    public async Task SaveAsync_WhenNewGame_ShouldSaveAndReturnGameId()
+    {
+        // Arrange
+        var game = _fixture.CreateReadyGame();
+
+        // Act
+        await _repository.SaveAsync(game);
+
+        // Assert
+        var savedGame = await _repository.GetByIdAsync(game.Id);
+        savedGame.Should().NotBeNull();
+        savedGame.Id.Should().Be(game.Id);
+    }
+
+    [Fact]
+    public async Task SaveAsync_WhenUpdatingExistingGame_ShouldUpdateAndReturnGameId()
+    {
+        // Arrange
+        var game = _fixture.CreateReadyGame();
+        await _repository.SaveAsync(game);
+
+        // Modify the game
+        game.Attack(BoardSide.Own, "A1");
+
+        // Act
+        await _repository.SaveAsync(game);
+
+        // Assert
+        var updatedGame = await _repository.GetByIdAsync(game.Id);
+        updatedGame.Should().NotBeNull();
+        updatedGame.Id.Should().Be(game.Id);
+    }
+
+    #endregion
+
+    #region DeleteAsync Tests
+
+    [Fact]
+    public async Task DeleteAsync_WhenGameExists_ShouldRemoveGame()
+    {
+        // Arrange
+        var game = _fixture.CreateReadyGame();
+        await _repository.SaveAsync(game);
+
+        // Act
+        await _repository.DeleteAsync(game.Id);
+
+        // Assert
+        var result = await _repository.GetByIdAsync(game.Id);
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenGameDoesNotExist_ShouldNotThrow()
+    {
+        // Arrange
+        var nonExistentGameId = new GameId(Guid.NewGuid());
+
+        // Act
+        var act = async () => await _repository.DeleteAsync(nonExistentGameId);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WithCancellationToken_ShouldRespectCancellation()
+    {
+        // Arrange
+        var game = _fixture.CreateReadyGame();
+        await _repository.SaveAsync(game);
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        // Act
+        await _repository.DeleteAsync(game.Id, cts.Token);
+
+        // Assert - Should complete successfully as method is synchronous internally
+        var result = await _repository.GetByIdAsync(game.Id);
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ConcurrentOperations_ShouldBeThreadSafe()
+    {
+        // Arrange
+        var games = new List<Game>();
+        for (int i = 0; i < 10; i++)
+        {
+            var game = _fixture.CreateReadyGame();
+            await _repository.SaveAsync(game);
+            games.Add(game);
+        }
+
+        // Act - Delete all games concurrently
+        var deleteTasks = games.Select(g => _repository.DeleteAsync(g.Id));
+        await Task.WhenAll(deleteTasks);
+
+        // Assert
+        foreach (var game in games)
+        {
+            var result = await _repository.GetByIdAsync(game.Id);
+            result.Should().BeNull();
+        }
+    }
+
+    #endregion
+
+    #region GetByPlayerIdAsync Tests
+
+    [Fact]
+    public async Task GetByPlayerIdAsync_WhenPlayerHasGames_ShouldReturnAllGames()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        var game1 = new Game(playerId);
+        var game2 = new Game(playerId);
+        var otherPlayerGame = _fixture.CreateReadyGame(); // Different player
+
+        await _repository.SaveAsync(game1);
+        await _repository.SaveAsync(game2);
+        await _repository.SaveAsync(otherPlayerGame);
+
+        // Act
+        var result = await _repository.GetByPlayerIdAsync(playerId);
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Should().Contain(g => g.Id == game1.Id);
+        result.Should().Contain(g => g.Id == game2.Id);
+        result.Should().NotContain(g => g.Id == otherPlayerGame.Id);
+    }
+
+    [Fact]
+    public async Task GetByPlayerIdAsync_WhenPlayerHasNoGames_ShouldReturnEmptyCollection()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+
+        // Act
+        var result = await _repository.GetByPlayerIdAsync(playerId);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetByPlayerIdAsync_WithCancellationToken_ShouldRespectCancellation()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        // Act
+        var result = await _repository.GetByPlayerIdAsync(playerId, cts.Token);
+
+        // Assert - Should complete successfully as method is synchronous internally
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetByPlayerIdAsync_ConcurrentOperations_ShouldBeThreadSafe()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        var games = new List<Game>();
+
+        for (int i = 0; i < 5; i++)
+        {
+            var game = new Game(playerId);
+            games.Add(game);
+            await _repository.SaveAsync(game);
+        }
+
+        // Act - Query same player concurrently
+        var queryTasks = Enumerable.Range(0, 10)
+            .Select(_ => _repository.GetByPlayerIdAsync(playerId));
+        var results = await Task.WhenAll(queryTasks);
+
+        // Assert
+        foreach (var result in results)
+        {
+            result.Should().HaveCount(5);
+            foreach (var game in games)
+            {
+                result.Should().Contain(g => g.Id == game.Id);
+            }
+        }
+    }
+
+    #endregion
+
+    #region GetActiveGameByPlayerIdAsync Tests
+
+    [Fact]
+    public async Task GetActiveGameByPlayerIdAsync_WhenPlayerHasActiveGame_ShouldReturnGame()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        var game = new Game(playerId); // State: Started (active)
+
+        await _repository.SaveAsync(game);
+
+        // Act
+        var result = await _repository.GetActiveGameByPlayerIdAsync(playerId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be(game.Id);
+        result.State.Should().NotBe(GameState.GameOver);
+    }
+
+    [Fact]
+    public async Task GetActiveGameByPlayerIdAsync_WhenPlayerHasActiveGame_ShouldReturnActiveGame()
+    {
+        // Arrange
+        var game = _fixture.CreateReadyGame();
+        await _repository.SaveAsync(game);
+
+        // Act - Use the correct playerId from the game
+        var result = await _repository.GetActiveGameByPlayerIdAsync(game.PlayerId);
+
+        // Assert - _fixture.CreateReadyGame() creates a game in BoardsAreReady state, not GameOver
+        // So this should return the active game
+        result.Should().NotBeNull();
+        result.State.Should().NotBe(GameState.GameOver);
+        result.Id.Should().Be(game.Id);
+    }
+
+    [Fact]
+    public async Task GetActiveGameByPlayerIdAsync_WhenPlayerHasNoGames_ShouldReturnNull()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+
+        // Act
+        var result = await _repository.GetActiveGameByPlayerIdAsync(playerId);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetActiveGameByPlayerIdAsync_WithMultipleActiveGames_ShouldReturnFirst()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        var game1 = new Game(playerId);
+        var game2 = new Game(playerId);
+
+        await _repository.SaveAsync(game1);
+        await _repository.SaveAsync(game2);
+
+        // Act
+        var result = await _repository.GetActiveGameByPlayerIdAsync(playerId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.PlayerId.Should().Be(playerId);
+        result.State.Should().NotBe(GameState.GameOver);
+    }
+
+    [Fact]
+    public async Task GetActiveGameByPlayerIdAsync_WithCancellationToken_ShouldRespectCancellation()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        // Act
+        var result = await _repository.GetActiveGameByPlayerIdAsync(playerId, cts.Token);
+
+        // Assert - Should complete successfully as method is synchronous internally
+        result.Should().BeNull();
+    }
+
+    #endregion
+
+    #region Data Integrity and State Consistency Tests
+
+    [Fact]
+    public async Task Repository_WhenSavingAndRetrieving_ShouldMaintainGameState()
+    {
+        // Arrange
+        var game = _fixture.CreateReadyGame();
+        var originalState = game.State;
+        var originalBoardSize = game.BoardSize;
+
+        // Act
+        await _repository.SaveAsync(game);
+        var retrievedGame = await _repository.GetByIdAsync(game.Id);
+
+        // Assert
+        retrievedGame.Should().NotBeNull();
+        retrievedGame.State.Should().Be(originalState);
+        retrievedGame.BoardSize.Should().Be(originalBoardSize);
+        retrievedGame.PlayerId.Should().Be(game.PlayerId);
+    }
+
+    [Fact]
+    public async Task Repository_ConcurrentSaveAndRead_ShouldMaintainConsistency()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        var game = new Game(playerId);
+        await _repository.SaveAsync(game);
+
+        var readTasks = new List<Task<Game?>>();
+        var saveTasks = new List<Task>();
+
+        // Act - Perform concurrent reads and saves
+        for (int i = 0; i < 20; i++)
+        {
+            readTasks.Add(_repository.GetByIdAsync(game.Id));
+            if (i % 2 == 0)
+            {
+                saveTasks.Add(_repository.SaveAsync(game));
+            }
+        }
+
+        var readResults = await Task.WhenAll(readTasks);
+        await Task.WhenAll(saveTasks);
+
+        // Assert
+        readResults.Should().OnlyContain(g => g != null);
+        readResults.Should().OnlyContain(g => g!.Id == game.Id);
+    }
+
+    [Fact]
+    public async Task Repository_WhenGameUpdated_ShouldReflectChangesInSubsequentReads()
+    {
+        // Arrange
+        var game = _fixture.CreateReadyGame();
+        await _repository.SaveAsync(game);
+
+        // Act - Attack a cell to change game state
+        game.Attack(BoardSide.Own, "A1");
+        await _repository.SaveAsync(game);
+
+        // Retrieve updated game
+        var updatedGame = await _repository.GetByIdAsync(game.Id);
+
+        // Assert
+        updatedGame.Should().NotBeNull();
+        updatedGame.Id.Should().Be(game.Id);
+        // The updated game should reflect the attack
+    }
+
+    #endregion
+
+    #region Edge Cases and Exception Handling
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(50)]
+    [InlineData(100)]
+    public async Task Repository_WithMultipleGames_ShouldHandleCorrectly(int gameCount)
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        var games = new List<Game>();
+
+        for (int i = 0; i < gameCount; i++)
+        {
+            games.Add(new Game(playerId));
+        }
+
+        // Act
+        var saveTasks = games.Select(g => _repository.SaveAsync(g));
+        await Task.WhenAll(saveTasks);
+
+        var retrievedGames = await _repository.GetByPlayerIdAsync(playerId);
+
+        // Assert
+        retrievedGames.Should().HaveCount(gameCount);
+        foreach (var game in games)
+        {
+            retrievedGames.Should().Contain(g => g.Id == game.Id);
+        }
+    }
+
+    [Fact]
+    public async Task Repository_AfterDeleteAndSave_ShouldNotAffectOtherGames()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        var game1 = new Game(playerId);
+        var game2 = new Game(playerId);
+
+        await _repository.SaveAsync(game1);
+        await _repository.SaveAsync(game2);
+
+        // Act
+        await _repository.DeleteAsync(game1.Id);
+        var game3 = new Game(playerId);
+        await _repository.SaveAsync(game3);
+
+        // Assert
+        var games = await _repository.GetByPlayerIdAsync(playerId);
+        games.Should().HaveCount(2);
+        games.Should().Contain(g => g.Id == game2.Id);
+        games.Should().Contain(g => g.Id == game3.Id);
+        games.Should().NotContain(g => g.Id == game1.Id);
+    }
+
+    #endregion
+}

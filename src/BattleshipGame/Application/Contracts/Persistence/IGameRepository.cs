@@ -22,7 +22,7 @@ public interface IGameRepository
     /// <param name="game">The game to save.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The saved game identifier.</returns>
-    Task<GameId> SaveAsync(Game game, CancellationToken ct = default);
+    Task SaveAsync(Game game, CancellationToken ct = default);
 
     /// <summary>
     /// Deletes a game by its identifier.

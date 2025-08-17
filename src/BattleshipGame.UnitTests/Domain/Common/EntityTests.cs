@@ -12,34 +12,34 @@ public class EntityTests
     [InlineData(false, false)]
     public void Equals_WhenSameInstanceOrNot(bool areSame, bool expectedResult)
     {
-        var (subject, subject2) = CreateSubject(areSame);
+        var (testEntity1, testEntity2) = CreateSubject(areSame);
 
-        subject.Equals(subject2).Should().Be(expectedResult);
+        testEntity1.Equals(testEntity2).Should().Be(expectedResult);
     }
 
     [Fact]
     public void GetHashCode_WhenSameInstance_ReturnsSameHashCode()
     {
-        var (subject, subject2) = CreateSubject(areSame: true);
+        var (testEntity1, testEntity2) = CreateSubject(areSame: true);
 
-        subject.GetHashCode().Should().Be(subject2.GetHashCode());
+        testEntity1.GetHashCode().Should().Be(testEntity2.GetHashCode());
     }
 
     [Fact]
     public void GetHashCode_WhenNotSameInstance_ReturnsDifferentHashCode()
     {
-        var (subject, subject2) = CreateSubject(areSame: false);
+        var (testEntity1, testEntity2) = CreateSubject(areSame: false);
 
-        subject.GetHashCode().Should().NotBe(subject2.GetHashCode());
+        testEntity1.GetHashCode().Should().NotBe(testEntity2.GetHashCode());
     }
 
     private static (TestEntity, TestEntity) CreateSubject(bool areSame)
     {
         var id1 = Guid.NewGuid();
         var id2 = areSame ? id1 : Guid.NewGuid();
-        var subject = new TestEntity(id1);
-        var subject2 = new TestEntity(id2);
-        return (subject, subject2);
+        var testEntity1 = new TestEntity(id1);
+        var testEntity2 = new TestEntity(id2);
+        return (testEntity1, testEntity2);
     }
 }
 
