@@ -11,31 +11,31 @@ public interface IPlayerRepository
     /// Retrieves a player by their identifier.
     /// </summary>
     /// <param name="playerId">The player identifier.</param>
-    /// <param name="ct">Cancellation token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The player if found, otherwise null.</returns>
-    Task<Player?> GetByIdAsync(PlayerId playerId, CancellationToken ct = default);
+    Task<Player?> GetByIdAsync(PlayerId playerId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Saves a new or existing player.
     /// </summary>
     /// <param name="player">The player to save.</param>
-    /// <param name="ct">Cancellation token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The saved player identifier.</returns>
-    Task<PlayerId> SaveAsync(Player player, CancellationToken ct = default);
+    Task<PlayerId> SaveAsync(Player player, CancellationToken cancellationToken);
 
     /// <summary>
     /// Finds a player by their username.
     /// </summary>
     /// <param name="username">The username to search for.</param>
-    /// <param name="ct">Cancellation token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The player if found, otherwise null.</returns>
-    Task<Player?> GetByUsernameAsync(string username, CancellationToken ct = default);
+    Task<Player?> GetByUsernameAsync(string username, CancellationToken cancellationToken);
 
     /// <summary>
     /// Checks if a username is already taken.
     /// </summary>
     /// <param name="username">The username to check.</param>
-    /// <param name="ct">Cancellation token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>True if username exists, otherwise false.</returns>
-    Task<bool> UsernameExistsAsync(string username, CancellationToken ct = default);
+    Task<bool> UsernameExistsAsync(string username, CancellationToken cancellationToken);
 }

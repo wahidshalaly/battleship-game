@@ -13,28 +13,28 @@ public class InMemoryGameRepository : IGameRepository
     private readonly ConcurrentDictionary<GameId, Game> _games = new();
 
     /// <inheritdoc />
-    public Task<Game?> GetByIdAsync(GameId gameId, CancellationToken ct = default)
+    public Task<Game?> GetByIdAsync(GameId gameId, CancellationToken cancellationToken)
     {
         _games.TryGetValue(gameId, out var game);
         return Task.FromResult(game);
     }
 
     /// <inheritdoc />
-    public Task SaveAsync(Game game, CancellationToken ct = default)
+    public Task SaveAsync(Game game, CancellationToken cancellationToken)
     {
         _games.AddOrUpdate(game.Id, game, (_, _) => game);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task DeleteAsync(GameId gameId, CancellationToken ct = default)
+    public Task DeleteAsync(GameId gameId, CancellationToken cancellationToken)
     {
         _games.TryRemove(gameId, out _);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyCollection<Game>> GetByPlayerIdAsync(PlayerId playerId, CancellationToken ct = default)
+    public Task<IReadOnlyCollection<Game>> GetByPlayerIdAsync(PlayerId playerId, CancellationToken cancellationToken)
     {
         var playerGames = _games.Values
             .Where(game => game.PlayerId == playerId)
@@ -45,7 +45,7 @@ public class InMemoryGameRepository : IGameRepository
     }
 
     /// <inheritdoc />
-    public Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken ct = default)
+    public Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken cancellationToken)
     {
         var game = _games.Values
             .LastOrDefault(game =>

@@ -28,15 +28,15 @@ public class GetPlayerQueryHandlerTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var query = new GetPlayerQuery(playerId);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, "TestPlayer", null, 0);
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
             .Returns(player);
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(query, cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -45,7 +45,7 @@ public class GetPlayerQueryHandlerTests
         result.ActiveGameId.Should().BeNull();
         result.TotalGamesPlayed.Should().Be(0);
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -55,18 +55,18 @@ public class GetPlayerQueryHandlerTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var query = new GetPlayerQuery(playerId);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
             .Returns(Task.FromResult<Player?>(null));
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(query, cancellationToken);
 
         // Assert
         result.Should().BeNull();
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -76,15 +76,15 @@ public class GetPlayerQueryHandlerTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var query = new GetPlayerQuery(playerId);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
         var expectedException = new InvalidOperationException("Database connection failed");
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
             .Throws(expectedException);
 
         // Act & Assert
         var actualException = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _handler.Handle(query, ct));
+            () => _handler.Handle(query, cancellationToken));
 
         actualException.Should().BeSameAs(expectedException);
     }
@@ -96,15 +96,15 @@ public class GetPlayerQueryHandlerTests
         var playerId = new PlayerId(Guid.NewGuid());
         var activeGameId = new GameId(Guid.NewGuid());
         var query = new GetPlayerQuery(playerId);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, "PlayerWithGame", activeGameId, 0);
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
             .Returns(player);
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(query, cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -118,15 +118,15 @@ public class GetPlayerQueryHandlerTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var query = new GetPlayerQuery(playerId);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, "ExperiencedPlayer", null, 3);
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
             .Returns(player);
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(query, cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -141,15 +141,15 @@ public class GetPlayerQueryHandlerTests
         var playerId = new PlayerId(Guid.NewGuid());
         var activeGameId = new GameId(Guid.NewGuid());
         var query = new GetPlayerQuery(playerId);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, "ActivePlayer", activeGameId, 5);
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
             .Returns(player);
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(query, cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -167,15 +167,15 @@ public class GetPlayerQueryHandlerTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var query = new GetPlayerQuery(playerId);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, username, null, 0);
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
             .Returns(player);
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(query, cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -206,17 +206,17 @@ public class GetPlayerQueryHandlerTests
         var playerId = new PlayerId(Guid.NewGuid());
         var activeGameId = new GameId(Guid.NewGuid());
         var query = new GetPlayerQuery(playerId);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
         const string expectedUsername = "CompleteTestPlayer";
         const int expectedHistoryCount = 7;
 
         var player = CreatePlayer(playerId, expectedUsername, activeGameId, expectedHistoryCount);
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
             .Returns(player);
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(query, cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -238,15 +238,15 @@ public class GetPlayerQueryHandlerTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var query = new GetPlayerQuery(playerId);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, "TestPlayer", null, historyCount);
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
             .Returns(player);
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(query, cancellationToken);
 
         // Assert
         result.Should().NotBeNull();

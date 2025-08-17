@@ -18,7 +18,7 @@ public class GetGameQueryHandlerTests
     private readonly IGameRepository _gameRepository;
     private readonly GetGameQueryHandler _handler;
     private readonly GameFixture _gameFixture = new();
-    private readonly CancellationToken _ct = CancellationToken.None;
+    private readonly CancellationToken _cancellationToken = CancellationToken.None;
 
     public GetGameQueryHandlerTests()
     {
@@ -33,10 +33,10 @@ public class GetGameQueryHandlerTests
         var game = _gameFixture.CreateNewGame();
         var query = new GetGameQuery(game.Id);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _ct)).Returns(game);
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
 
         // Act
-        var result = await _handler.Handle(query, _ct);
+        var result = await _handler.Handle(query, _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -45,7 +45,7 @@ public class GetGameQueryHandlerTests
         result.BoardSize.Should().Be(10);
         result.State.Should().Be(GameState.Started);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _ct))
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -56,15 +56,15 @@ public class GetGameQueryHandlerTests
         var gameId = new GameId(Guid.NewGuid());
         var query = new GetGameQuery(gameId);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, _ct)).Returns<Game?>(null);
+        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, _cancellationToken)).Returns<Game?>(null);
 
         // Act
-        var result = await _handler.Handle(query, _ct);
+        var result = await _handler.Handle(query, _cancellationToken);
 
         // Assert
         result.Should().BeNull();
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, _ct))
+        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, _cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -79,10 +79,10 @@ public class GetGameQueryHandlerTests
         var game = _gameFixture.CreateNewGame(boardSize: boardSize);
         var query = new GetGameQuery(game.Id);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _ct)).Returns(game);
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
 
         // Act
-        var result = await _handler.Handle(query, _ct);
+        var result = await _handler.Handle(query, _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -115,10 +115,10 @@ public class GetGameQueryHandlerTests
         var game = _gameFixture.CreateNewGame(playerId1);
         var query = new GetGameQuery(game.Id);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _ct)).Returns(game);
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
 
         // Act
-        var result = await _handler.Handle(query, _ct);
+        var result = await _handler.Handle(query, _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -137,10 +137,10 @@ public class GetGameQueryHandlerTests
         var game = _gameFixture.CreateReadyGame(playerId);
         var query = new GetGameQuery(game.Id);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _ct)).Returns(game);
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
 
         // Act
-        var result = await _handler.Handle(query, _ct);
+        var result = await _handler.Handle(query, _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();

@@ -29,20 +29,20 @@ internal class AddShipCommandHandler(
     IDomainEventDispatcher eventDispatcher)
     : IRequestHandler<AddShipCommand, AddShipResult>
 {
-    public async Task<AddShipResult> Handle(AddShipCommand request, CancellationToken ct)
+    public async Task<AddShipResult> Handle(AddShipCommand request, CancellationToken cancellationToken)
     {
         // Load the game aggregate
-        var game = await gameRepository.GetByIdAsync(request.GameId, ct)
+        var game = await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
                    ?? throw new GameNotFoundException(request.GameId);
 
         // Add the ship to the specified board side
         var shipId = game.AddShip(request.BoardSide, request.Kind, request.Orientation, request.BowCode);
 
         // Save the updated game aggregate
-        await gameRepository.SaveAsync(game, ct);
+        await gameRepository.SaveAsync(game, cancellationToken);
 
         // Dispatch any domain events raised by the AddShip method
-        await eventDispatcher.DispatchEventsAsync(game, ct);
+        await eventDispatcher.DispatchEventsAsync(game, cancellationToken);
 
         return new AddShipResult(shipId);
     }

@@ -24,7 +24,7 @@ public class AttackCellCommandHandlerTests
     private readonly IDomainEventDispatcher _eventDispatcher;
     private readonly AttackCellCommandHandler _handler;
     private readonly GameFixture _gameFixture = new();
-    private readonly CancellationToken _ct = CancellationToken.None;
+    private readonly CancellationToken _cancellationToken = CancellationToken.None;
 
     public AttackCellCommandHandlerTests()
     {
@@ -42,22 +42,22 @@ public class AttackCellCommandHandlerTests
         var game = _gameFixture.CreateReadyGame();
         var command = new AttackCellCommand(game.Id, boardSide, Ship1Location);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _ct)).Returns(game);
-        A.CallTo(() => _gameRepository.SaveAsync(game, _ct)).Returns(Task.CompletedTask);
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
+        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _handler.Handle(command, _ct);
+        var result = await _handler.Handle(command, _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
         result.IsHit.Should().BeTrue();
         result.IsGameOver.Should().BeFalse();
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _ct))
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken))
             .MustHaveHappenedOnceExactly();
-        A.CallTo(() => _gameRepository.SaveAsync(game, _ct))
+        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken))
             .MustHaveHappenedOnceExactly();
-        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _ct))
+        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -70,20 +70,20 @@ public class AttackCellCommandHandlerTests
         var game = _gameFixture.CreateReadyGame(); // Ship at A1, attacking B1
         var command = new AttackCellCommand(game.Id, boardSide, cellCode);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _ct)).Returns(game);
-        A.CallTo(() => _gameRepository.SaveAsync(game, _ct)).Returns(Task.CompletedTask);
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
+        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _handler.Handle(command, _ct);
+        var result = await _handler.Handle(command, _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
         result.IsHit.Should().BeFalse();
         result.IsGameOver.Should().BeFalse();
 
-        A.CallTo(() => _gameRepository.SaveAsync(game, _ct))
+        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken))
             .MustHaveHappenedOnceExactly();
-        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _ct))
+        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -102,20 +102,20 @@ public class AttackCellCommandHandlerTests
 
         var command = new AttackCellCommand(game.Id, boardSide, lastCell);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _ct)).Returns(game);
-        A.CallTo(() => _gameRepository.SaveAsync(game, _ct)).Returns(Task.CompletedTask);
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
+        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _handler.Handle(command, _ct);
+        var result = await _handler.Handle(command, _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
         result.IsHit.Should().BeTrue();
         result.IsGameOver.Should().BeTrue();
 
-        A.CallTo(() => _gameRepository.SaveAsync(game, _ct))
+        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken))
             .MustHaveHappenedOnceExactly();
-        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _ct))
+        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -128,17 +128,17 @@ public class AttackCellCommandHandlerTests
         var gameId = new GameId(Guid.NewGuid());
         var command = new AttackCellCommand(gameId, boardSide, cellCode);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, _ct)).Returns<Game?>(null);
+        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, _cancellationToken)).Returns<Game?>(null);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _handler.Handle(command, _ct));
+            () => _handler.Handle(command, _cancellationToken));
 
         exception.Message.Should().Contain($"Game {gameId} not found");
 
-        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, _ct))
+        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, _cancellationToken))
             .MustNotHaveHappened();
-        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(A<Game>._, _ct))
+        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(A<Game>._, _cancellationToken))
             .MustNotHaveHappened();
     }
 
@@ -151,11 +151,11 @@ public class AttackCellCommandHandlerTests
         var game = _gameFixture.CreateReadyGame();
         var command = new AttackCellCommand(game.Id, boardSide, cellCode);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _ct)).Returns(game);
-        A.CallTo(() => _gameRepository.SaveAsync(game, _ct)).Returns(Task.CompletedTask);
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
+        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken)).Returns(Task.CompletedTask);
 
         // Act
-        await _handler.Handle(command, _ct);
+        await _handler.Handle(command, _cancellationToken);
 
         // Assert
         game.DomainEvents.Should().BeEmpty();

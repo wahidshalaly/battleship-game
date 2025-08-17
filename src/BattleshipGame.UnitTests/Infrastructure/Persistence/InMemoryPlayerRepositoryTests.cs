@@ -12,12 +12,8 @@ namespace BattleshipGame.UnitTests.Infrastructure.Persistence;
 
 public class InMemoryPlayerRepositoryTests
 {
-    private readonly InMemoryPlayerRepository _repository;
-
-    public InMemoryPlayerRepositoryTests()
-    {
-        _repository = new InMemoryPlayerRepository();
-    }
+    private readonly InMemoryPlayerRepository _repository = new();
+    private readonly CancellationToken _cancellationToken = CancellationToken.None;
 
     #region GetByIdAsync Tests
 
@@ -26,14 +22,14 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var result = await _repository.GetByIdAsync(player.Id);
+        var result = await _repository.GetByIdAsync(player.Id, _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
-        result!.Id.Should().Be(player.Id);
+        result.Id.Should().Be(player.Id);
         result.Username.Should().Be(player.Username);
     }
 
@@ -44,7 +40,7 @@ public class InMemoryPlayerRepositoryTests
         var nonExistentPlayerId = new PlayerId(Guid.NewGuid());
 
         // Act
-        var result = await _repository.GetByIdAsync(nonExistentPlayerId);
+        var result = await _repository.GetByIdAsync(nonExistentPlayerId, _cancellationToken);
 
         // Assert
         result.Should().BeNull();
@@ -55,9 +51,9 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var result = await _repository.GetByIdAsync(player.Id, cts.Token);
@@ -77,13 +73,13 @@ public class InMemoryPlayerRepositoryTests
         var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
 
         // Act
-        var result = await _repository.SaveAsync(player);
+        var result = await _repository.SaveAsync(player, _cancellationToken);
 
         // Assert
         result.Should().Be(player.Id);
-        var savedPlayer = await _repository.GetByIdAsync(player.Id);
+        var savedPlayer = await _repository.GetByIdAsync(player.Id, _cancellationToken);
         savedPlayer.Should().NotBeNull();
-        savedPlayer!.Id.Should().Be(player.Id);
+        savedPlayer.Id.Should().Be(player.Id);
         savedPlayer.Username.Should().Be("TestPlayer");
     }
 
@@ -92,20 +88,20 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "OriginalName");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Create new player instance with same ID but different username (simulating update)
         var updatedPlayer = new Player(new PlayerId(Guid.NewGuid()), "UpdatedName");
         // Since Player constructor creates new ID, we'll test with the original player
 
         // Act
-        var result = await _repository.SaveAsync(player);
+        var result = await _repository.SaveAsync(player, _cancellationToken);
 
         // Assert
         result.Should().Be(player.Id);
-        var retrievedPlayer = await _repository.GetByIdAsync(player.Id);
+        var retrievedPlayer = await _repository.GetByIdAsync(player.Id, _cancellationToken);
         retrievedPlayer.Should().NotBeNull();
-        retrievedPlayer!.Id.Should().Be(player.Id);
+        retrievedPlayer.Id.Should().Be(player.Id);
     }
 
     [Fact]
@@ -114,7 +110,7 @@ public class InMemoryPlayerRepositoryTests
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var result = await _repository.SaveAsync(player, cts.Token);
@@ -133,7 +129,7 @@ public class InMemoryPlayerRepositoryTests
         for (int i = 0; i < 10; i++)
         {
             var player = new Player(new PlayerId(Guid.NewGuid()), $"Player{i}");
-            tasks.Add(_repository.SaveAsync(player));
+            tasks.Add(_repository.SaveAsync(player, _cancellationToken));
         }
 
         var results = await Task.WhenAll(tasks);
@@ -145,7 +141,7 @@ public class InMemoryPlayerRepositoryTests
         // Verify all players were saved
         foreach (var playerId in results)
         {
-            var savedPlayer = await _repository.GetByIdAsync(playerId);
+            var savedPlayer = await _repository.GetByIdAsync(playerId, _cancellationToken);
             savedPlayer.Should().NotBeNull();
         }
     }
@@ -159,14 +155,14 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var result = await _repository.GetByUsernameAsync("TestPlayer");
+        var result = await _repository.GetByUsernameAsync("TestPlayer", _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
-        result!.Id.Should().Be(player.Id);
+        result.Id.Should().Be(player.Id);
         result.Username.Should().Be("TestPlayer");
     }
 
@@ -175,10 +171,10 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "ExistingPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var result = await _repository.GetByUsernameAsync("NonExistentPlayer");
+        var result = await _repository.GetByUsernameAsync("NonExistentPlayer", _cancellationToken);
 
         // Assert
         result.Should().BeNull();
@@ -193,14 +189,14 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), originalUsername);
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var result = await _repository.GetByUsernameAsync(searchUsername);
+        var result = await _repository.GetByUsernameAsync(searchUsername, _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
-        result!.Username.Should().Be(originalUsername);
+        result.Username.Should().Be(originalUsername);
     }
 
     [Fact]
@@ -208,10 +204,10 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var result = await _repository.GetByUsernameAsync(null!);
+        var result = await _repository.GetByUsernameAsync(null!, _cancellationToken);
 
         // Assert
         result.Should().BeNull();
@@ -223,10 +219,10 @@ public class InMemoryPlayerRepositoryTests
         // Arrange
         // Cannot create Player with empty username due to validation, so test with valid player
         var player = new Player(new PlayerId(Guid.NewGuid()), "ValidPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var result = await _repository.GetByUsernameAsync("");
+        var result = await _repository.GetByUsernameAsync("", _cancellationToken);
 
         // Assert
         result.Should().BeNull();
@@ -237,9 +233,9 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var result = await _repository.GetByUsernameAsync("TestPlayer", cts.Token);
@@ -254,15 +250,15 @@ public class InMemoryPlayerRepositoryTests
         // Arrange - This scenario shouldn't happen in practice, but tests repository behavior
         var player1 = new Player(new PlayerId(Guid.NewGuid()), "DuplicateUser");
         var player2 = new Player(new PlayerId(Guid.NewGuid()), "DuplicateUser");
-        await _repository.SaveAsync(player1);
-        await _repository.SaveAsync(player2);
+        await _repository.SaveAsync(player1, _cancellationToken);
+        await _repository.SaveAsync(player2, _cancellationToken);
 
         // Act
-        var result = await _repository.GetByUsernameAsync("DuplicateUser");
+        var result = await _repository.GetByUsernameAsync("DuplicateUser", _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
-        result!.Username.Should().Be("DuplicateUser");
+        result.Username.Should().Be("DuplicateUser");
         // Should return one of the players (implementation dependent)
         var validIds = new[] { player1.Id, player2.Id };
         validIds.Should().Contain(result.Id);
@@ -277,10 +273,10 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "ExistingPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var result = await _repository.UsernameExistsAsync("ExistingPlayer");
+        var result = await _repository.UsernameExistsAsync("ExistingPlayer", _cancellationToken);
 
         // Assert
         result.Should().BeTrue();
@@ -291,10 +287,10 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "ExistingPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var result = await _repository.UsernameExistsAsync("NonExistentPlayer");
+        var result = await _repository.UsernameExistsAsync("NonExistentPlayer", _cancellationToken);
 
         // Assert
         result.Should().BeFalse();
@@ -311,10 +307,10 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), originalUsername);
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var result = await _repository.UsernameExistsAsync(searchUsername);
+        var result = await _repository.UsernameExistsAsync(searchUsername, _cancellationToken);
 
         // Assert
         result.Should().BeTrue();
@@ -325,10 +321,10 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var result = await _repository.UsernameExistsAsync(null!);
+        var result = await _repository.UsernameExistsAsync(null!, _cancellationToken);
 
         // Assert
         result.Should().BeFalse();
@@ -340,10 +336,10 @@ public class InMemoryPlayerRepositoryTests
         // Arrange
         // Cannot create Player with empty username due to validation, so test with valid player
         var player = new Player(new PlayerId(Guid.NewGuid()), "ValidPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var result = await _repository.UsernameExistsAsync("");
+        var result = await _repository.UsernameExistsAsync("", _cancellationToken);
 
         // Assert
         result.Should().BeFalse();
@@ -354,9 +350,9 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var result = await _repository.UsernameExistsAsync("TestPlayer", cts.Token);
@@ -370,11 +366,11 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "ConcurrentTestPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act - Check existence concurrently
         var tasks = Enumerable.Range(0, 20)
-            .Select(_ => _repository.UsernameExistsAsync("ConcurrentTestPlayer"));
+            .Select(_ => _repository.UsernameExistsAsync("ConcurrentTestPlayer", _cancellationToken));
         var results = await Task.WhenAll(tasks);
 
         // Assert
@@ -390,7 +386,7 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "ConcurrentPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         var readTasks = new List<Task<Player?>>();
         var saveTasks = new List<Task<PlayerId>>();
@@ -398,12 +394,12 @@ public class InMemoryPlayerRepositoryTests
         // Act - Perform concurrent reads and saves
         for (int i = 0; i < 20; i++)
         {
-            readTasks.Add(_repository.GetByIdAsync(player.Id));
-            readTasks.Add(_repository.GetByUsernameAsync("ConcurrentPlayer"));
+            readTasks.Add(_repository.GetByIdAsync(player.Id, _cancellationToken));
+            readTasks.Add(_repository.GetByUsernameAsync("ConcurrentPlayer", _cancellationToken));
 
             if (i % 2 == 0)
             {
-                saveTasks.Add(_repository.SaveAsync(player));
+                saveTasks.Add(_repository.SaveAsync(player, _cancellationToken));
             }
         }
 
@@ -422,11 +418,11 @@ public class InMemoryPlayerRepositoryTests
         // Arrange
         var username = "ConcurrentUsername";
         var player = new Player(new PlayerId(Guid.NewGuid()), username);
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act - Perform concurrent username existence checks
         var tasks = Enumerable.Range(0, 50)
-            .Select(_ => _repository.UsernameExistsAsync(username));
+            .Select(_ => _repository.UsernameExistsAsync(username, _cancellationToken));
         var results = await Task.WhenAll(tasks);
 
         // Assert
@@ -442,11 +438,11 @@ public class InMemoryPlayerRepositoryTests
             .ToList();
 
         // Act - Save all players concurrently
-        var saveTasks = players.Select(p => _repository.SaveAsync(p));
+        var saveTasks = players.Select(p => _repository.SaveAsync(p, _cancellationToken));
         var savedIds = await Task.WhenAll(saveTasks);
 
         // Retrieve all players concurrently
-        var getTasks = savedIds.Select(id => _repository.GetByIdAsync(id));
+        var getTasks = savedIds.Select(id => _repository.GetByIdAsync(id, _cancellationToken));
         var retrievedPlayers = await Task.WhenAll(getTasks);
 
         // Assert
@@ -471,12 +467,12 @@ public class InMemoryPlayerRepositoryTests
         var player = new Player(new PlayerId(Guid.NewGuid()), originalUsername);
 
         // Act
-        await _repository.SaveAsync(player);
-        var retrievedPlayer = await _repository.GetByIdAsync(player.Id);
+        await _repository.SaveAsync(player, _cancellationToken);
+        var retrievedPlayer = await _repository.GetByIdAsync(player.Id, _cancellationToken);
 
         // Assert
         retrievedPlayer.Should().NotBeNull();
-        retrievedPlayer!.Id.Should().Be(player.Id);
+        retrievedPlayer.Id.Should().Be(player.Id);
         retrievedPlayer.Username.Should().Be(originalUsername);
     }
 
@@ -485,16 +481,16 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "UniquePlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var retrievedById = await _repository.GetByIdAsync(player.Id);
-        var retrievedByUsername = await _repository.GetByUsernameAsync("UniquePlayer");
+        var retrievedById = await _repository.GetByIdAsync(player.Id, _cancellationToken);
+        var retrievedByUsername = await _repository.GetByUsernameAsync("UniquePlayer", _cancellationToken);
 
         // Assert
         retrievedById.Should().NotBeNull();
         retrievedByUsername.Should().NotBeNull();
-        retrievedById!.Id.Should().Be(retrievedByUsername!.Id);
+        retrievedById.Id.Should().Be(retrievedByUsername.Id);
         retrievedById.Username.Should().Be(retrievedByUsername.Username);
     }
 
@@ -504,17 +500,17 @@ public class InMemoryPlayerRepositoryTests
         // Arrange
         var username = "ConsistencyTestPlayer";
         var player = new Player(new PlayerId(Guid.NewGuid()), username);
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act
-        var exists = await _repository.UsernameExistsAsync(username);
-        var retrievedPlayer = await _repository.GetByUsernameAsync(username);
+        var exists = await _repository.UsernameExistsAsync(username, _cancellationToken);
+        var retrievedPlayer = await _repository.GetByUsernameAsync(username, _cancellationToken);
 
         // Assert
         if (exists)
         {
             retrievedPlayer.Should().NotBeNull();
-            retrievedPlayer!.Username.Should().Be(username);
+            retrievedPlayer.Username.Should().Be(username);
         }
         else
         {
@@ -540,13 +536,13 @@ public class InMemoryPlayerRepositoryTests
         var player = new Player(new PlayerId(Guid.NewGuid()), username);
 
         // Act
-        await _repository.SaveAsync(player);
-        var retrievedPlayer = await _repository.GetByUsernameAsync(username);
-        var usernameExists = await _repository.UsernameExistsAsync(username);
+        await _repository.SaveAsync(player, _cancellationToken);
+        var retrievedPlayer = await _repository.GetByUsernameAsync(username, _cancellationToken);
+        var usernameExists = await _repository.UsernameExistsAsync(username, _cancellationToken);
 
         // Assert
         retrievedPlayer.Should().NotBeNull();
-        retrievedPlayer!.Username.Should().Be(username);
+        retrievedPlayer.Username.Should().Be(username);
         usernameExists.Should().BeTrue();
     }
 
@@ -562,17 +558,17 @@ public class InMemoryPlayerRepositoryTests
             .ToList();
 
         // Act
-        var saveTasks = players.Select(p => _repository.SaveAsync(p));
+        var saveTasks = players.Select(p => _repository.SaveAsync(p, _cancellationToken));
         await Task.WhenAll(saveTasks);
 
         // Assert - Verify all players can be retrieved
         foreach (var player in players)
         {
-            var retrievedPlayer = await _repository.GetByIdAsync(player.Id);
+            var retrievedPlayer = await _repository.GetByIdAsync(player.Id, _cancellationToken);
             retrievedPlayer.Should().NotBeNull();
-            retrievedPlayer!.Username.Should().Be(player.Username);
+            retrievedPlayer.Username.Should().Be(player.Username);
 
-            var existsByUsername = await _repository.UsernameExistsAsync(player.Username);
+            var existsByUsername = await _repository.UsernameExistsAsync(player.Username, _cancellationToken);
             existsByUsername.Should().BeTrue();
         }
     }
@@ -582,17 +578,17 @@ public class InMemoryPlayerRepositoryTests
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), "OriginalPlayer");
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Act - Save the same player again (simulating update)
-        await _repository.SaveAsync(player);
+        await _repository.SaveAsync(player, _cancellationToken);
 
         // Retrieve updated player
-        var updatedPlayer = await _repository.GetByIdAsync(player.Id);
+        var updatedPlayer = await _repository.GetByIdAsync(player.Id, _cancellationToken);
 
         // Assert
         updatedPlayer.Should().NotBeNull();
-        updatedPlayer!.Id.Should().Be(player.Id);
+        updatedPlayer.Id.Should().Be(player.Id);
         updatedPlayer.Username.Should().Be(player.Username);
     }
 
@@ -613,14 +609,14 @@ public class InMemoryPlayerRepositoryTests
         // For this test, we'll use separate players with different IDs
 
         // Act
-        await _repository.SaveAsync(player1);
-        await _repository.SaveAsync(player1); // Save again to test update
+        await _repository.SaveAsync(player1, _cancellationToken);
+        await _repository.SaveAsync(player1, _cancellationToken); // Save again to test update
 
-        var retrievedPlayer = await _repository.GetByIdAsync(player1.Id);
+        var retrievedPlayer = await _repository.GetByIdAsync(player1.Id, _cancellationToken);
 
         // Assert
         retrievedPlayer.Should().NotBeNull();
-        retrievedPlayer!.Id.Should().Be(player1.Id);
+        retrievedPlayer.Id.Should().Be(player1.Id);
     }
 
     [Fact]
@@ -636,9 +632,9 @@ public class InMemoryPlayerRepositoryTests
         foreach (var player in players)
         {
             // Save each player multiple times concurrently
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
-                saveTasks.Add(_repository.SaveAsync(player));
+                saveTasks.Add(_repository.SaveAsync(player, _cancellationToken));
             }
         }
 
@@ -650,9 +646,9 @@ public class InMemoryPlayerRepositoryTests
         // Verify each player exists exactly once in the repository
         foreach (var player in players)
         {
-            var retrievedPlayer = await _repository.GetByIdAsync(player.Id);
+            var retrievedPlayer = await _repository.GetByIdAsync(player.Id, _cancellationToken);
             retrievedPlayer.Should().NotBeNull();
-            retrievedPlayer!.Username.Should().Be(player.Username);
+            retrievedPlayer.Username.Should().Be(player.Username);
         }
     }
 

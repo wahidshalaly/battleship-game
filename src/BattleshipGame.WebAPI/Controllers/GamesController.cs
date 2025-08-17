@@ -31,10 +31,9 @@ public class GamesController(
     [ProducesResponseType(typeof(ProblemDetails), 400)]
     public async Task<ActionResult<Guid>> CreateGame(
         [FromBody] CreateGameRequest request,
-        CancellationToken ct = default)
+        CancellationToken cancellationToken)
     {
-        var command = new CreateGameCommand(new PlayerId(request.PlayerId), request.BoardSize);
-        var result = await mediator.Send(command, ct);
+        var result = await mediator.Send(new CreateGameCommand(new PlayerId(request.PlayerId), request.BoardSize), cancellationToken);
 
         logger.LogInformation("New Game: {GameId} for Player: {PlayerId}", result.GameId, request.PlayerId);
 
@@ -50,10 +49,10 @@ public class GamesController(
     [ProducesResponseType(typeof(ProblemDetails), 404)]
     public async Task<ActionResult<GetGameResult>> GetGame(
         [FromRoute] Guid id,
-        CancellationToken ct = default)
+        CancellationToken cancellationToken)
     {
         var query = new GetGameQuery(new GameId(id));
-        var result = await mediator.Send(query, ct);
+        var result = await mediator.Send(query, cancellationToken);
         if (result is null)
         {
             return NotFound(new ProblemDetails
@@ -77,7 +76,7 @@ public class GamesController(
     public async Task<ActionResult<Guid>> AddShip(
         [FromRoute] Guid id,
         [FromBody] AddShipRequest request,
-        CancellationToken ct = default)
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -89,7 +88,7 @@ public class GamesController(
                 request.BowCode
             );
 
-            var result = await mediator.Send(addShipCommand, ct);
+            var result = await mediator.Send(addShipCommand, cancellationToken);
 
             return Ok(result.ShipId);
         }
@@ -132,7 +131,7 @@ public class GamesController(
     public async Task<IActionResult> Attack(
         [FromRoute] Guid id,
         [FromBody] AttackRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         var game = await gameRepository.GetByIdAsync(new GameId(id), cancellationToken);
 
@@ -172,7 +171,7 @@ public class GamesController(
     [ProducesResponseType(typeof(ProblemDetails), 404)]
     public async Task<ActionResult<GameStateModel>> GetGameState(
         [FromRoute] Guid id,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         var game = await gameRepository.GetByIdAsync(new GameId(id), cancellationToken);
 

@@ -40,9 +40,9 @@ public class CreateGameCommandHandler(
     /// Handles <see cref="CreateGameCommand"/> and returns <see cref="CreateGameResult"/>.
     /// </summary>
     /// <param name="request">The create game command.</param>
-    /// <param name="ct">The cancellation token.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The attack result.</returns>
-    public async Task<CreateGameResult> Handle(CreateGameCommand request, CancellationToken ct)
+    public async Task<CreateGameResult> Handle(CreateGameCommand request, CancellationToken cancellationToken)
     {
         logger.LogInformation(
             "Creating new game for player {PlayerId} with board size {BoardSize}",
@@ -52,10 +52,10 @@ public class CreateGameCommandHandler(
         var game = new Game(request.PlayerId, request.BoardSize ?? 10);
 
         // 2. Save aggregate state
-        await gameRepository.SaveAsync(game, ct);
+        await gameRepository.SaveAsync(game, cancellationToken);
 
         // 3. Dispatch domain events (THIS IS WHERE SIDE EFFECTS HAPPEN)
-        await eventDispatcher.DispatchEventsAsync(game, ct);
+        await eventDispatcher.DispatchEventsAsync(game, cancellationToken);
 
         // 4. Clear events from aggregate
         game.ClearDomainEvents();

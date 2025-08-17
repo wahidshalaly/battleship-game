@@ -37,13 +37,13 @@ public class AddShipCommandHandlerTests
         var playerId = new PlayerId(Guid.NewGuid());
         var game = new Game(playerId);
         var command = new AddShipCommand(game.Id, boardSide, shipKind, orientation, bowCode);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, ct))
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, cancellationToken))
             .Returns(game);
 
         // Act
-        var result = await _handler.Handle(command, ct);
+        var result = await _handler.Handle(command, cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -58,13 +58,13 @@ public class AddShipCommandHandlerTests
         var gameId = new GameId(Guid.NewGuid());
         var command = new AddShipCommand(
             gameId, BoardSide.Own, ShipKind.Battleship, ShipOrientation.Horizontal, bowCode);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, ct))
+        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, cancellationToken))
             .Returns(Task.FromResult<Game?>(null));
 
         // Act
-        var act = () => _handler.Handle(command, ct);
+        var act = () => _handler.Handle(command, cancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<GameNotFoundException>()

@@ -28,7 +28,7 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<PlayerModel>> CreatePlayer(
         [FromBody] CreatePlayerRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Username))
         {
@@ -79,7 +79,7 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PlayerModel>> GetPlayer(
         Guid id,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         var query = new GetPlayerQuery(new PlayerId(id));
         var result = await mediator.Send(query, cancellationToken);
@@ -115,7 +115,7 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PlayerModel>> GetPlayerByUsername(
         string username,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         var query = new GetPlayerByUsernameQuery(username);
         var result = await mediator.Send(query, cancellationToken);

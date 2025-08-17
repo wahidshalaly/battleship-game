@@ -35,13 +35,13 @@ public class CreateGameCommandHandlerTests
         var playerId = new PlayerId(Guid.NewGuid());
         const int boardSize = 12;
         var command = new CreateGameCommand(playerId, boardSize);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, ct))
+        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, cancellationToken))
             .Returns(Task.FromResult(new GameId(Guid.NewGuid())));
 
         // Act
-        var result = await _handler.Handle(command, ct);
+        var result = await _handler.Handle(command, cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -51,7 +51,7 @@ public class CreateGameCommandHandlerTests
             A<Game>.That.Matches(g =>
                 g.PlayerId == playerId &&
                 g.BoardSize == boardSize &&
-                g.State == GameState.Started), ct))
+                g.State == GameState.Started), cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -61,19 +61,19 @@ public class CreateGameCommandHandlerTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var command = new CreateGameCommand(playerId, null);
-        var ct = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, ct))
+        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, cancellationToken))
             .Returns(Task.FromResult(new GameId(Guid.NewGuid())));
 
         // Act
-        var result = await _handler.Handle(command, ct);
+        var result = await _handler.Handle(command, cancellationToken);
 
         // Assert
         result.GameId.Should().NotBe(Guid.Empty);
 
         A.CallTo(() => _gameRepository.SaveAsync(
-            A<Game>.That.Matches(g => g.BoardSize == DefaultBoardSize), ct))
+            A<Game>.That.Matches(g => g.BoardSize == DefaultBoardSize), cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
 }

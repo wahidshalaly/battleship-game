@@ -12,7 +12,7 @@ public class InMemoryPlayerRepository : IPlayerRepository
     private readonly ConcurrentDictionary<PlayerId, Player> _players = new();
 
     /// <inheritdoc />
-    public Task<Player?> GetByIdAsync(PlayerId playerId, CancellationToken ct = default)
+    public Task<Player?> GetByIdAsync(PlayerId playerId, CancellationToken cancellationToken)
     {
         _players.TryGetValue(playerId, out var player);
 
@@ -20,7 +20,7 @@ public class InMemoryPlayerRepository : IPlayerRepository
     }
 
     /// <inheritdoc />
-    public Task<PlayerId> SaveAsync(Player player, CancellationToken ct = default)
+    public Task<PlayerId> SaveAsync(Player player, CancellationToken cancellationToken)
     {
         _players.AddOrUpdate(player.Id, player, (playerId, oldValue) => player);
 
@@ -28,7 +28,7 @@ public class InMemoryPlayerRepository : IPlayerRepository
     }
 
     /// <inheritdoc />
-    public Task<Player?> GetByUsernameAsync(string username, CancellationToken ct = default)
+    public Task<Player?> GetByUsernameAsync(string username, CancellationToken cancellationToken)
     {
         var player = _players.Values.FirstOrDefault(
             p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase));
@@ -37,7 +37,7 @@ public class InMemoryPlayerRepository : IPlayerRepository
     }
 
     /// <inheritdoc />
-    public Task<bool> UsernameExistsAsync(string username, CancellationToken ct = default)
+    public Task<bool> UsernameExistsAsync(string username, CancellationToken cancellationToken)
     {
         var exists = _players.Values.Any(
             p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase));
