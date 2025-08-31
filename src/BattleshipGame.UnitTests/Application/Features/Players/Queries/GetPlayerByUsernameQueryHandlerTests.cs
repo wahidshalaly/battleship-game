@@ -33,8 +33,7 @@ public class GetPlayerByUsernameQueryHandlerTests
 
         var player = CreatePlayer(playerId, username, null, 0);
 
-        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken))
-            .Returns(player);
+        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken)).Returns(player);
 
         // Act
         var result = await _handler.Handle(query, cancellationToken);
@@ -46,8 +45,7 @@ public class GetPlayerByUsernameQueryHandlerTests
         result.ActiveGameId.Should().BeNull();
         result.TotalGamesPlayed.Should().Be(0);
 
-        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken))
-            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]
@@ -67,8 +65,7 @@ public class GetPlayerByUsernameQueryHandlerTests
         // Assert
         result.Should().BeNull();
 
-        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken))
-            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]
@@ -80,12 +77,12 @@ public class GetPlayerByUsernameQueryHandlerTests
         var cancellationToken = CancellationToken.None;
         var expectedException = new InvalidOperationException("Database connection failed");
 
-        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken))
-            .Throws(expectedException);
+        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken)).Throws(expectedException);
 
         // Act & Assert
-        var actualException = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _handler.Handle(query, cancellationToken));
+        var actualException = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _handler.Handle(query, cancellationToken)
+        );
 
         actualException.Should().BeSameAs(expectedException);
     }
@@ -102,8 +99,7 @@ public class GetPlayerByUsernameQueryHandlerTests
 
         var player = CreatePlayer(playerId, username, activeGameId, 0);
 
-        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken))
-            .Returns(player);
+        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken)).Returns(player);
 
         // Act
         var result = await _handler.Handle(query, cancellationToken);
@@ -125,8 +121,7 @@ public class GetPlayerByUsernameQueryHandlerTests
 
         var player = CreatePlayer(playerId, username, null, 3);
 
-        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken))
-            .Returns(player);
+        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken)).Returns(player);
 
         // Act
         var result = await _handler.Handle(query, cancellationToken);
@@ -149,8 +144,7 @@ public class GetPlayerByUsernameQueryHandlerTests
 
         var player = CreatePlayer(playerId, username, activeGameId, 5);
 
-        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken))
-            .Returns(player);
+        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken)).Returns(player);
 
         // Act
         var result = await _handler.Handle(query, cancellationToken);
@@ -177,8 +171,7 @@ public class GetPlayerByUsernameQueryHandlerTests
 
         var player = CreatePlayer(playerId, username, null, 0);
 
-        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken))
-            .Returns(player);
+        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken)).Returns(player);
 
         // Act
         var result = await _handler.Handle(query, cancellationToken);
@@ -202,8 +195,7 @@ public class GetPlayerByUsernameQueryHandlerTests
             .Throws(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
-            () => _handler.Handle(query, cts.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => _handler.Handle(query, cts.Token));
     }
 
     [Fact]
@@ -219,8 +211,7 @@ public class GetPlayerByUsernameQueryHandlerTests
 
         var player = CreatePlayer(playerId, expectedUsername, activeGameId, expectedHistoryCount);
 
-        A.CallTo(() => _playerRepository.GetByUsernameAsync(expectedUsername, cancellationToken))
-            .Returns(player);
+        A.CallTo(() => _playerRepository.GetByUsernameAsync(expectedUsername, cancellationToken)).Returns(player);
 
         // Act
         var result = await _handler.Handle(query, cancellationToken);
@@ -250,8 +241,7 @@ public class GetPlayerByUsernameQueryHandlerTests
 
         var player = CreatePlayer(playerId, username, null, historyCount);
 
-        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken))
-            .Returns(player);
+        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken)).Returns(player);
 
         // Act
         var result = await _handler.Handle(query, cancellationToken);
@@ -299,8 +289,7 @@ public class GetPlayerByUsernameQueryHandlerTests
         // Assert
         result.Should().BeNull();
 
-        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken))
-            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _playerRepository.GetByUsernameAsync(username, cancellationToken)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]
@@ -334,8 +323,10 @@ public class GetPlayerByUsernameQueryHandlerTests
         var player = new Player(playerId, username, activeGameId);
 
         // Use reflection to add games to history to simulate TotalGamesPlayed
-        var gameHistoryField = typeof(Player).GetField("_gameHistory",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var gameHistoryField = typeof(Player).GetField(
+            "_gameHistory",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+        );
 
         if (gameHistoryField != null)
         {

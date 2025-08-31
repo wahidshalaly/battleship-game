@@ -12,7 +12,7 @@ public enum CellState
     Clear,
     Occupied,
     Hit,
-    Missed
+    Missed,
 }
 
 /// <summary>
@@ -30,7 +30,7 @@ public enum ShipKind
     Cruiser = 2,
     Submarine = 3,
     Battleship = 4,
-    Carrier = 5
+    Carrier = 5,
 }
 
 /// <summary>
@@ -40,7 +40,7 @@ public enum ShipOrientation
 {
     None = 0,
     Vertical = 1,
-    Horizontal = 2
+    Horizontal = 2,
 }
 
 /// <summary>
@@ -50,7 +50,7 @@ public enum BoardSide
 {
     None = 0,
     Own = 1,
-    Opp = 2
+    Opp = 2,
 }
 
 /// <summary>
@@ -62,5 +62,5 @@ public enum GameState
     Started = 1,
     BoardsAreReady = 2,
     InProgress = 3,
-    GameOver = 4
+    GameOver = 4,
 }

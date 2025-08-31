@@ -70,8 +70,7 @@ public class GameTests
         game.AddShip(boardSide, ShipKind.Submarine, ShipOrientation.Horizontal, "A4");
         game.AddShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A5");
 
-        Action act = () =>
-            game.AddShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A6");
+        Action act = () => game.AddShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A6");
 
         act.Should().Throw<InvalidOperationException>().WithMessage(ErrorMessages.InvalidShipKindAlreadyExists);
 
@@ -138,15 +137,14 @@ public class GameTests
 
         var act = () => game.Attack(boardSide, "A1");
 
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage(ErrorMessages.InvalidCellToAttack);
+        act.Should().Throw<InvalidOperationException>().WithMessage(ErrorMessages.InvalidCellToAttack);
     }
 
     [Fact]
     public void IsReady_WhenBothBoardsReady_ShouldReturnTrueForBoth()
     {
         var game = _fixture.CreateReadyGame();
-       
+
         game.IsBoardReady(BoardSide.Own).Should().BeTrue();
         game.IsBoardReady(BoardSide.Opp).Should().BeTrue();
         game.State.Should().Be(GameState.BoardsAreReady);

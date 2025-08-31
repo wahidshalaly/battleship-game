@@ -58,8 +58,11 @@ public class GameOverEventHandler : INotificationHandler<GameOverEvent>
     private async Task NotifyPlayers(GameOverEvent gameOverEvent)
     {
         // Example: Send notifications via SignalR, email, push notifications
-        _logger.LogInformation("Sending game over notifications for game {GameId}, winner: {WinnerSide}",
-            gameOverEvent.GameId, gameOverEvent.WinnerSide);
+        _logger.LogInformation(
+            "Sending game over notifications for game {GameId}, winner: {WinnerSide}",
+            gameOverEvent.GameId,
+            gameOverEvent.WinnerSide
+        );
 
         // In real implementation, you might:
         // - Send real-time notifications via SignalR
@@ -73,9 +76,11 @@ public class GameOverEventHandler : INotificationHandler<GameOverEvent>
     private void LogGameCompletion(GameOverEvent gameOverEvent)
     {
         // Example: Structured logging for analytics and monitoring
-        _logger.LogInformation("Game completed: {GameId}, Winner: {WinnerSide}",
+        _logger.LogInformation(
+            "Game completed: {GameId}, Winner: {WinnerSide}",
             gameOverEvent.GameId,
-            gameOverEvent.WinnerSide);
+            gameOverEvent.WinnerSide
+        );
 
         // In real implementation, you might:
         // - Send events to analytics platforms

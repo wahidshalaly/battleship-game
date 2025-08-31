@@ -40,10 +40,8 @@ public class CreatePlayerCommandHandlerTests
         result.Should().NotBeNull();
         result.PlayerId.Should().NotBe(new PlayerId(Guid.Empty));
 
-        A.CallTo(() => _repository.UsernameExistsAsync(username, _cancellationToken))
-            .MustHaveHappenedOnceExactly();
-        A.CallTo(() => _repository.SaveAsync(
-            A<Player>.That.Matches(p => p.Username == username), _cancellationToken))
+        A.CallTo(() => _repository.UsernameExistsAsync(username, _cancellationToken)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _repository.SaveAsync(A<Player>.That.Matches(p => p.Username == username), _cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -57,15 +55,14 @@ public class CreatePlayerCommandHandlerTests
         A.CallTo(() => _repository.UsernameExistsAsync(username, _cancellationToken)).Returns(true);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _handler.Handle(command, _cancellationToken));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _handler.Handle(command, _cancellationToken)
+        );
 
         exception.Message.Should().Contain($"A player with username '{username}' already exists.");
 
-        A.CallTo(() => _repository.UsernameExistsAsync(username, _cancellationToken))
-            .MustHaveHappenedOnceExactly();
-        A.CallTo(() => _repository.SaveAsync(A<Player>._, _cancellationToken))
-            .MustNotHaveHappened();
+        A.CallTo(() => _repository.UsernameExistsAsync(username, _cancellationToken)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _repository.SaveAsync(A<Player>._, _cancellationToken)).MustNotHaveHappened();
     }
 
     [Theory]
@@ -83,11 +80,9 @@ public class CreatePlayerCommandHandlerTests
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
 
-        A.CallTo(() => _repository.UsernameExistsAsync(username!, _cancellationToken))
-            .MustNotHaveHappened();
+        A.CallTo(() => _repository.UsernameExistsAsync(username!, _cancellationToken)).MustNotHaveHappened();
 
-        A.CallTo(() => _repository.SaveAsync(
-            A<Player>.That.Matches(p => p.Username == username), _cancellationToken))
+        A.CallTo(() => _repository.SaveAsync(A<Player>.That.Matches(p => p.Username == username), _cancellationToken))
             .MustNotHaveHappened();
     }
 }

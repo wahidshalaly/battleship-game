@@ -17,12 +17,7 @@ public record GetPlayerQuery(PlayerId PlayerId) : IRequest<GetPlayerResult>;
 /// <param name="Username">The player's username.</param>
 /// <param name="ActiveGameId">The currently active game ID, if any.</param>
 /// <param name="TotalGamesPlayed">The total number of games played.</param>
-public record GetPlayerResult(
-    PlayerId PlayerId,
-    string Username,
-    Guid? ActiveGameId,
-    int TotalGamesPlayed
-);
+public record GetPlayerResult(PlayerId PlayerId, string Username, Guid? ActiveGameId, int TotalGamesPlayed);
 
 /// <summary>
 /// Handler for getting a player by ID.
@@ -45,13 +40,9 @@ public class GetPlayerQueryHandler : IRequestHandler<GetPlayerQuery, GetPlayerRe
     {
         var player = await _playerRepository.GetByIdAsync(request.PlayerId, cancellationToken);
 
-        if (player is null) return null;
+        if (player is null)
+            return null;
 
-        return new GetPlayerResult(
-            player.Id,
-            player.Username,
-            player.ActiveGameId?.Value,
-            player.TotalGamesPlayed
-        );
+        return new GetPlayerResult(player.Id, player.Username, player.ActiveGameId?.Value, player.TotalGamesPlayed);
     }
 }

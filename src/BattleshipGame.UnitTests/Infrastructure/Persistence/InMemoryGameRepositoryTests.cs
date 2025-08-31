@@ -247,7 +247,8 @@ public class InMemoryGameRepositoryTests
         }
 
         // Act - Query same player concurrently
-        var queryTasks = Enumerable.Range(0, 10)
+        var queryTasks = Enumerable
+            .Range(0, 10)
             .Select(_ => _repository.GetByPlayerIdAsync(playerId, _cancellationToken));
         var results = await Task.WhenAll(queryTasks);
 

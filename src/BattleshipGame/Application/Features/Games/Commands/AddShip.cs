@@ -20,20 +20,20 @@ public record AddShipCommand(
     BoardSide BoardSide,
     ShipKind Kind,
     ShipOrientation Orientation,
-    string BowCode) : IRequest<AddShipResult>;
+    string BowCode
+) : IRequest<AddShipResult>;
 
 public record AddShipResult(Guid ShipId);
 
-internal class AddShipCommandHandler(
-    IGameRepository gameRepository,
-    IDomainEventDispatcher eventDispatcher)
+internal class AddShipCommandHandler(IGameRepository gameRepository, IDomainEventDispatcher eventDispatcher)
     : IRequestHandler<AddShipCommand, AddShipResult>
 {
     public async Task<AddShipResult> Handle(AddShipCommand request, CancellationToken cancellationToken)
     {
         // Load the game aggregate
-        var game = await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
-                   ?? throw new GameNotFoundException(request.GameId);
+        var game =
+            await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
+            ?? throw new GameNotFoundException(request.GameId);
 
         // Add the ship to the specified board side
         var shipId = game.AddShip(request.BoardSide, request.Kind, request.Orientation, request.BowCode);

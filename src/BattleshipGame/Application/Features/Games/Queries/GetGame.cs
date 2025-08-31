@@ -31,13 +31,9 @@ internal class GetGameQueryHandler(IGameRepository gameRepository) : IRequestHan
     {
         var game = await gameRepository.GetByIdAsync(request.GameId, cancellationToken);
 
-        if (game is null) return null;
+        if (game is null)
+            return null;
 
-        return new GetGameResult(
-            game.Id,
-            game.PlayerId.Value,
-            game.BoardSize,
-            game.State
-        );
+        return new GetGameResult(game.Id, game.PlayerId.Value, game.BoardSize, game.State);
     }
 }

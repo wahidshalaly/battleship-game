@@ -8,9 +8,7 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// Handles the BoardsReadyEvent domain event and executes side effects.
 /// </summary>
 /// <param name="logger">The logger instance.</param>
-public class BoardsReadyEventHandler(
-    ILogger<BoardsReadyEventHandler> logger)
-    : INotificationHandler<BoardsReadyEvent>
+public class BoardsReadyEventHandler(ILogger<BoardsReadyEventHandler> logger) : INotificationHandler<BoardsReadyEvent>
 {
     /// <summary>
     /// Handles the BoardsReadyEvent and executes side effects.
@@ -35,8 +33,7 @@ public class BoardsReadyEventHandler(
     private async Task NotifyGameStart(BoardsReadyEvent boardsReadyEvent)
     {
         // Example: Notify all players that the game is ready to start
-        logger.LogInformation("Notifying players that game {GameId} is ready to start",
-            boardsReadyEvent.GameId);
+        logger.LogInformation("Notifying players that game {GameId} is ready to start", boardsReadyEvent.GameId);
 
         // In real implementation, you might:
         // - Send SignalR notifications to all connected players
@@ -50,8 +47,7 @@ public class BoardsReadyEventHandler(
     private async Task InitializeGameMonitoring(BoardsReadyEvent boardsReadyEvent)
     {
         // Example: Set up monitoring and logging for the active game
-        logger.LogInformation("Initializing monitoring for game {GameId}",
-            boardsReadyEvent.GameId);
+        logger.LogInformation("Initializing monitoring for game {GameId}", boardsReadyEvent.GameId);
 
         // In real implementation, you might:
         // - Create monitoring dashboards for this game session
@@ -65,8 +61,7 @@ public class BoardsReadyEventHandler(
     private async Task SetupSessionTracking(BoardsReadyEvent boardsReadyEvent)
     {
         // Example: Initialize session analytics and tracking
-        logger.LogInformation("Setting up session tracking for game {GameId}",
-            boardsReadyEvent.GameId);
+        logger.LogInformation("Setting up session tracking for game {GameId}", boardsReadyEvent.GameId);
 
         // In real implementation, you might:
         // - Start session duration tracking

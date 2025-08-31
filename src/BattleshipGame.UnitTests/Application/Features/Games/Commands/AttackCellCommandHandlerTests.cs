@@ -53,12 +53,9 @@ public class AttackCellCommandHandlerTests
         result.IsHit.Should().BeTrue();
         result.IsGameOver.Should().BeFalse();
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken))
-            .MustHaveHappenedOnceExactly();
-        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken))
-            .MustHaveHappenedOnceExactly();
-        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _cancellationToken))
-            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _cancellationToken)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]
@@ -81,10 +78,8 @@ public class AttackCellCommandHandlerTests
         result.IsHit.Should().BeFalse();
         result.IsGameOver.Should().BeFalse();
 
-        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken))
-            .MustHaveHappenedOnceExactly();
-        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _cancellationToken))
-            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _cancellationToken)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]
@@ -113,10 +108,8 @@ public class AttackCellCommandHandlerTests
         result.IsHit.Should().BeTrue();
         result.IsGameOver.Should().BeTrue();
 
-        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken))
-            .MustHaveHappenedOnceExactly();
-        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _cancellationToken))
-            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(game, _cancellationToken)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]
@@ -131,15 +124,14 @@ public class AttackCellCommandHandlerTests
         A.CallTo(() => _gameRepository.GetByIdAsync(gameId, _cancellationToken)).Returns<Game?>(null);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _handler.Handle(command, _cancellationToken));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _handler.Handle(command, _cancellationToken)
+        );
 
         exception.Message.Should().Contain($"Game {gameId} not found");
 
-        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, _cancellationToken))
-            .MustNotHaveHappened();
-        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(A<Game>._, _cancellationToken))
-            .MustNotHaveHappened();
+        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, _cancellationToken)).MustNotHaveHappened();
+        A.CallTo(() => _eventDispatcher.DispatchEventsAsync(A<Game>._, _cancellationToken)).MustNotHaveHappened();
     }
 
     [Fact]

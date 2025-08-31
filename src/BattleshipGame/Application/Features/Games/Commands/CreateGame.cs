@@ -12,10 +12,7 @@ namespace BattleshipGame.Application.Features.Games.Commands;
 /// </summary>
 /// <param name="PlayerId">The player creating the game.</param>
 /// <param name="BoardSize">The size of the game board (optional, defaults to 10).</param>
-public record CreateGameCommand(
-    PlayerId PlayerId,
-    int? BoardSize = 10)
-    : IRequest<CreateGameResult>;
+public record CreateGameCommand(PlayerId PlayerId, int? BoardSize = 10) : IRequest<CreateGameResult>;
 
 /// <summary>
 /// Result of creating a game.
@@ -32,10 +29,9 @@ public record CreateGameResult(GameId GameId);
 public class CreateGameCommandHandler(
     ILogger<CreateGameCommandHandler> logger,
     IGameRepository gameRepository,
-    IDomainEventDispatcher eventDispatcher)
-    : IRequestHandler<CreateGameCommand, CreateGameResult>
+    IDomainEventDispatcher eventDispatcher
+) : IRequestHandler<CreateGameCommand, CreateGameResult>
 {
-
     /// <summary>
     /// Handles <see cref="CreateGameCommand"/> and returns <see cref="CreateGameResult"/>.
     /// </summary>
@@ -46,7 +42,9 @@ public class CreateGameCommandHandler(
     {
         logger.LogInformation(
             "Creating new game for player {PlayerId} with board size {BoardSize}",
-            request.PlayerId, request.BoardSize ?? 10);
+            request.PlayerId,
+            request.BoardSize ?? 10
+        );
 
         // 1. Create new game (this may raise domain events)
         var game = new Game(request.PlayerId, request.BoardSize ?? 10);
@@ -60,9 +58,7 @@ public class CreateGameCommandHandler(
         // 4. Clear events from aggregate
         game.ClearDomainEvents();
 
-        logger.LogInformation(
-            "Successfully created game {GameId} for player {PlayerId}",
-            game.Id, request.PlayerId);
+        logger.LogInformation("Successfully created game {GameId} for player {PlayerId}", game.Id, request.PlayerId);
 
         return new CreateGameResult(game.Id);
     }

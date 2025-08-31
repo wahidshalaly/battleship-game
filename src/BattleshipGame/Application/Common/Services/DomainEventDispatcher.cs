@@ -9,8 +9,8 @@ namespace BattleshipGame.Application.Common.Services;
 /// </summary>
 public class DomainEventDispatcher : IDomainEventDispatcher
 {
-    private readonly IMediator _mediator;
     private readonly ILogger<DomainEventDispatcher> _logger;
+    private readonly IMediator _mediator;
 
     /// <summary>
     /// Initializes a new instance of the DomainEventDispatcher class.
@@ -19,8 +19,8 @@ public class DomainEventDispatcher : IDomainEventDispatcher
     /// <param name="mediator">The MediatR mediator instance.</param>
     public DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMediator mediator)
     {
-        _mediator = mediator;
         _logger = logger;
+        _mediator = mediator;
     }
 
     /// <summary>
@@ -36,7 +36,9 @@ public class DomainEventDispatcher : IDomainEventDispatcher
 
         _logger.LogInformation(
             "Dispatching {EventCount} domain events for aggregate {AggregateId}",
-            domainEvents.Count, aggregateRoot.Id);
+            domainEvents.Count,
+            aggregateRoot.Id
+        );
 
         foreach (var domainEvent in domainEvents)
         {
@@ -44,13 +46,13 @@ public class DomainEventDispatcher : IDomainEventDispatcher
             {
                 _logger.LogDebug(
                     "Publishing domain event {EventType} for aggregate {AggregateId}",
-                    domainEvent.GetType().Name, aggregateRoot.Id);
+                    domainEvent.GetType().Name,
+                    aggregateRoot.Id
+                );
 
                 await _mediator.Publish(domainEvent, cancellationToken);
 
-                _logger.LogDebug(
-                    "Successfully published domain event {EventType}",
-                    domainEvent.GetType().Name);
+                _logger.LogDebug("Successfully published domain event {EventType}", domainEvent.GetType().Name);
             }
             catch (Exception exception)
             {
@@ -58,7 +60,8 @@ public class DomainEventDispatcher : IDomainEventDispatcher
                     exception,
                     "Failed to publish domain event {EventType} for aggregate {AggregateId}",
                     domainEvent.GetType().Name,
-                    aggregateRoot.Id);
+                    aggregateRoot.Id
+                );
 
                 throw;
             }
@@ -71,7 +74,10 @@ public class DomainEventDispatcher : IDomainEventDispatcher
     /// <param name="aggregateRoots">The collection of aggregate roots.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task DispatchEventsAsync<TId>(IEnumerable<AggregateRoot<TId>> aggregateRoots, CancellationToken cancellationToken)
+    public async Task DispatchEventsAsync<TId>(
+        IEnumerable<AggregateRoot<TId>> aggregateRoots,
+        CancellationToken cancellationToken
+    )
         where TId : EntityId
     {
         foreach (var aggregateRoot in aggregateRoots)

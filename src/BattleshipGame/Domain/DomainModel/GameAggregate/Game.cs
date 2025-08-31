@@ -1,7 +1,7 @@
 ﻿using BattleshipGame.Domain.Common;
 using BattleshipGame.Domain.DomainModel.Common;
-using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
+using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using static BattleshipGame.Domain.Common.Constants;
 
 namespace BattleshipGame.Domain.DomainModel.GameAggregate;
@@ -39,12 +39,7 @@ public sealed class Game : AggregateRoot<GameId>
         _oppBoard = new Board(boardSize);
     }
 
-    public ShipId AddShip(
-        BoardSide side,
-        ShipKind kind,
-        ShipOrientation orientation,
-        string bowCode
-    )
+    public ShipId AddShip(BoardSide side, ShipKind kind, ShipOrientation orientation, string bowCode)
     {
         var board = BoardSelector(side);
         var shipId = board.AddShip(kind, orientation, bowCode);
@@ -77,7 +72,8 @@ public sealed class Game : AggregateRoot<GameId>
 
         // Raise domain event for cell attack
         AddDomainEvent(new CellAttackedEvent(Id, cellCode, cellState));
-        if (cellState != CellState.Hit) return cellState;
+        if (cellState != CellState.Hit)
+            return cellState;
 
         // Check if the cell belongs to a ship that was sunk
         if (shipId is not null && shipSunk)
@@ -129,7 +125,7 @@ public sealed class Game : AggregateRoot<GameId>
         {
             BoardSide.Own => _ownBoard,
             BoardSide.Opp => _oppBoard,
-            _ => throw new ArgumentOutOfRangeException(nameof(side), side, ErrorMessages.InvalidBoardSide)
+            _ => throw new ArgumentOutOfRangeException(nameof(side), side, ErrorMessages.InvalidBoardSide),
         };
     }
 }

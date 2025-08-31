@@ -182,14 +182,8 @@ internal class Board : Entity<BoardId>
         }
         else
         {
-            var minLetterIndex = Math.Min(
-                _letters.IndexOf(bow.Letter),
-                _letters.IndexOf(stern.Letter)
-            );
-            var maxLetterIndex = Math.Max(
-                _letters.IndexOf(bow.Letter),
-                _letters.IndexOf(stern.Letter)
-            );
+            var minLetterIndex = Math.Min(_letters.IndexOf(bow.Letter), _letters.IndexOf(stern.Letter));
+            var maxLetterIndex = Math.Max(_letters.IndexOf(bow.Letter), _letters.IndexOf(stern.Letter));
 
             for (var idx = minLetterIndex; idx <= maxLetterIndex; idx++)
             {

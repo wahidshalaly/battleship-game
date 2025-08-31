@@ -8,17 +8,14 @@ public abstract class AggregateRoot<TId> : Entity<TId>
     /// <summary>
     /// Initializes a new instance with a new identifier.
     /// </summary>
-    protected AggregateRoot()
-    {
-    }
+    protected AggregateRoot() { }
 
     /// <summary>
     /// Initializes a new instance with the specified identifier.
     /// </summary>
     /// <param name="id">The identifier.</param>
-    protected AggregateRoot(Guid id) : base(id)
-    {
-    }
+    protected AggregateRoot(Guid id)
+        : base(id) { }
 
     /// <summary>
     /// Gets the domain events that have been raised by this aggregate.

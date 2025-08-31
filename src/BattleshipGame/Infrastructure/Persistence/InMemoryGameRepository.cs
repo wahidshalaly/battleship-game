@@ -1,7 +1,7 @@
+using System.Collections.Concurrent;
 using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
-using System.Collections.Concurrent;
 
 namespace BattleshipGame.Infrastructure.Persistence;
 
@@ -36,10 +36,7 @@ public class InMemoryGameRepository : IGameRepository
     /// <inheritdoc />
     public Task<IReadOnlyCollection<Game>> GetByPlayerIdAsync(PlayerId playerId, CancellationToken cancellationToken)
     {
-        var playerGames = _games.Values
-            .Where(game => game.PlayerId == playerId)
-            .ToList()
-            .AsReadOnly();
+        var playerGames = _games.Values.Where(g => g.PlayerId == playerId).ToList().AsReadOnly();
 
         return Task.FromResult<IReadOnlyCollection<Game>>(playerGames);
     }
@@ -47,10 +44,9 @@ public class InMemoryGameRepository : IGameRepository
     /// <inheritdoc />
     public Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken cancellationToken)
     {
-        var game = _games.Values
-            .LastOrDefault(game =>
-                game.PlayerId == playerId &&
-                game.State != Domain.DomainModel.Common.GameState.GameOver);
+        var game = _games.Values.LastOrDefault(g =>
+            g.PlayerId == playerId && g.State != Domain.DomainModel.Common.GameState.GameOver
+        );
 
         return Task.FromResult(game);
     }

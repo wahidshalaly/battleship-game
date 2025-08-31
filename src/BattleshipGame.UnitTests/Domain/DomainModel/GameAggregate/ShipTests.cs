@@ -20,7 +20,7 @@ public class ShipTests
             3 => ["A1", "A2", "A3"],
             4 => ["A1", "A2", "A3", "A4"],
             5 => ["A1", "A2", "A3", "A4", "A5"],
-            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
         var ship = new Ship(kind, position);
@@ -36,9 +36,7 @@ public class ShipTests
 
         var act = () => new Ship(ShipKind.Cruiser, position);
 
-        act.Should()
-            .Throw<InvalidOperationException>()
-            .WithMessage(ErrorMessages.InvalidShipPosition_Count);
+        act.Should().Throw<InvalidOperationException>().WithMessage(ErrorMessages.InvalidShipPosition_Count);
     }
 
     [Fact]
@@ -46,9 +44,7 @@ public class ShipTests
     {
         List<string> position = ["A1", "B2", "C3", "A4"];
         var act = () => new Ship(ShipKind.Battleship, position);
-        act.Should()
-            .Throw<InvalidOperationException>()
-            .WithMessage(ErrorMessages.InvalidShipPosition_Alignment);
+        act.Should().Throw<InvalidOperationException>().WithMessage(ErrorMessages.InvalidShipPosition_Alignment);
     }
 
     [Theory]
@@ -56,9 +52,7 @@ public class ShipTests
     public void Ctor_WhenCellsAreNonadjacent_ThrowsException(List<string> position)
     {
         var act = () => new Ship(ShipKind.Cruiser, position);
-        act.Should()
-            .Throw<InvalidOperationException>()
-            .WithMessage(ErrorMessages.InvalidShipPosition_Alignment);
+        act.Should().Throw<InvalidOperationException>().WithMessage(ErrorMessages.InvalidShipPosition_Alignment);
     }
 
     [Fact]
@@ -108,17 +102,11 @@ public class ShipTests
     }
 
     public static TheoryData<ShipKind> ShipKinds =>
-        [
-            ShipKind.Destroyer,
-            ShipKind.Cruiser,
-            ShipKind.Submarine,
-            ShipKind.Battleship,
-            ShipKind.Carrier
-        ];
+        [ShipKind.Destroyer, ShipKind.Cruiser, ShipKind.Submarine, ShipKind.Battleship, ShipKind.Carrier];
 
     public static TheoryData<List<string>> NonadjacentPosition =>
         [
             ["A1", "A3", "A4"],
-            ["A1", "B1", "D1"]
+            ["A1", "B1", "D1"],
         ];
 }

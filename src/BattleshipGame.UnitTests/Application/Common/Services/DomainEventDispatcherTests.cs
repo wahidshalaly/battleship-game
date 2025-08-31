@@ -64,8 +64,7 @@ public class DomainEventDispatcherTests
         await _dispatcher.DispatchEventsAsync(game, cancellationToken);
 
         // Assert
-        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, cancellationToken))
-            .MustNotHaveHappened();
+        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, cancellationToken)).MustNotHaveHappened();
     }
 
     [Fact]

@@ -38,7 +38,8 @@ public class BoardTests
         ShipKind shipKind,
         string bowPosition,
         ShipOrientation orientation,
-        string[] expectedPosition)
+        string[] expectedPosition
+    )
     {
         var board = new Board();
 
@@ -51,19 +52,13 @@ public class BoardTests
 
     [Theory]
     [MemberData(nameof(InvalidShipPositions))]
-    public void AddShip_WhenShipPositionsIsInvalid(
-        ShipKind shipKind,
-        string bowPosition,
-        ShipOrientation orientation
-    )
+    public void AddShip_WhenShipPositionsIsInvalid(ShipKind shipKind, string bowPosition, ShipOrientation orientation)
     {
         var board = new Board();
 
         var act = () => board.AddShip(shipKind, orientation, bowPosition);
 
-        act.Should()
-            .Throw<ArgumentException>()
-            .WithMessage(ErrorMessages.InvalidShipOnBoardPosition);
+        act.Should().Throw<ArgumentException>().WithMessage(ErrorMessages.InvalidShipOnBoardPosition);
         board.Cells.Should().HaveCount(100);
         board.Ships.Should().BeEmpty();
     }
@@ -104,11 +99,7 @@ public class BoardTests
 
         void ValidateState(CellState state, string[] expectedCodes)
         {
-            board.Cells
-                .Where(c => c.State == state)
-                .Select(c => c.Code)
-                .Should()
-                .BeEquivalentTo(expectedCodes);
+            board.Cells.Where(c => c.State == state).Select(c => c.Code).Should().BeEquivalentTo(expectedCodes);
         }
     }
 
@@ -199,7 +190,7 @@ public class BoardTests
             { 10, 100 },
             { 15, 225 },
             { 20, 400 },
-            { 26, 676 }
+            { 26, 676 },
         };
 
     public static TheoryData<ShipKind, string, ShipOrientation, string[]> ValidShipPositions =>
@@ -208,7 +199,7 @@ public class BoardTests
             { ShipKind.Destroyer, "A1", ShipOrientation.Vertical, ["A1", "A2"] },
             { ShipKind.Submarine, "B2", ShipOrientation.Horizontal, ["B2", "C2", "D2"] },
             { ShipKind.Cruiser, "C3", ShipOrientation.Vertical, ["C3", "C4", "C5"] },
-            { ShipKind.Battleship, "D4", ShipOrientation.Horizontal, ["D4", "E4", "F4", "G4"] }
+            { ShipKind.Battleship, "D4", ShipOrientation.Horizontal, ["D4", "E4", "F4", "G4"] },
         };
 
     public static TheoryData<ShipKind, string, ShipOrientation> InvalidShipPositions =>
@@ -217,6 +208,6 @@ public class BoardTests
             { ShipKind.Destroyer, "Z1", ShipOrientation.Vertical },
             { ShipKind.Submarine, "B20", ShipOrientation.Horizontal },
             { ShipKind.Cruiser, "C0", ShipOrientation.Vertical },
-            { ShipKind.Battleship, "D-1", ShipOrientation.Horizontal }
+            { ShipKind.Battleship, "D-1", ShipOrientation.Horizontal },
         };
 }

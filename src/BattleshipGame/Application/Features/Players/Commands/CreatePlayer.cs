@@ -20,7 +20,8 @@ public record CreatePlayerResult(PlayerId PlayerId);
 /// Handler for creating a new player.
 /// </summary>
 /// <param name="playerRepository">The player repository.</param>
-public class CreatePlayerCommandHandler(IPlayerRepository playerRepository) : IRequestHandler<CreatePlayerCommand, CreatePlayerResult>
+public class CreatePlayerCommandHandler(IPlayerRepository playerRepository)
+    : IRequestHandler<CreatePlayerCommand, CreatePlayerResult>
 {
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="InvalidOperationException"></exception>

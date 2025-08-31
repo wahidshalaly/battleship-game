@@ -45,7 +45,7 @@ public class DomainEventTests
             new ConcreteDomainEvent(),
             new ConcreteDomainEvent(),
             new ConcreteDomainEvent(),
-            new ConcreteDomainEvent()
+            new ConcreteDomainEvent(),
         };
 
         // Assert

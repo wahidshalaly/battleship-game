@@ -18,10 +18,8 @@ namespace BattleshipGame.WebAPI.Controllers;
 /// <param name="gameRepository">The game repository (for operations not yet converted to MediatR).</param>
 [ApiController]
 [Route("api/[controller]")]
-public class GamesController(
-    ILogger<GamesController> logger,
-    IMediator mediator,
-    IGameRepository gameRepository) : ControllerBase
+public class GamesController(ILogger<GamesController> logger, IMediator mediator, IGameRepository gameRepository)
+    : ControllerBase
 {
     /// <summary>
     /// Create a new game
@@ -31,9 +29,13 @@ public class GamesController(
     [ProducesResponseType(typeof(ProblemDetails), 400)]
     public async Task<ActionResult<Guid>> CreateGame(
         [FromBody] CreateGameRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
-        var result = await mediator.Send(new CreateGameCommand(new PlayerId(request.PlayerId), request.BoardSize), cancellationToken);
+        var result = await mediator.Send(
+            new CreateGameCommand(new PlayerId(request.PlayerId), request.BoardSize),
+            cancellationToken
+        );
 
         logger.LogInformation("New Game: {GameId} for Player: {PlayerId}", result.GameId, request.PlayerId);
 
@@ -47,20 +49,20 @@ public class GamesController(
     [ProducesResponseType(typeof(GameModel), 200)]
     [ProducesResponseType(typeof(ProblemDetails), 400)]
     [ProducesResponseType(typeof(ProblemDetails), 404)]
-    public async Task<ActionResult<GetGameResult>> GetGame(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<GetGameResult>> GetGame([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var query = new GetGameQuery(new GameId(id));
         var result = await mediator.Send(query, cancellationToken);
         if (result is null)
         {
-            return NotFound(new ProblemDetails
-            {
-                Title = "Game Not Found",
-                Detail = $"Game with ID '{id}' was not found.",
-                Status = StatusCodes.Status404NotFound
-            });
+            return NotFound(
+                new ProblemDetails
+                {
+                    Title = "Game Not Found",
+                    Detail = $"Game with ID '{id}' was not found.",
+                    Status = StatusCodes.Status404NotFound,
+                }
+            );
         }
 
         return Ok(result);
@@ -76,7 +78,8 @@ public class GamesController(
     public async Task<ActionResult<Guid>> AddShip(
         [FromRoute] Guid id,
         [FromBody] AddShipRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -94,30 +97,36 @@ public class GamesController(
         }
         catch (GameNotFoundException)
         {
-            return NotFound(new ProblemDetails
-            {
-                Title = "Game Not Found",
-                Detail = $"Game with ID '{id}' was not found.",
-                Status = StatusCodes.Status404NotFound
-            });
+            return NotFound(
+                new ProblemDetails
+                {
+                    Title = "Game Not Found",
+                    Detail = $"Game with ID '{id}' was not found.",
+                    Status = StatusCodes.Status404NotFound,
+                }
+            );
         }
         catch (InvalidOperationException exception)
         {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Ship Placement Error",
-                Detail = exception.Message,
-                Status = StatusCodes.Status400BadRequest
-            });
+            return BadRequest(
+                new ProblemDetails
+                {
+                    Title = "Ship Placement Error",
+                    Detail = exception.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                }
+            );
         }
         catch (ArgumentException exception)
         {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Invalid Ship Parameters",
-                Detail = exception.Message,
-                Status = StatusCodes.Status400BadRequest
-            });
+            return BadRequest(
+                new ProblemDetails
+                {
+                    Title = "Invalid Ship Parameters",
+                    Detail = exception.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                }
+            );
         }
     }
 
@@ -131,18 +140,21 @@ public class GamesController(
     public async Task<IActionResult> Attack(
         [FromRoute] Guid id,
         [FromBody] AttackRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var game = await gameRepository.GetByIdAsync(new GameId(id), cancellationToken);
 
         if (game is null)
         {
-            return NotFound(new ProblemDetails
-            {
-                Title = "Game Not Found",
-                Detail = $"Game with ID '{id}' was not found.",
-                Status = StatusCodes.Status404NotFound
-            });
+            return NotFound(
+                new ProblemDetails
+                {
+                    Title = "Game Not Found",
+                    Detail = $"Game with ID '{id}' was not found.",
+                    Status = StatusCodes.Status404NotFound,
+                }
+            );
         }
 
         try
@@ -154,12 +166,14 @@ public class GamesController(
         }
         catch (ArgumentException exception)
         {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Invalid Attack",
-                Detail = exception.Message,
-                Status = StatusCodes.Status400BadRequest
-            });
+            return BadRequest(
+                new ProblemDetails
+                {
+                    Title = "Invalid Attack",
+                    Detail = exception.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                }
+            );
         }
     }
 
@@ -171,18 +185,21 @@ public class GamesController(
     [ProducesResponseType(typeof(ProblemDetails), 404)]
     public async Task<ActionResult<GameStateModel>> GetGameState(
         [FromRoute] Guid id,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var game = await gameRepository.GetByIdAsync(new GameId(id), cancellationToken);
 
         if (game is null)
         {
-            return NotFound(new ProblemDetails
-            {
-                Title = "Game Not Found",
-                Detail = $"Game with ID '{id}' was not found.",
-                Status = StatusCodes.Status404NotFound
-            });
+            return NotFound(
+                new ProblemDetails
+                {
+                    Title = "Game Not Found",
+                    Detail = $"Game with ID '{id}' was not found.",
+                    Status = StatusCodes.Status404NotFound,
+                }
+            );
         }
 
         // For demo, winner is null unless state is GameOver
@@ -193,17 +210,11 @@ public class GamesController(
     // DTOs and request models
     public record CreateGameRequest(Guid PlayerId, int? BoardSize = 10);
 
-    public record AddShipRequest(
-        BoardSide Side,
-        ShipKind ShipKind,
-        ShipOrientation Orientation,
-        string BowCode
-    );
+    public record AddShipRequest(BoardSide Side, ShipKind ShipKind, ShipOrientation Orientation, string BowCode);
 
     public record GameModel(Guid Id, string State, int BoardSize)
     {
-        public static GameModel From(Game game) =>
-            new(game.Id.Value, game.State.ToString(), game.BoardSize);
+        public static GameModel From(Game game) => new(game.Id.Value, game.State.ToString(), game.BoardSize);
     }
 
     public record AttackRequest(BoardSide Side, string Cell);

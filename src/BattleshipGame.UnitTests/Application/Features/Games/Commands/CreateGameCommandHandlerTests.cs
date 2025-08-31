@@ -47,11 +47,14 @@ public class CreateGameCommandHandlerTests
         result.Should().NotBeNull();
         result.GameId.Should().NotBe(Guid.Empty);
 
-        A.CallTo(() => _gameRepository.SaveAsync(
-            A<Game>.That.Matches(g =>
-                g.PlayerId == playerId &&
-                g.BoardSize == boardSize &&
-                g.State == GameState.Started), cancellationToken))
+        A.CallTo(() =>
+                _gameRepository.SaveAsync(
+                    A<Game>.That.Matches(g =>
+                        g.PlayerId == playerId && g.BoardSize == boardSize && g.State == GameState.Started
+                    ),
+                    cancellationToken
+                )
+            )
             .MustHaveHappenedOnceExactly();
     }
 
@@ -72,8 +75,9 @@ public class CreateGameCommandHandlerTests
         // Assert
         result.GameId.Should().NotBe(Guid.Empty);
 
-        A.CallTo(() => _gameRepository.SaveAsync(
-            A<Game>.That.Matches(g => g.BoardSize == DefaultBoardSize), cancellationToken))
+        A.CallTo(() =>
+                _gameRepository.SaveAsync(A<Game>.That.Matches(g => g.BoardSize == DefaultBoardSize), cancellationToken)
+            )
             .MustHaveHappenedOnceExactly();
     }
 }

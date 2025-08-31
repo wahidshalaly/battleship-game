@@ -28,16 +28,19 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<PlayerModel>> CreatePlayer(
         [FromBody] CreatePlayerRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (string.IsNullOrWhiteSpace(request.Username))
         {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Invalid Username",
-                Detail = "Username cannot be null or whitespace.",
-                Status = StatusCodes.Status400BadRequest
-            });
+            return BadRequest(
+                new ProblemDetails
+                {
+                    Title = "Invalid Username",
+                    Detail = "Username cannot be null or whitespace.",
+                    Status = StatusCodes.Status400BadRequest,
+                }
+            );
         }
 
         try
@@ -45,26 +48,31 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
             var command = new CreatePlayerCommand(request.Username);
             var result = await mediator.Send(command, cancellationToken);
 
-           logger.LogInformation("Player created with ID: {PlayerId}, Username: {Username}",
-                result.PlayerId.Value, command.Username);
+            logger.LogInformation(
+                "Player created with ID: {PlayerId}, Username: {Username}",
+                result.PlayerId.Value,
+                command.Username
+            );
 
             var response = new PlayerModel(
                 result.PlayerId.Value,
                 command.Username,
                 null, // No active game initially
-                0     // No games played initially
+                0 // No games played initially
             );
 
             return CreatedAtAction(nameof(GetPlayer), new { id = result.PlayerId.Value }, response);
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new ProblemDetails
-            {
-                Title = "Username Already Exists",
-                Detail = ex.Message,
-                Status = StatusCodes.Status409Conflict
-            });
+            return Conflict(
+                new ProblemDetails
+                {
+                    Title = "Username Already Exists",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status409Conflict,
+                }
+            );
         }
     }
 
@@ -77,21 +85,21 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(PlayerModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PlayerModel>> GetPlayer(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<PlayerModel>> GetPlayer(Guid id, CancellationToken cancellationToken)
     {
         var query = new GetPlayerQuery(new PlayerId(id));
         var result = await mediator.Send(query, cancellationToken);
 
         if (result is null)
         {
-            return NotFound(new ProblemDetails
-            {
-                Title = "Player Not Found",
-                Detail = $"Player with ID '{id}' was not found.",
-                Status = StatusCodes.Status404NotFound
-            });
+            return NotFound(
+                new ProblemDetails
+                {
+                    Title = "Player Not Found",
+                    Detail = $"Player with ID '{id}' was not found.",
+                    Status = StatusCodes.Status404NotFound,
+                }
+            );
         }
 
         var response = new PlayerModel(
@@ -115,19 +123,22 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PlayerModel>> GetPlayerByUsername(
         string username,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var query = new GetPlayerByUsernameQuery(username);
         var result = await mediator.Send(query, cancellationToken);
 
         if (result is null)
         {
-            return NotFound(new ProblemDetails
-            {
-                Title = "Player Not Found",
-                Detail = $"Player with username '{username}' was not found.",
-                Status = StatusCodes.Status404NotFound
-            });
+            return NotFound(
+                new ProblemDetails
+                {
+                    Title = "Player Not Found",
+                    Detail = $"Player with username '{username}' was not found.",
+                    Status = StatusCodes.Status404NotFound,
+                }
+            );
         }
 
         var response = new PlayerModel(
@@ -154,9 +165,4 @@ public record CreatePlayerRequest(string Username);
 /// <param name="Username">The player's username.</param>
 /// <param name="ActiveGameId">The currently active game ID, if any.</param>
 /// <param name="TotalGamesPlayed">The total number of games played.</param>
-public record PlayerModel(
-    Guid Id,
-    string Username,
-    Guid? ActiveGameId,
-    int TotalGamesPlayed
-);
+public record PlayerModel(Guid Id, string Username, Guid? ActiveGameId, int TotalGamesPlayed);

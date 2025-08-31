@@ -30,7 +30,10 @@ public class AddShipCommandHandlerTests
     [Theory]
     [MemberData(nameof(DifferentShipSetups))]
     public async Task Handle_WhenValidCommand_ShouldAddShipAndReturnResult(
-        BoardSide boardSide, ShipKind shipKind, ShipOrientation orientation)
+        BoardSide boardSide,
+        ShipKind shipKind,
+        ShipOrientation orientation
+    )
     {
         // Arrange
         const string bowCode = "A1";
@@ -39,8 +42,7 @@ public class AddShipCommandHandlerTests
         var command = new AddShipCommand(game.Id, boardSide, shipKind, orientation, bowCode);
         var cancellationToken = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, cancellationToken))
-            .Returns(game);
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, cancellationToken)).Returns(game);
 
         // Act
         var result = await _handler.Handle(command, cancellationToken);
@@ -57,29 +59,29 @@ public class AddShipCommandHandlerTests
         const string bowCode = "A1";
         var gameId = new GameId(Guid.NewGuid());
         var command = new AddShipCommand(
-            gameId, BoardSide.Own, ShipKind.Battleship, ShipOrientation.Horizontal, bowCode);
+            gameId,
+            BoardSide.Own,
+            ShipKind.Battleship,
+            ShipOrientation.Horizontal,
+            bowCode
+        );
         var cancellationToken = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, cancellationToken))
-            .Returns(Task.FromResult<Game?>(null));
+        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, cancellationToken)).Returns(Task.FromResult<Game?>(null));
 
         // Act
         var act = () => _handler.Handle(command, cancellationToken);
 
         // Assert
-        await act.Should().ThrowAsync<GameNotFoundException>()
-            .WithMessage($"Game with ID {gameId.Value} not found.");
+        await act.Should().ThrowAsync<GameNotFoundException>().WithMessage($"Game with ID {gameId.Value} not found.");
     }
 
     public static System.Collections.Generic.IEnumerable<object[]> DifferentShipSetups()
     {
-        return
-            from BoardSide side in Enum.GetValues(typeof(BoardSide))
+        return from BoardSide side in Enum.GetValues(typeof(BoardSide))
             from ShipKind kind in Enum.GetValues(typeof(ShipKind))
             from ShipOrientation orientation in Enum.GetValues(typeof(ShipOrientation))
-            where side != BoardSide.None
-                  && kind != ShipKind.None
-                  && orientation != ShipOrientation.None
+            where side != BoardSide.None && kind != ShipKind.None && orientation != ShipOrientation.None
             select (object[])[side, kind, orientation];
     }
 }

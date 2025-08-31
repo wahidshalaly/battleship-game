@@ -45,8 +45,7 @@ public class GetGameQueryHandlerTests
         result.BoardSize.Should().Be(10);
         result.State.Should().Be(GameState.Started);
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken))
-            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]
@@ -64,8 +63,7 @@ public class GetGameQueryHandlerTests
         // Assert
         result.Should().BeNull();
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, _cancellationToken))
-            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, _cancellationToken)).MustHaveHappenedOnceExactly();
     }
 
     [Theory]
@@ -98,12 +96,10 @@ public class GetGameQueryHandlerTests
         var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, cts.Token))
-            .Throws(new OperationCanceledException());
+        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, cts.Token)).Throws(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
-            () => _handler.Handle(query, cts.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => _handler.Handle(query, cts.Token));
     }
 
     [Fact]

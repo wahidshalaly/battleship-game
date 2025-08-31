@@ -1,6 +1,6 @@
+using System.Collections.Concurrent;
 using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
-using System.Collections.Concurrent;
 
 namespace BattleshipGame.Infrastructure.Persistence;
 
@@ -30,8 +30,9 @@ public class InMemoryPlayerRepository : IPlayerRepository
     /// <inheritdoc />
     public Task<Player?> GetByUsernameAsync(string username, CancellationToken cancellationToken)
     {
-        var player = _players.Values.FirstOrDefault(
-            p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase));
+        var player = _players.Values.FirstOrDefault(p =>
+            string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase)
+        );
 
         return Task.FromResult(player);
     }
@@ -39,8 +40,7 @@ public class InMemoryPlayerRepository : IPlayerRepository
     /// <inheritdoc />
     public Task<bool> UsernameExistsAsync(string username, CancellationToken cancellationToken)
     {
-        var exists = _players.Values.Any(
-            p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase));
+        var exists = _players.Values.Any(p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase));
 
         return Task.FromResult(exists);
     }

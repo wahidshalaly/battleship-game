@@ -185,7 +185,10 @@ public class InMemoryPlayerRepositoryTests
     [InlineData("TestPlayer", "TESTPLAYER")]
     [InlineData("TestPlayer", "TestPlayer")]
     [InlineData("TestPlayer", "tESTPLAYER")]
-    public async Task GetByUsernameAsync_WithDifferentCasing_ShouldBeCaseInsensitive(string originalUsername, string searchUsername)
+    public async Task GetByUsernameAsync_WithDifferentCasing_ShouldBeCaseInsensitive(
+        string originalUsername,
+        string searchUsername
+    )
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), originalUsername);
@@ -303,7 +306,10 @@ public class InMemoryPlayerRepositoryTests
     [InlineData("TestPlayer", "tESTPLAYER")]
     [InlineData("MixedCase123", "mixedcase123")]
     [InlineData("user_name", "USER_NAME")]
-    public async Task UsernameExistsAsync_WithDifferentCasing_ShouldBeCaseInsensitive(string originalUsername, string searchUsername)
+    public async Task UsernameExistsAsync_WithDifferentCasing_ShouldBeCaseInsensitive(
+        string originalUsername,
+        string searchUsername
+    )
     {
         // Arrange
         var player = new Player(new PlayerId(Guid.NewGuid()), originalUsername);
@@ -369,7 +375,8 @@ public class InMemoryPlayerRepositoryTests
         await _repository.SaveAsync(player, _cancellationToken);
 
         // Act - Check existence concurrently
-        var tasks = Enumerable.Range(0, 20)
+        var tasks = Enumerable
+            .Range(0, 20)
             .Select(_ => _repository.UsernameExistsAsync("ConcurrentTestPlayer", _cancellationToken));
         var results = await Task.WhenAll(tasks);
 
@@ -421,8 +428,7 @@ public class InMemoryPlayerRepositoryTests
         await _repository.SaveAsync(player, _cancellationToken);
 
         // Act - Perform concurrent username existence checks
-        var tasks = Enumerable.Range(0, 50)
-            .Select(_ => _repository.UsernameExistsAsync(username, _cancellationToken));
+        var tasks = Enumerable.Range(0, 50).Select(_ => _repository.UsernameExistsAsync(username, _cancellationToken));
         var results = await Task.WhenAll(tasks);
 
         // Assert
@@ -433,7 +439,8 @@ public class InMemoryPlayerRepositoryTests
     public async Task Repository_ConcurrentSaveOperations_ShouldMaintainDataIntegrity()
     {
         // Arrange
-        var players = Enumerable.Range(0, 20)
+        var players = Enumerable
+            .Range(0, 20)
             .Select(i => new Player(new PlayerId(Guid.NewGuid()), $"Player{i}"))
             .ToList();
 
@@ -529,7 +536,6 @@ public class InMemoryPlayerRepositoryTests
     [InlineData("UPPERCASE")]
     [InlineData("MixedCasePlayer")]
     [InlineData("Special-Characters_123")]
-
     public async Task Repository_WithVariousUsernameFormats_ShouldHandleCorrectly(string username)
     {
         // Arrange
@@ -553,7 +559,8 @@ public class InMemoryPlayerRepositoryTests
     public async Task Repository_WithMultiplePlayers_ShouldHandleCorrectly(int playerCount)
     {
         // Arrange
-        var players = Enumerable.Range(0, playerCount)
+        var players = Enumerable
+            .Range(0, playerCount)
             .Select(i => new Player(new PlayerId(Guid.NewGuid()), $"Player{i}"))
             .ToList();
 
@@ -623,7 +630,8 @@ public class InMemoryPlayerRepositoryTests
     public async Task Repository_ConcurrentAddOrUpdate_ShouldHandleRaceConditions()
     {
         // Arrange
-        var players = Enumerable.Range(0, 10)
+        var players = Enumerable
+            .Range(0, 10)
             .Select(i => new Player(new PlayerId(Guid.NewGuid()), $"RaceConditionPlayer{i}"))
             .ToList();
 

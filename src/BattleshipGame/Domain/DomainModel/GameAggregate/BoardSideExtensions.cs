@@ -11,7 +11,7 @@ public static class BoardSideExtensions
         {
             BoardSide.Own => BoardSide.Opp,
             BoardSide.Opp => BoardSide.Own,
-            _ => throw new ArgumentOutOfRangeException(nameof(side), side, ErrorMessages.InvalidBoardSide)
+            _ => throw new ArgumentOutOfRangeException(nameof(side), side, ErrorMessages.InvalidBoardSide),
         };
     }
 }

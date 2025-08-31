@@ -33,9 +33,8 @@ public class PlayerTests
     {
         var act = () => new Player(_playerId, invalidUsername!);
 
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("Username cannot be null or whitespace.*")
-            .And.ParamName.Should().Be("username");
+        const string exceptionMessage = "Username cannot be null or whitespace.*";
+        act.Should().Throw<ArgumentException>().WithMessage(exceptionMessage).And.ParamName.Should().Be("username");
     }
 
     [Fact]
@@ -69,8 +68,8 @@ public class PlayerTests
 
         var act = () => player.JoinGame(gameId2);
 
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("Player is already in an active game.");
+        const string exceptionMessage = "Player is already in an active game.";
+        act.Should().Throw<InvalidOperationException>().WithMessage(exceptionMessage);
     }
 
     [Fact]
@@ -103,8 +102,7 @@ public class PlayerTests
 
         var act = () => player.LeaveGame();
 
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("Player is not in an active game.");
+        act.Should().Throw<InvalidOperationException>().WithMessage("Player is not in an active game.");
     }
 
     [Fact]

@@ -26,8 +26,7 @@ public class ShipKindExtensionsTests
         var shipKind = ShipKind.None;
 
         // Act & Assert
-        shipKind.Invoking(s => s.ToSize())
-            .Should().Throw<KeyNotFoundException>();
+        shipKind.Invoking(s => s.ToSize()).Should().Throw<KeyNotFoundException>();
     }
 
     [Fact]
@@ -37,8 +36,7 @@ public class ShipKindExtensionsTests
         var invalidShipKind = (ShipKind)999;
 
         // Act & Assert
-        invalidShipKind.Invoking(s => s.ToSize())
-            .Should().Throw<KeyNotFoundException>();
+        invalidShipKind.Invoking(s => s.ToSize()).Should().Throw<KeyNotFoundException>();
     }
 
     [Fact]
@@ -48,8 +46,7 @@ public class ShipKindExtensionsTests
         var negativeShipKind = (ShipKind)(-1);
 
         // Act & Assert
-        negativeShipKind.Invoking(s => s.ToSize())
-            .Should().Throw<KeyNotFoundException>();
+        negativeShipKind.Invoking(s => s.ToSize()).Should().Throw<KeyNotFoundException>();
     }
 
     [Fact]
@@ -62,7 +59,7 @@ public class ShipKindExtensionsTests
             ShipKind.Cruiser,
             ShipKind.Submarine,
             ShipKind.Battleship,
-            ShipKind.Carrier
+            ShipKind.Carrier,
         };
 
         // Act & Assert
@@ -70,8 +67,7 @@ public class ShipKindExtensionsTests
 
         foreach (var shipKind in validShipKinds)
         {
-            shipKind.Invoking(s => s.ToSize())
-                .Should().NotThrow();
+            shipKind.Invoking(s => s.ToSize()).Should().NotThrow();
         }
     }
 

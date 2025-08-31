@@ -211,13 +211,10 @@ public class AggregateRootTests
 // Test classes for testing AggregateRoot
 internal class TestAggregateRoot : AggregateRoot<TestAggregateRootId>
 {
-    public TestAggregateRoot()
-    {
-    }
+    public TestAggregateRoot() { }
 
-    public TestAggregateRoot(Guid id) : base(id)
-    {
-    }
+    public TestAggregateRoot(Guid id)
+        : base(id) { }
 
     // Expose protected method for testing
     public void PublicAddDomainEvent(IDomainEvent domainEvent)

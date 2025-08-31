@@ -13,10 +13,7 @@ namespace BattleshipGame.Application.Features.Games.Commands;
 /// <param name="GameId">The game identifier.</param>
 /// <param name="BoardSide">The board side to attack.</param>
 /// <param name="CellCode">The cell code to attack (e.g., "A1", "B5").</param>
-public record AttackCellCommand(
-    GameId GameId,
-    BoardSide BoardSide,
-    string CellCode) : IRequest<AttackCellResult>;
+public record AttackCellCommand(GameId GameId, BoardSide BoardSide, string CellCode) : IRequest<AttackCellResult>;
 
 /// <summary>
 /// Result of a cell attack operation.
@@ -34,8 +31,8 @@ public record AttackCellResult(bool IsHit, bool IsGameOver);
 public class AttackCellCommandHandler(
     ILogger<AttackCellCommandHandler> logger,
     IGameRepository gameRepository,
-    IDomainEventDispatcher eventDispatcher)
-    : IRequestHandler<AttackCellCommand, AttackCellResult>
+    IDomainEventDispatcher eventDispatcher
+) : IRequestHandler<AttackCellCommand, AttackCellResult>
 {
     /// <summary>
     /// Handles the attack cell command.
@@ -43,16 +40,19 @@ public class AttackCellCommandHandler(
     /// <param name="request">The attack cell command.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The attack result.</returns>
-    public async Task<AttackCellResult> Handle(
-        AttackCellCommand request,
-        CancellationToken cancellationToken)
+    public async Task<AttackCellResult> Handle(AttackCellCommand request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Processing attack on {BoardSide} board at {CellCode} for game {GameId}",
-            request.BoardSide, request.CellCode, request.GameId);
+        logger.LogInformation(
+            "Processing attack on {BoardSide} board at {CellCode} for game {GameId}",
+            request.BoardSide,
+            request.CellCode,
+            request.GameId
+        );
 
         // 1. Load aggregate
-        var game = await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
-                   ?? throw new InvalidOperationException($"Game {request.GameId} not found");
+        var game =
+            await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
+            ?? throw new InvalidOperationException($"Game {request.GameId} not found");
 
         // 2. Execute domain operation (this will raise domain events)
         var cellState = game.Attack(request.BoardSide, request.CellCode);
@@ -66,14 +66,14 @@ public class AttackCellCommandHandler(
         // 5. Clear events after dispatching
         game.ClearDomainEvents();
 
-        logger.LogInformation("Attack processed successfully for game {GameId}, cell {CellCode}",
-            request.GameId, request.CellCode);
+        logger.LogInformation(
+            "Attack processed successfully for game {GameId}, cell {CellCode}",
+            request.GameId,
+            request.CellCode
+        );
 
         // 6. Return result
         // Check if game is over by testing both boards
-        return new AttackCellResult(
-            IsHit: cellState == CellState.Hit,
-            IsGameOver: game.IsGameOver(request.BoardSide)
-        );
+        return new AttackCellResult(IsHit: cellState == CellState.Hit, IsGameOver: game.IsGameOver(request.BoardSide));
     }
 }

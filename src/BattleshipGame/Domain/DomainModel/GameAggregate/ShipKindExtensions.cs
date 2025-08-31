@@ -10,7 +10,7 @@ public static class ShipKindExtensions
         { ShipKind.Cruiser, 3 },
         { ShipKind.Submarine, 3 },
         { ShipKind.Battleship, 4 },
-        { ShipKind.Carrier, 5 }
+        { ShipKind.Carrier, 5 },
     };
 
     public static int ToSize(this ShipKind kind)
