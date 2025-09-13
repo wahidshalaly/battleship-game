@@ -59,9 +59,9 @@ public class ShipTests
     {
         var ship = new Ship(ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
 
-        ship.Attack("A1");
-        ship.Attack("A2");
-        ship.Attack("A3");
+        ship.TakeHitAt("A1");
+        ship.TakeHitAt("A2");
+        ship.TakeHitAt("A3");
 
         ship.Sunk.Should().BeFalse();
     }
@@ -71,10 +71,10 @@ public class ShipTests
     {
         var ship = new Ship(ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
 
-        ship.Attack("A1");
-        ship.Attack("A2");
-        ship.Attack("A3");
-        ship.Attack("A4");
+        ship.TakeHitAt("A1");
+        ship.TakeHitAt("A2");
+        ship.TakeHitAt("A3");
+        ship.TakeHitAt("A4");
 
         ship.Sunk.Should().BeTrue();
     }
@@ -84,7 +84,7 @@ public class ShipTests
     {
         var ship = new Ship(ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
 
-        var act = () => ship.Attack("C5");
+        var act = () => ship.TakeHitAt("C5");
 
         act.Should().Throw<InvalidOperationException>().WithMessage(ErrorMessages.InvalidShipAttack);
     }
@@ -93,9 +93,9 @@ public class ShipTests
     public void Attack_WhenCellIsAlreadyHit_ThrowsException()
     {
         var ship = new Ship(ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
-        ship.Attack("A1");
+        ship.TakeHitAt("A1");
 
-        var act = () => ship.Attack("A1");
+        var act = () => ship.TakeHitAt("A1");
 
         act.Should().Throw<InvalidOperationException>().WithMessage(ErrorMessages.InvalidCellToAttack);
     }

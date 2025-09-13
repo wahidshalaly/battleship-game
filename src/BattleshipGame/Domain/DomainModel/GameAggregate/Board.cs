@@ -90,7 +90,7 @@ internal class Board : Entity<BoardId>
         if (cell.State == CellState.Hit)
         {
             var ship = _ships.First(s => s.Id == cell.ShipId);
-            ship.Attack(code);
+            ship.TakeHitAt(code);
             shipSunk = ship.Sunk;
         }
 

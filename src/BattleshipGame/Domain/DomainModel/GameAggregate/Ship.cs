@@ -16,7 +16,7 @@ public record ShipId(Guid Value) : EntityId(Value);
 /// </summary>
 internal class Ship : Entity<ShipId>
 {
-    private readonly HashSet<string> _cells;
+    private readonly HashSet<string> _codes;
     private readonly HashSet<string> _hits;
 
     /// <summary>
@@ -27,9 +27,9 @@ internal class Ship : Entity<ShipId>
     /// <summary>
     /// Ship's position, cells it occupies
     /// </summary>
-    public IReadOnlyCollection<string> Position => _cells;
+    public IReadOnlyCollection<string> Position => _codes;
 
-    public bool Sunk => _cells.Count == _hits.Count;
+    public bool Sunk => _codes.Count == _hits.Count;
 
     /// <summary>
     /// Creates a new battleship with the specified ID, type, and cells
@@ -41,13 +41,13 @@ internal class Ship : Entity<ShipId>
         ValidatePosition(kind, position);
 
         Kind = kind;
-        _cells = [.. position];
+        _codes = [.. position];
         _hits = [];
     }
 
-    public void Attack(string code)
+    public void TakeHitAt(string code)
     {
-        if (!_cells.Contains(code))
+        if (!_codes.Contains(code))
         {
             throw new InvalidOperationException(ErrorMessages.InvalidShipAttack);
         }
