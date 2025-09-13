@@ -1,4 +1,4 @@
-using BattleshipGame.Domain.DomainModel.Common;
+using BattleshipGame.SharedKernel;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

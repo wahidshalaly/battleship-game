@@ -1,5 +1,4 @@
 using BattleshipGame.Application.Contracts.Persistence;
-using BattleshipGame.Domain.DomainModel.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using MediatR;
 

@@ -1,16 +1,16 @@
-﻿namespace BattleshipGame.Domain.DomainModel.Common;
+﻿namespace BattleshipGame.SharedKernel;
 
 public abstract class Entity<TId>
     where TId : EntityId
 {
     protected Entity()
     {
-        Id = EntityId.New<TId>();
+        Id = EntityId.CreateFromValue<TId>(Guid.NewGuid());
     }
 
     protected Entity(Guid id)
     {
-        Id = EntityId.FromGuid<TId>(id);
+        Id = EntityId.CreateFromValue<TId>(id);
     }
 
     public TId Id { get; }

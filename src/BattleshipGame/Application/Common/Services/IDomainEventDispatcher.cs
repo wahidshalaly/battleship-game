@@ -1,4 +1,4 @@
-using BattleshipGame.Domain.DomainModel.Common;
+using BattleshipGame.SharedKernel;
 
 namespace BattleshipGame.Application.Common.Services;
 

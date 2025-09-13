@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace BattleshipGame.Domain.DomainModel.Common;
+namespace BattleshipGame.SharedKernel;
 
 public interface IDomainEvent : INotification
 {

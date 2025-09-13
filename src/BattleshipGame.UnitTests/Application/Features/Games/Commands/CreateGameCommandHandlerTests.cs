@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using BattleshipGame.Application.Common.Services;
 using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Application.Features.Games.Commands;
-using BattleshipGame.Domain.DomainModel.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using FakeItEasy;

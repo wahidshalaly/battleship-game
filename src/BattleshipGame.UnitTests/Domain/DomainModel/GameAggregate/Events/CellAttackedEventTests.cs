@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using BattleshipGame.Domain.DomainModel.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;

@@ -1,5 +1,4 @@
 using System;
-using BattleshipGame.Domain.DomainModel.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using static BattleshipGame.Domain.Common.Constants;

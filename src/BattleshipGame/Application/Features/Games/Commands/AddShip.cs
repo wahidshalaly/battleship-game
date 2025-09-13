@@ -1,7 +1,6 @@
 ﻿using BattleshipGame.Application.Common.Services;
 using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Application.Exceptions;
-using BattleshipGame.Domain.DomainModel.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using MediatR;
 

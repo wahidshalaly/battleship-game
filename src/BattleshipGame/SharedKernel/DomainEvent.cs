@@ -1,4 +1,4 @@
-﻿namespace BattleshipGame.Domain.DomainModel.Common;
+﻿namespace BattleshipGame.SharedKernel;
 
 public abstract class DomainEvent<T> : IDomainEvent
     where T : class

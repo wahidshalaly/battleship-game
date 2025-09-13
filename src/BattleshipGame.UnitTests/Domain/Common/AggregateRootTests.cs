@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BattleshipGame.Domain.DomainModel.Common;
+using BattleshipGame.SharedKernel;
 using FluentAssertions;
 using Xunit;
 

@@ -1,15 +1,14 @@
-﻿using BattleshipGame.Domain.DomainModel.Common;
-using BattleshipGame.Domain.DomainModel.GameAggregate;
+﻿using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate.Events;
+using BattleshipGame.SharedKernel;
 
 namespace BattleshipGame.Domain.DomainModel.PlayerAggregate;
 
 /// <summary>
 /// Represents the unique identifier for a player.
 /// </summary>
-/// <remarks>This type encapsulates a <see cref="Guid"/> value to uniquely identify a game entity. It inherits
-/// from <see cref="EntityId"/> to provide additional context or functionality specific to entity
-/// identification.</remarks>
+/// <remarks>This type encapsulates a  value to uniquely identify a game entity.
+/// It inherits from to provide additional context or functionality specific to entity identification.</remarks>
 /// <param name="Value"></param>
 public record PlayerId(Guid Value) : EntityId(Value);
 

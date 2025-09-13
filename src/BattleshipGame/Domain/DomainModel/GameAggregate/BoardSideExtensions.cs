@@ -1,5 +1,4 @@
 ﻿using BattleshipGame.Domain.Common;
-using BattleshipGame.Domain.DomainModel.Common;
 
 namespace BattleshipGame.Domain.DomainModel.GameAggregate;
 

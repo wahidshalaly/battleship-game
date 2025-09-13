@@ -1,6 +1,6 @@
 using System;
 using System.Threading;
-using BattleshipGame.Domain.DomainModel.Common;
+using BattleshipGame.SharedKernel;
 using FluentAssertions;
 using MediatR;
 using Xunit;
