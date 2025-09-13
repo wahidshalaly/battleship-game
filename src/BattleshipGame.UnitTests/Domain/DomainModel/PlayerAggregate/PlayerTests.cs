@@ -102,7 +102,8 @@ public class PlayerTests
 
         var act = () => player.LeaveGame();
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("Player is not in an active game.");
+        const string exceptionMessage = "Player is not in an active game.";
+        act.Should().Throw<InvalidOperationException>().WithMessage(exceptionMessage);
     }
 
     [Fact]

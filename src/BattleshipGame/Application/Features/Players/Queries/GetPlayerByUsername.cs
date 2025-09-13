@@ -30,9 +30,8 @@ public class GetPlayerByUsernameQueryHandler : IRequestHandler<GetPlayerByUserna
     {
         var player = await _playerRepository.GetByUsernameAsync(request.Username, cancellationToken);
 
-        if (player is null)
-            return null;
-
-        return new GetPlayerResult(player.Id, player.Username, player.ActiveGameId?.Value, player.TotalGamesPlayed);
+        return player is null
+            ? null
+            : new GetPlayerResult(player.Id, player.Username, player.ActiveGameId?.Value, player.TotalGamesPlayed);
     }
 }

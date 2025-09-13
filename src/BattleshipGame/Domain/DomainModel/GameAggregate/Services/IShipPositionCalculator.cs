@@ -1,6 +1,4 @@
-﻿using BattleshipGame.Domain.DomainModel.Common;
-
-namespace BattleshipGame.Domain.DomainModel.GameAggregate.Services;
+﻿namespace BattleshipGame.Domain.DomainModel.GameAggregate.Services;
 
 public interface IShipPositionCalculator
 {

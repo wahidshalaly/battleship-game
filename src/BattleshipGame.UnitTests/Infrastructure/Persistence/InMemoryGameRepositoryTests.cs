@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using BattleshipGame.Domain.DomainModel.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Infrastructure.Persistence;
@@ -102,79 +101,6 @@ public class InMemoryGameRepositoryTests
         var updatedGame = await _repository.GetByIdAsync(game.Id, _cancellationToken);
         updatedGame.Should().NotBeNull();
         updatedGame.Id.Should().Be(game.Id);
-    }
-
-    #endregion
-
-    #region DeleteAsync Tests
-
-    [Fact]
-    public async Task DeleteAsync_WhenGameExists_ShouldRemoveGame()
-    {
-        // Arrange
-        var game = _fixture.CreateReadyGame();
-        await _repository.SaveAsync(game, _cancellationToken);
-
-        // Act
-        await _repository.DeleteAsync(game.Id, _cancellationToken);
-
-        // Assert
-        var result = await _repository.GetByIdAsync(game.Id, _cancellationToken);
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task DeleteAsync_WhenGameDoesNotExist_ShouldNotThrow()
-    {
-        // Arrange
-        var nonExistentGameId = new GameId(Guid.NewGuid());
-
-        // Act
-        var act = async () => await _repository.DeleteAsync(nonExistentGameId, _cancellationToken);
-
-        // Assert
-        await act.Should().NotThrowAsync();
-    }
-
-    [Fact]
-    public async Task DeleteAsync_WithCancellationToken_ShouldRespectCancellation()
-    {
-        // Arrange
-        var game = _fixture.CreateReadyGame();
-        await _repository.SaveAsync(game, _cancellationToken);
-        using var cts = new CancellationTokenSource();
-        await cts.CancelAsync();
-
-        // Act
-        await _repository.DeleteAsync(game.Id, cts.Token);
-
-        // Assert - Should complete successfully as method is synchronous internally
-        var result = await _repository.GetByIdAsync(game.Id, _cancellationToken);
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task DeleteAsync_ConcurrentOperations_ShouldBeThreadSafe()
-    {
-        // Arrange
-        var games = new List<Game>();
-        for (int i = 0; i < 10; i++)
-        {
-            var game = _fixture.CreateReadyGame();
-            await _repository.SaveAsync(game, _cancellationToken);
-            games.Add(game);
-        }
-
-        // Act - Delete all games concurrently
-        var deleteTasks = games.Select(g => _repository.DeleteAsync(g.Id, _cancellationToken));
-        await Task.WhenAll(deleteTasks);
-
-        // Assert
-        foreach (var game in games)
-        {
-            var result = await _repository.GetByIdAsync(game.Id, _cancellationToken);
-            result.Should().BeNull();
-        }
     }
 
     #endregion
@@ -453,30 +379,6 @@ public class InMemoryGameRepositoryTests
         {
             retrievedGames.Should().Contain(g => g.Id == game.Id);
         }
-    }
-
-    [Fact]
-    public async Task Repository_AfterDeleteAndSave_ShouldNotAffectOtherGames()
-    {
-        // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var game1 = new Game(playerId);
-        var game2 = new Game(playerId);
-
-        await _repository.SaveAsync(game1, _cancellationToken);
-        await _repository.SaveAsync(game2, _cancellationToken);
-
-        // Act
-        await _repository.DeleteAsync(game1.Id, _cancellationToken);
-        var game3 = new Game(playerId);
-        await _repository.SaveAsync(game3, _cancellationToken);
-
-        // Assert
-        var games = await _repository.GetByPlayerIdAsync(playerId, _cancellationToken);
-        games.Should().HaveCount(2);
-        games.Should().Contain(g => g.Id == game2.Id);
-        games.Should().Contain(g => g.Id == game3.Id);
-        games.Should().NotContain(g => g.Id == game1.Id);
     }
 
     #endregion

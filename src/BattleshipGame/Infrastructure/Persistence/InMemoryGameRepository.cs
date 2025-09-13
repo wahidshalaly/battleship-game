@@ -27,13 +27,6 @@ public class InMemoryGameRepository : IGameRepository
     }
 
     /// <inheritdoc />
-    public Task DeleteAsync(GameId gameId, CancellationToken cancellationToken)
-    {
-        _games.TryRemove(gameId, out _);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
     public Task<IReadOnlyCollection<Game>> GetByPlayerIdAsync(PlayerId playerId, CancellationToken cancellationToken)
     {
         var playerGames = _games.Values.Where(g => g.PlayerId == playerId).ToList().AsReadOnly();
@@ -44,9 +37,7 @@ public class InMemoryGameRepository : IGameRepository
     /// <inheritdoc />
     public Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken cancellationToken)
     {
-        var game = _games.Values.LastOrDefault(g =>
-            g.PlayerId == playerId && g.State != Domain.DomainModel.Common.GameState.GameOver
-        );
+        var game = _games.Values.LastOrDefault(g => g.PlayerId == playerId && g.State != GameState.GameOver);
 
         return Task.FromResult(game);
     }

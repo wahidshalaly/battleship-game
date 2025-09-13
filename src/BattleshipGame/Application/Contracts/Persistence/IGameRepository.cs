@@ -25,14 +25,6 @@ public interface IGameRepository
     Task SaveAsync(Game game, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Deletes a game by its identifier.
-    /// </summary>
-    /// <param name="gameId">The game identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    Task DeleteAsync(GameId gameId, CancellationToken cancellationToken);
-
-    /// <summary>
     /// Gets all games for a specific player.
     /// </summary>
     /// <param name="playerId">The player identifier.</param>

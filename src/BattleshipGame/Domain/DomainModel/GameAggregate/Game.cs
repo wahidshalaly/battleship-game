@@ -1,7 +1,7 @@
 ﻿using BattleshipGame.Domain.Common;
-using BattleshipGame.Domain.DomainModel.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using BattleshipGame.SharedKernel;
 using static BattleshipGame.Domain.Common.Constants;
 
 namespace BattleshipGame.Domain.DomainModel.GameAggregate;
@@ -10,7 +10,7 @@ namespace BattleshipGame.Domain.DomainModel.GameAggregate;
 /// Represents the unique identifier for a game.
 /// </summary>
 /// <remarks>This type encapsulates a <see cref="Guid"/> value to uniquely identify a game entity. It inherits
-/// from <see cref="EntityId"/> to provide additional context or functionality specific to entity
+/// from <see code="EntityId"/> to provide additional context or functionality specific to entity
 /// identification.</remarks>
 /// <param name="Value"></param>
 public record GameId(Guid Value) : EntityId(Value);
