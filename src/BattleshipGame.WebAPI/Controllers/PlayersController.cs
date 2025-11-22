@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BattleshipGame.WebAPI.Controllers;
 
 /// <summary>
-/// Controller for managing player operations.
+/// Provides endpoints for managing players.
 /// </summary>
 /// <param name="logger">The logger.</param>
 /// <param name="mediator">The mediator.</param>
@@ -23,10 +23,10 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created player information.</returns>
     [HttpPost]
-    [ProducesResponseType(typeof(PlayerModel), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<PlayerModel>> CreatePlayer(
+    public async Task<ActionResult> CreatePlayer(
         [FromBody] CreatePlayerRequest request,
         CancellationToken cancellationToken
     )
@@ -54,14 +54,7 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
                 command.Username
             );
 
-            var response = new PlayerModel(
-                result.PlayerId.Value,
-                command.Username,
-                null, // No active game initially
-                0 // No games played initially
-            );
-
-            return CreatedAtAction(nameof(GetPlayer), new { id = result.PlayerId.Value }, response);
+            return CreatedAtAction(nameof(GetPlayer), new { id = result.PlayerId.Value }, result.PlayerId);
         }
         catch (InvalidOperationException ex)
         {

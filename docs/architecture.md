@@ -195,7 +195,7 @@ sequenceDiagram
 - Logs errors for debugging and monitoring
 
 ### API Layer
-- Returns appropriate HTTP status codes (400, 404, 500)
+- Returns appropriate HTTP status codes (200, 201, 400, 404, 500)
 - Uses Problem Details format for error responses
 - Implements global exception handling middleware
 

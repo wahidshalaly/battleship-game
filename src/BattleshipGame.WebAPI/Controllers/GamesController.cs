@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BattleshipGame.WebAPI.Controllers;
 
 /// <summary>
-/// Controller for managing games.
+/// Provides endpoints for managing games.
 /// </summary>
 /// <param name="logger">The logger.</param>
 /// <param name="mediator">The mediator.</param>
@@ -21,12 +21,13 @@ public class GamesController(ILogger<GamesController> logger, IMediator mediator
     : ControllerBase
 {
     /// <summary>
-    /// Create a new game
+    /// Creates a new game.
     /// </summary>
+    /// <response code="201">Game successfully created.</response>
     [HttpPost]
-    [ProducesResponseType(typeof(GameModel), 201)]
-    [ProducesResponseType(typeof(ProblemDetails), 400)]
-    public async Task<ActionResult<Guid>> CreateGame(
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateGame(
         [FromBody] CreateGameRequest request,
         CancellationToken cancellationToken
     )
@@ -38,20 +39,24 @@ public class GamesController(ILogger<GamesController> logger, IMediator mediator
 
         logger.LogInformation("New Game: {GameId} for Player: {PlayerId}", result.GameId, request.PlayerId);
 
-        return CreatedAtAction(nameof(GetGame), new { id = result.GameId });
+        return CreatedAtAction(nameof(GetGame), new { id = result.GameId.Value }, result.GameId);
     }
 
     /// <summary>
-    /// Get game details
+    /// Retrieves a game.
     /// </summary>
+    /// <response code="200">Returns a game.</response>
+    /// <response code="400">Invalid input data.</response>
+    /// <response code="404">Game not found.</response>
+    /// <response code="500">Internal server error.</response>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(GameModel), 200)]
-    [ProducesResponseType(typeof(ProblemDetails), 400)]
-    [ProducesResponseType(typeof(ProblemDetails), 404)]
-    public async Task<ActionResult<GetGameResult>> GetGame([FromRoute] Guid id, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(GameModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<GameModel>> GetGame([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var query = new GetGameQuery(new GameId(id));
-        var result = await mediator.Send(query, cancellationToken);
+        var result = await mediator.Send<GameModel?>(query, cancellationToken);
         if (result is null)
         {
             return NotFound(
@@ -68,12 +73,12 @@ public class GamesController(ILogger<GamesController> logger, IMediator mediator
     }
 
     /// <summary>
-    /// Add a ship to a board
+    /// Adds a ship to a certain board side.
     /// </summary>
     [HttpPost("{id:guid}/ships")]
-    [ProducesResponseType(typeof(Guid), 200)]
-    [ProducesResponseType(typeof(ProblemDetails), 400)]
-    [ProducesResponseType(typeof(ProblemDetails), 404)]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Guid>> AddShip(
         [FromRoute] Guid id,
         [FromBody] AddShipRequest request,
@@ -130,13 +135,13 @@ public class GamesController(ILogger<GamesController> logger, IMediator mediator
     }
 
     /// <summary>
-    /// Attack a cell
+    /// Attacks a cell on a certain board side.
     /// </summary>
     [HttpPost("{id:guid}/attacks")]
-    [ProducesResponseType(200)]
-    [ProducesResponseType(typeof(ProblemDetails), 400)]
-    [ProducesResponseType(typeof(ProblemDetails), 404)]
-    public async Task<IActionResult> Attack(
+    [ProducesResponseType(typeof(CellState), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CellState>> Attack(
         [FromRoute] Guid id,
         [FromBody] AttackRequest request,
         CancellationToken cancellationToken
@@ -158,10 +163,10 @@ public class GamesController(ILogger<GamesController> logger, IMediator mediator
 
         try
         {
-            game.Attack(request.Side, request.Cell);
+            var cellState = game.Attack(request.Side, request.Cell);
             await gameRepository.SaveAsync(game, cancellationToken);
 
-            return Ok();
+            return Ok(cellState);
         }
         catch (ArgumentException exception)
         {
@@ -177,11 +182,11 @@ public class GamesController(ILogger<GamesController> logger, IMediator mediator
     }
 
     /// <summary>
-    /// Get game state
+    /// Retrieves a game state.
     /// </summary>
     [HttpGet("{id:guid}/state")]
-    [ProducesResponseType(typeof(GameStateModel), 200)]
-    [ProducesResponseType(typeof(ProblemDetails), 404)]
+    [ProducesResponseType(typeof(GameStateModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<GameStateModel>> GetGameState(
         [FromRoute] Guid id,
         CancellationToken cancellationToken
@@ -205,18 +210,12 @@ public class GamesController(ILogger<GamesController> logger, IMediator mediator
         var winner = game.State == GameState.GameOver ? game.PlayerId.Value : (Guid?)null;
         return new GameStateModel(game.State.ToString(), winner);
     }
-
-    // DTOs and request models
-    public record CreateGameRequest(Guid PlayerId, int? BoardSize = 10);
-
-    public record AddShipRequest(BoardSide Side, ShipKind ShipKind, ShipOrientation Orientation, string BowCode);
-
-    public record GameModel(Guid Id, string State, int BoardSize)
-    {
-        public static GameModel From(Game game) => new(game.Id.Value, game.State.ToString(), game.BoardSize);
-    }
-
-    public record AttackRequest(BoardSide Side, string Cell);
-
-    public record GameStateModel(string State, Guid? Winner);
 }
+
+public record CreateGameRequest(Guid PlayerId, int? BoardSize = 10);
+
+public record AddShipRequest(BoardSide Side, ShipKind ShipKind, ShipOrientation Orientation, string BowCode);
+
+public record AttackRequest(BoardSide Side, string Cell);
+
+public record GameStateModel(string State, Guid? Winner);
