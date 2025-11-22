@@ -47,7 +47,9 @@ internal class Cell : ValueObject
         {
             CellState.Clear => CellState.Missed,
             CellState.Occupied => CellState.Hit,
-            CellState.Hit or CellState.Missed => throw new InvalidOperationException(ErrorMessages.InvalidCellToAttack),
+            CellState.Hit or CellState.Missed => throw new InvalidOperationException(
+                ErrorMessages.InvalidCellToAttack
+            ),
             _ => throw new ArgumentOutOfRangeException(nameof(State), State, null),
         };
     }

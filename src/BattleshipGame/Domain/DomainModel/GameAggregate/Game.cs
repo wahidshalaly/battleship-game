@@ -18,28 +18,26 @@ public record GameId(Guid Value) : EntityId(Value);
 /// <summary>
 /// This represents an instance of the Battleship game, and it tracks the state of the game.
 /// </summary>
-public sealed class Game : AggregateRoot<GameId>
+public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
+    : AggregateRoot<GameId>
 {
-    private readonly Board _ownBoard;
-    private readonly Board _oppBoard;
+    private readonly Board _ownBoard = new(boardSize);
+    private readonly Board _oppBoard = new(boardSize);
 
-    public PlayerId PlayerId { get; init; }
+    public PlayerId PlayerId { get; } = playerId;
 
-    public int BoardSize { get; init; }
+    public int BoardSize { get; } = boardSize;
 
-    public GameState State { get; private set; }
+    public GameState State { get; private set; } = GameState.Started;
 
-    public Game(PlayerId playerId, int boardSize = DefaultBoardSize)
-    {
-        PlayerId = playerId;
-        BoardSize = boardSize;
-        State = GameState.Started;
+    public BoardSide CurrentTurn { get; private set; } = BoardSide.Own;
 
-        _ownBoard = new Board(boardSize);
-        _oppBoard = new Board(boardSize);
-    }
-
-    public ShipId AddShip(BoardSide side, ShipKind kind, ShipOrientation orientation, string bowCode)
+    public ShipId AddShip(
+        BoardSide side,
+        ShipKind kind,
+        ShipOrientation orientation,
+        string bowCode
+    )
     {
         var board = BoardSelector(side);
         var shipId = board.AddShip(kind, orientation, bowCode);

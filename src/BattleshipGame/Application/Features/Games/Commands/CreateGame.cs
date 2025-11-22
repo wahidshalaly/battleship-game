@@ -12,7 +12,8 @@ namespace BattleshipGame.Application.Features.Games.Commands;
 /// </summary>
 /// <param name="PlayerId">The player creating the game.</param>
 /// <param name="BoardSize">The size of the game board (optional, defaults to 10).</param>
-public record CreateGameCommand(PlayerId PlayerId, int? BoardSize = 10) : IRequest<CreateGameResult>;
+public record CreateGameCommand(PlayerId PlayerId, int? BoardSize = 10)
+    : IRequest<CreateGameResult>;
 
 /// <summary>
 /// Result of creating a game.
@@ -38,7 +39,10 @@ public class CreateGameCommandHandler(
     /// <param name="request">The create game command.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The attack result.</returns>
-    public async Task<CreateGameResult> Handle(CreateGameCommand request, CancellationToken cancellationToken)
+    public async Task<CreateGameResult> Handle(
+        CreateGameCommand request,
+        CancellationToken cancellationToken
+    )
     {
         logger.LogInformation(
             "Creating new game for player {PlayerId} with board size {BoardSize}",
@@ -58,7 +62,11 @@ public class CreateGameCommandHandler(
         // 4. Clear events from aggregate
         game.ClearDomainEvents();
 
-        logger.LogInformation("Successfully created game {GameId} for player {PlayerId}", game.Id, request.PlayerId);
+        logger.LogInformation(
+            "Successfully created game {GameId} for player {PlayerId}",
+            game.Id,
+            request.PlayerId
+        );
 
         return new CreateGameResult(game.Id);
     }

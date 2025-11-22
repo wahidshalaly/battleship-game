@@ -23,13 +23,16 @@ public record GameModel(Guid GameId, Guid PlayerId, int BoardSize, GameState Sta
 /// Handler for getting a game by ID.
 /// </summary>
 /// <param name="gameRepository"> The game repository to access game data.</param>
-internal class GetGameQueryHandler(IGameRepository gameRepository) : IRequestHandler<GetGameQuery, GameModel?>
+internal class GetGameQueryHandler(IGameRepository gameRepository)
+    : IRequestHandler<GetGameQuery, GameModel?>
 {
     /// <inheritdoc />
     public async Task<GameModel?> Handle(GetGameQuery request, CancellationToken cancellationToken)
     {
         var game = await gameRepository.GetByIdAsync(request.GameId, cancellationToken);
 
-        return game is null ? null : new GameModel(game.Id, game.PlayerId.Value, game.BoardSize, game.State);
+        return game is null
+            ? null
+            : new GameModel(game.Id, game.PlayerId.Value, game.BoardSize, game.State);
     }
 }

@@ -9,7 +9,12 @@ internal class ShipPositionCalculator : IShipPositionCalculator
     private static readonly List<char> _letters = [.. ColumnHeaders];
 
     /// <inheritdoc />
-    public List<string> CalculatePosition(int boardSize, ShipKind kind, ShipOrientation orientation, string bowCode)
+    public List<string> CalculatePosition(
+        int boardSize,
+        ShipKind kind,
+        ShipOrientation orientation,
+        string bowCode
+    )
     {
         // Implementation of position calculation logic based on ship kind, orientation, and bow code.
         // This should return a list of cell codes that the ship occupies.
@@ -17,7 +22,12 @@ internal class ShipPositionCalculator : IShipPositionCalculator
     }
 
     /// <inheritdoc />
-    public void ValidatePosition(int boardSize, ShipKind kind, ShipOrientation orientation, string bowCode)
+    public void ValidatePosition(
+        int boardSize,
+        ShipKind kind,
+        ShipOrientation orientation,
+        string bowCode
+    )
     {
         ValidateShipKind(kind);
         ValidateOrientation(orientation);
@@ -45,7 +55,11 @@ internal class ShipPositionCalculator : IShipPositionCalculator
         }
     }
 
-    private static string CalculateSternCode(ShipKind kind, ShipOrientation orientation, string bowCode)
+    private static string CalculateSternCode(
+        ShipKind kind,
+        ShipOrientation orientation,
+        string bowCode
+    )
     {
         var (letter, digit) = Cell.FromCode(bowCode);
         var shipSize = kind.ToSize();
@@ -70,7 +84,11 @@ internal class ShipPositionCalculator : IShipPositionCalculator
 
         var letter = cellCode[0];
         var digit = cellCode[1..];
-        var isValid = _letters.Contains(letter) && int.TryParse(digit, out var num) && num > 0 && num <= boardSize;
+        var isValid =
+            _letters.Contains(letter)
+            && int.TryParse(digit, out var num)
+            && num > 0
+            && num <= boardSize;
         if (!isValid)
         {
             throw new ArgumentException(ErrorMessages.InvalidShipOnBoardPosition);

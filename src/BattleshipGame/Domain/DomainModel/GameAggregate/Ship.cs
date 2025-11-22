@@ -75,7 +75,9 @@ internal class Ship : Entity<ShipId>
             {
                 if (cells[i].Digit != cells[0].Digit + i)
                 {
-                    throw new InvalidOperationException(ErrorMessages.InvalidShipPosition_Alignment);
+                    throw new InvalidOperationException(
+                        ErrorMessages.InvalidShipPosition_Alignment
+                    );
                 }
             }
         }
@@ -85,7 +87,9 @@ internal class Ship : Entity<ShipId>
             {
                 if (cells[i].Letter != cells[0].Letter + i)
                 {
-                    throw new InvalidOperationException(ErrorMessages.InvalidShipPosition_Alignment);
+                    throw new InvalidOperationException(
+                        ErrorMessages.InvalidShipPosition_Alignment
+                    );
                 }
             }
         }

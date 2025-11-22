@@ -24,10 +24,15 @@ public record AddShipCommand(
 
 public record AddShipResult(Guid ShipId);
 
-internal class AddShipCommandHandler(IGameRepository gameRepository, IDomainEventDispatcher eventDispatcher)
-    : IRequestHandler<AddShipCommand, AddShipResult>
+internal class AddShipCommandHandler(
+    IGameRepository gameRepository,
+    IDomainEventDispatcher eventDispatcher
+) : IRequestHandler<AddShipCommand, AddShipResult>
 {
-    public async Task<AddShipResult> Handle(AddShipCommand request, CancellationToken cancellationToken)
+    public async Task<AddShipResult> Handle(
+        AddShipCommand request,
+        CancellationToken cancellationToken
+    )
     {
         // Load the game aggregate
         var game =
@@ -35,7 +40,12 @@ internal class AddShipCommandHandler(IGameRepository gameRepository, IDomainEven
             ?? throw new GameNotFoundException(request.GameId);
 
         // Add the ship to the specified board side
-        var shipId = game.AddShip(request.BoardSide, request.Kind, request.Orientation, request.BowCode);
+        var shipId = game.AddShip(
+            request.BoardSide,
+            request.Kind,
+            request.Orientation,
+            request.BowCode
+        );
 
         // Save the updated game aggregate
         await gameRepository.SaveAsync(game, cancellationToken);

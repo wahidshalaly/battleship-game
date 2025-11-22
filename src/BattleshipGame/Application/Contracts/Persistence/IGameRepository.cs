@@ -30,7 +30,10 @@ public interface IGameRepository
     /// <param name="playerId">The player identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A collection of games for the player.</returns>
-    Task<IReadOnlyCollection<Game>> GetByPlayerIdAsync(PlayerId playerId, CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<Game>> GetByPlayerIdAsync(
+        PlayerId playerId,
+        CancellationToken cancellationToken
+    );
 
     /// <summary>
     /// Gets the active game for a specific player, if any.
@@ -38,5 +41,8 @@ public interface IGameRepository
     /// <param name="playerId">The player identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The active game if found, otherwise null.</returns>
-    Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken cancellationToken);
+    Task<Game?> GetActiveGameByPlayerIdAsync(
+        PlayerId playerId,
+        CancellationToken cancellationToken
+    );
 }

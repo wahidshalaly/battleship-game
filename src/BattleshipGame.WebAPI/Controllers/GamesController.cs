@@ -17,8 +17,11 @@ namespace BattleshipGame.WebAPI.Controllers;
 /// <param name="gameRepository">The game repository (for operations not yet converted to MediatR).</param>
 [ApiController]
 [Route("api/[controller]")]
-public class GamesController(ILogger<GamesController> logger, IMediator mediator, IGameRepository gameRepository)
-    : ControllerBase
+public class GamesController(
+    ILogger<GamesController> logger,
+    IMediator mediator,
+    IGameRepository gameRepository
+) : ControllerBase
 {
     /// <summary>
     /// Creates a new game.
@@ -37,7 +40,11 @@ public class GamesController(ILogger<GamesController> logger, IMediator mediator
             cancellationToken
         );
 
-        logger.LogInformation("New Game: {GameId} for Player: {PlayerId}", result.GameId, request.PlayerId);
+        logger.LogInformation(
+            "New Game: {GameId} for Player: {PlayerId}",
+            result.GameId,
+            request.PlayerId
+        );
 
         return CreatedAtAction(nameof(GetGame), new { id = result.GameId.Value }, result.GameId);
     }
@@ -53,7 +60,10 @@ public class GamesController(ILogger<GamesController> logger, IMediator mediator
     [ProducesResponseType(typeof(GameModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<GameModel>> GetGame([FromRoute] Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<GameModel>> GetGame(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken
+    )
     {
         var query = new GetGameQuery(new GameId(id));
         var result = await mediator.Send<GameModel?>(query, cancellationToken);
@@ -214,7 +224,12 @@ public class GamesController(ILogger<GamesController> logger, IMediator mediator
 
 public record CreateGameRequest(Guid PlayerId, int? BoardSize = 10);
 
-public record AddShipRequest(BoardSide Side, ShipKind ShipKind, ShipOrientation Orientation, string BowCode);
+public record AddShipRequest(
+    BoardSide Side,
+    ShipKind ShipKind,
+    ShipOrientation Orientation,
+    string BowCode
+);
 
 public record AttackRequest(BoardSide Side, string Cell);
 

@@ -10,7 +10,12 @@ public interface IShipPositionCalculator
     /// <param name="orientation">The orientation of the ship (horizontal or vertical).</param>
     /// <param name="bowCode">The starting position of the ship on the board.</param>
     /// <returns>A list of cell codes representing the position of the ship.</returns>
-    List<string> CalculatePosition(int boardSize, ShipKind kind, ShipOrientation orientation, string bowCode);
+    List<string> CalculatePosition(
+        int boardSize,
+        ShipKind kind,
+        ShipOrientation orientation,
+        string bowCode
+    );
 
     /// <summary>
     /// Validates the position of a ship based on its kind, orientation, and bow code.
@@ -19,7 +24,12 @@ public interface IShipPositionCalculator
     /// <param name="kind">The type of ship.</param>
     /// <param name="orientation">The orientation of the ship (horizontal or vertical).</param>
     /// <param name="bowCode">The starting position of the ship on the board.</param>
-    void ValidatePosition(int boardSize, ShipKind kind, ShipOrientation orientation, string bowCode);
+    void ValidatePosition(
+        int boardSize,
+        ShipKind kind,
+        ShipOrientation orientation,
+        string bowCode
+    );
 
     /// <summary>
     /// Validates the orientation of a ship.

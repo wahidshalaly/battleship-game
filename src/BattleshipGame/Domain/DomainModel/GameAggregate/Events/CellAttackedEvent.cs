@@ -11,7 +11,8 @@ namespace BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 /// <param name="boardId">The board identifier.</param>
 /// <param name="cellCode">The attacked cell code.</param>
 /// <param name="cellState">The cell cellState after attack</param>
-public class CellAttackedEvent(GameId boardId, string cellCode, CellState cellState) : DomainEvent<CellAttackedEvent>
+public class CellAttackedEvent(GameId boardId, string cellCode, CellState cellState)
+    : DomainEvent<CellAttackedEvent>
 {
     /// <summary>
     /// Gets the game identifier.

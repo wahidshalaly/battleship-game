@@ -11,7 +11,8 @@ namespace BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 /// <param name="gameId">The game identifier.</param>
 /// <param name="shipId">The sunk ship's identifier.</param>
 /// <param name="attackedSide">The side that was attacked (owns the sunk ship).</param>
-public class ShipSunkEvent(GameId gameId, ShipId shipId, BoardSide attackedSide) : DomainEvent<ShipSunkEvent>
+public class ShipSunkEvent(GameId gameId, ShipId shipId, BoardSide attackedSide)
+    : DomainEvent<ShipSunkEvent>
 {
     /// <summary>
     /// Gets the game identifier.

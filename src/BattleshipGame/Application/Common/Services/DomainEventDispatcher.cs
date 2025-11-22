@@ -7,34 +7,29 @@ namespace BattleshipGame.Application.Common.Services;
 /// <summary>
 /// Service responsible for dispatching domain events through MediatR.
 /// </summary>
-public class DomainEventDispatcher : IDomainEventDispatcher
+/// <remarks>
+/// Initializes a new instance of the DomainEventDispatcher class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+/// <param name="mediator">The MediatR mediator instance.</param>
+public class DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMediator mediator)
+    : IDomainEventDispatcher
 {
-    private readonly ILogger<DomainEventDispatcher> _logger;
-    private readonly IMediator _mediator;
-
-    /// <summary>
-    /// Initializes a new instance of the DomainEventDispatcher class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="mediator">The MediatR mediator instance.</param>
-    public DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMediator mediator)
-    {
-        _logger = logger;
-        _mediator = mediator;
-    }
-
     /// <summary>
     /// Dispatches all domain events from the given aggregate root.
     /// </summary>
     /// <param name="aggregateRoot">The aggregate root containing domain events.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task DispatchEventsAsync<TId>(AggregateRoot<TId> aggregateRoot, CancellationToken cancellationToken)
+    public async Task DispatchEventsAsync<TId>(
+        AggregateRoot<TId> aggregateRoot,
+        CancellationToken cancellationToken
+    )
         where TId : EntityId
     {
         var domainEvents = aggregateRoot.DomainEvents.ToList();
 
-        _logger.LogInformation(
+        logger.LogInformation(
             "Dispatching {EventCount} domain events for aggregate {AggregateId}",
             domainEvents.Count,
             aggregateRoot.Id
@@ -44,19 +39,22 @@ public class DomainEventDispatcher : IDomainEventDispatcher
         {
             try
             {
-                _logger.LogDebug(
+                logger.LogDebug(
                     "Publishing domain event {EventType} for aggregate {AggregateId}",
                     domainEvent.GetType().Name,
                     aggregateRoot.Id
                 );
 
-                await _mediator.Publish(domainEvent, cancellationToken);
+                await mediator.Publish(domainEvent, cancellationToken);
 
-                _logger.LogDebug("Successfully published domain event {EventType}", domainEvent.GetType().Name);
+                logger.LogDebug(
+                    "Successfully published domain event {EventType}",
+                    domainEvent.GetType().Name
+                );
             }
             catch (Exception exception)
             {
-                _logger.LogError(
+                logger.LogError(
                     exception,
                     "Failed to publish domain event {EventType} for aggregate {AggregateId}",
                     domainEvent.GetType().Name,

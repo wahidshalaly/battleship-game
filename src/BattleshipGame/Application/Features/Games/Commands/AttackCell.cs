@@ -12,7 +12,8 @@ namespace BattleshipGame.Application.Features.Games.Commands;
 /// <param name="GameId">The game identifier.</param>
 /// <param name="BoardSide">The board side to attack.</param>
 /// <param name="CellCode">The cell code to attack (e.g., "A1", "B5").</param>
-public record AttackCellCommand(GameId GameId, BoardSide BoardSide, string CellCode) : IRequest<AttackCellResult>;
+public record AttackCellCommand(GameId GameId, BoardSide BoardSide, string CellCode)
+    : IRequest<AttackCellResult>;
 
 /// <summary>
 /// Result of a cell attack operation.
@@ -39,7 +40,10 @@ public class AttackCellCommandHandler(
     /// <param name="request">The attack cell command.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The attack result.</returns>
-    public async Task<AttackCellResult> Handle(AttackCellCommand request, CancellationToken cancellationToken)
+    public async Task<AttackCellResult> Handle(
+        AttackCellCommand request,
+        CancellationToken cancellationToken
+    )
     {
         logger.LogInformation(
             "Processing attack on {BoardSide} board at {CellCode} for game {GameId}",
@@ -73,6 +77,9 @@ public class AttackCellCommandHandler(
 
         // 6. Return result
         // Check if game is over by testing both boards
-        return new AttackCellResult(IsHit: cellState == CellState.Hit, IsGameOver: game.IsGameOver(request.BoardSide));
+        return new AttackCellResult(
+            IsHit: cellState == CellState.Hit,
+            IsGameOver: game.IsGameOver(request.BoardSide)
+        );
     }
 }

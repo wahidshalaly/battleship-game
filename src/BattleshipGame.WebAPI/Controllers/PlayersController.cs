@@ -14,7 +14,8 @@ namespace BattleshipGame.WebAPI.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class PlayersController(ILogger<PlayersController> logger, IMediator mediator) : ControllerBase
+public class PlayersController(ILogger<PlayersController> logger, IMediator mediator)
+    : ControllerBase
 {
     /// <summary>
     /// Creates a new player.
@@ -54,7 +55,11 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
                 command.Username
             );
 
-            return CreatedAtAction(nameof(GetPlayer), new { id = result.PlayerId.Value }, result.PlayerId);
+            return CreatedAtAction(
+                nameof(GetPlayer),
+                new { id = result.PlayerId.Value },
+                result.PlayerId
+            );
         }
         catch (InvalidOperationException ex)
         {
@@ -78,7 +83,10 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(PlayerModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PlayerModel>> GetPlayer(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<PlayerModel>> GetPlayer(
+        Guid id,
+        CancellationToken cancellationToken
+    )
     {
         var query = new GetPlayerQuery(new PlayerId(id));
         var result = await mediator.Send(query, cancellationToken);

@@ -12,7 +12,8 @@ public record GetPlayerByUsernameQuery(string Username) : IRequest<GetPlayerResu
 /// <summary>
 /// Handler for getting a player by username.
 /// </summary>
-public class GetPlayerByUsernameQueryHandler : IRequestHandler<GetPlayerByUsernameQuery, GetPlayerResult?>
+public class GetPlayerByUsernameQueryHandler
+    : IRequestHandler<GetPlayerByUsernameQuery, GetPlayerResult?>
 {
     private readonly IPlayerRepository _playerRepository;
 
@@ -26,12 +27,23 @@ public class GetPlayerByUsernameQueryHandler : IRequestHandler<GetPlayerByUserna
     }
 
     /// <inheritdoc />
-    public async Task<GetPlayerResult?> Handle(GetPlayerByUsernameQuery request, CancellationToken cancellationToken)
+    public async Task<GetPlayerResult?> Handle(
+        GetPlayerByUsernameQuery request,
+        CancellationToken cancellationToken
+    )
     {
-        var player = await _playerRepository.GetByUsernameAsync(request.Username, cancellationToken);
+        var player = await _playerRepository.GetByUsernameAsync(
+            request.Username,
+            cancellationToken
+        );
 
         return player is null
             ? null
-            : new GetPlayerResult(player.Id, player.Username, player.ActiveGameId?.Value, player.TotalGamesPlayed);
+            : new GetPlayerResult(
+                player.Id,
+                player.Username,
+                player.ActiveGameId?.Value,
+                player.TotalGamesPlayed
+            );
     }
 }
