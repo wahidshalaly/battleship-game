@@ -102,6 +102,15 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
 
     public bool IsReady => IsBoardReady(BoardSide.Own) && IsBoardReady(BoardSide.Opp);
 
+    public IReadOnlyCollection<string> GetAvailableCellCodes(BoardSide boardSide)
+    {
+        return BoardSelector(boardSide)
+            .Cells.Where(s => s.State is CellState.Clear or CellState.Occupied)
+            .Select(s => s.Code)
+            .ToList()
+            .AsReadOnly();
+    }
+
     public IReadOnlyCollection<ShipId> GetShips(BoardSide boardSide)
     {
         return BoardSelector(boardSide).Ships.Select(s => s.Id).ToList().AsReadOnly();
@@ -123,7 +132,12 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
         {
             BoardSide.Own => _ownBoard,
             BoardSide.Opp => _oppBoard,
-            _ => throw new ArgumentOutOfRangeException(nameof(side), side, ErrorMessages.InvalidBoardSide),
+            BoardSide.None => throw new InvalidOperationException(ErrorMessages.InvalidBoardSide),
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(side),
+                side,
+                ErrorMessages.InvalidBoardSide
+            ),
         };
     }
 }
