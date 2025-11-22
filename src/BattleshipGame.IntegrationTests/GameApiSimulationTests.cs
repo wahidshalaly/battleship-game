@@ -3,13 +3,14 @@ using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.WebAPI.Controllers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Xunit.Abstractions;
 
 namespace BattleshipGame.IntegrationTests;
 
-public class GameApiSimulationTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public class GameApiSimulationTests(ITestOutputHelper output, WebApplicationFactory<Program> factory)
+    : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client = factory.CreateClient();
-    private readonly string[] _bowCodes = ["A1", "B2", "C3", "D4", "E5"];
 
     [Fact]
     public async Task Simulate_Full_Game_Playthrough_Via_Api()
@@ -28,10 +29,7 @@ public class GameApiSimulationTests(WebApplicationFactory<Program> factory) : IC
         await VerifyGameState(gameId, GameState.BoardsAreReady);
 
         // 4. Attack all Opp ship positions
-        foreach (var code in _bowCodes)
-        {
-            await _client.PostAsJsonAsync($"/api/games/{gameId}/attacks", new AttackRequest(BoardSide.Opp, code));
-        }
+        await AttackShips(gameId);
         await VerifyGameState(gameId, GameState.GameOver);
     }
 
@@ -42,34 +40,54 @@ public class GameApiSimulationTests(WebApplicationFactory<Program> factory) : IC
         getGameResult.State.Should().Be(gameState);
     }
 
+    private static (string BowCode, ShipKind Kind, ShipOrientation Orientation, string[] Position)[] DefineShips(
+        Guid gameId
+    )
+    {
+        return
+        [
+            ("A1", ShipKind.Destroyer, ShipOrientation.Horizontal, ["A1", "B1"]),
+            ("B2", ShipKind.Submarine, ShipOrientation.Vertical, ["B2", "B3", "B4"]),
+            ("C3", ShipKind.Cruiser, ShipOrientation.Horizontal, ["C3", "D3", "E3"]),
+            ("D4", ShipKind.Battleship, ShipOrientation.Vertical, ["D4", "D5", "D6", "D7"]),
+            ("E5", ShipKind.Carrier, ShipOrientation.Horizontal, ["E5", "F5", "G5", "H5", "I5"]),
+        ];
+    }
+
     private async Task PlaceShips(Guid gameId)
     {
-        var shipKinds = new[]
-        {
-            ShipKind.Destroyer,
-            ShipKind.Submarine,
-            ShipKind.Cruiser,
-            ShipKind.Battleship,
-            ShipKind.Carrier,
-        };
-        var orientations = new[]
-        {
-            ShipOrientation.Horizontal,
-            ShipOrientation.Vertical,
-            ShipOrientation.Horizontal,
-            ShipOrientation.Vertical,
-            ShipOrientation.Horizontal,
-        };
-        for (var i = 0; i < shipKinds.Length; i++)
+        var shipDefs = DefineShips(gameId);
+
+        foreach (var (bowCode, kind, orientation, _) in shipDefs)
         {
             await _client.PostAsJsonAsync(
                 $"/api/games/{gameId}/ships",
-                new AddShipRequest(BoardSide.Own, shipKinds[i], orientations[i], _bowCodes[i])
+                new AddShipRequest(BoardSide.Own, kind, orientation, bowCode)
             );
             await _client.PostAsJsonAsync(
                 $"/api/games/{gameId}/ships",
-                new AddShipRequest(BoardSide.Opp, shipKinds[i], orientations[i], _bowCodes[i])
+                new AddShipRequest(BoardSide.Opp, kind, orientation, bowCode)
             );
+        }
+    }
+
+    private async Task AttackShips(Guid gameId)
+    {
+        var shipDefs = DefineShips(gameId);
+
+        foreach (var (_, _, _, position) in shipDefs)
+        {
+            foreach (var cellCode in position)
+            {
+                var response = await _client.PostAsJsonAsync(
+                    $"/api/games/{gameId}/attacks",
+                    new AttackRequest(BoardSide.Opp, cellCode)
+                );
+                response.EnsureSuccessStatusCode();
+                var cellState = await response.Content.ReadFromJsonAsync<CellState>();
+                output.WriteLine("Attacked {0}. Outcome: {1}", cellCode, cellState);
+                Assert.Equal(CellState.Hit, cellState);
+            }
         }
     }
 
