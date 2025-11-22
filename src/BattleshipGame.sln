@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.UnitTests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.WebAPI", "BattleshipGame.WebAPI\BattleshipGame.WebAPI.csproj", "{0A223D35-0456-7A42-59AA-6C4238671957}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.IntegrationTests", "BattleshipGame.IntegrationTests\BattleshipGame.IntegrationTests.csproj", "{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{0A223D35-0456-7A42-59AA-6C4238671957}.Release|x64.Build.0 = Release|Any CPU
 		{0A223D35-0456-7A42-59AA-6C4238671957}.Release|x86.ActiveCfg = Release|Any CPU
 		{0A223D35-0456-7A42-59AA-6C4238671957}.Release|x86.Build.0 = Release|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Debug|x64.Build.0 = Debug|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Debug|x86.Build.0 = Debug|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Release|x64.ActiveCfg = Release|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Release|x64.Build.0 = Release|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Release|x86.ActiveCfg = Release|Any CPU
+		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
