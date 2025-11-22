@@ -1,0 +1,485 @@
+openapi: 3.0.4
+info:
+  title: Battleship Game API
+  version: '1.0'
+paths:
+  /api/games:
+    post:
+      tags:
+        - Games
+      summary: Creates a new game.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGameRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CreateGameRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CreateGameRequest'
+      responses:
+        '201':
+          description: Game successfully created.
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/games/{id}':
+    get:
+      tags:
+        - Games
+      summary: Retrieves a game.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Returns a game.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/GameModel'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameModel'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/GameModel'
+        '400':
+          description: Invalid input data.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Game not found.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Internal server error.
+  '/api/games/{id}/ships':
+    post:
+      tags:
+        - Games
+      summary: Adds a ship to a certain board side.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddShipRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/AddShipRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/AddShipRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: uuid
+            application/json:
+              schema:
+                type: string
+                format: uuid
+            text/json:
+              schema:
+                type: string
+                format: uuid
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/games/{id}/attacks':
+    post:
+      tags:
+        - Games
+      summary: Attacks a cell on a certain board side.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttackRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/AttackRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/AttackRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CellState'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CellState'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CellState'
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/games/{id}/state':
+    get:
+      tags:
+        - Games
+      summary: Retrieves a game state.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/GameStateModel'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameStateModel'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/GameStateModel'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/players:
+    post:
+      tags:
+        - Players
+      summary: Creates a new player.
+      requestBody:
+        description: The player creation request.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlayerRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlayerRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CreatePlayerRequest'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/players/{id}':
+    get:
+      tags:
+        - Players
+      summary: Gets a player by ID.
+      parameters:
+        - name: id
+          in: path
+          description: The player ID.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerModel'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/players/{username}':
+    get:
+      tags:
+        - Players
+      summary: Gets a player by username.
+      parameters:
+        - name: username
+          in: path
+          description: The username.
+          required: true
+          schema:
+            pattern: '^[A-Za-z]*$'
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerModel'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+components:
+  schemas:
+    AddShipRequest:
+      type: object
+      properties:
+        side:
+          $ref: '#/components/schemas/BoardSide'
+        shipKind:
+          $ref: '#/components/schemas/ShipKind'
+        orientation:
+          $ref: '#/components/schemas/ShipOrientation'
+        bowCode:
+          type: string
+          nullable: true
+      additionalProperties: false
+    AttackRequest:
+      type: object
+      properties:
+        side:
+          $ref: '#/components/schemas/BoardSide'
+        cell:
+          type: string
+          nullable: true
+      additionalProperties: false
+    BoardSide:
+      enum:
+        - 0
+        - 1
+        - 2
+      type: integer
+      format: int32
+    CellState:
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+      type: integer
+      format: int32
+    CreateGameRequest:
+      type: object
+      properties:
+        playerId:
+          type: string
+          format: uuid
+        boardSize:
+          type: integer
+          format: int32
+          nullable: true
+      additionalProperties: false
+    CreatePlayerRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          description: The player's username.
+          nullable: true
+      additionalProperties: false
+      description: Request model for creating a new player.
+    GameModel:
+      type: object
+      properties:
+        gameId:
+          type: string
+          format: uuid
+        playerId:
+          type: string
+          format: uuid
+        boardSize:
+          type: integer
+          format: int32
+        state:
+          $ref: '#/components/schemas/GameState'
+      additionalProperties: false
+    GameState:
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+      type: integer
+      format: int32
+    GameStateModel:
+      type: object
+      properties:
+        state:
+          type: string
+          nullable: true
+        winner:
+          type: string
+          format: uuid
+          nullable: true
+      additionalProperties: false
+    PlayerModel:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The player's unique identifier.
+          format: uuid
+        username:
+          type: string
+          description: The player's username.
+          nullable: true
+        activeGameId:
+          type: string
+          description: 'The currently active game ID, if any.'
+          format: uuid
+          nullable: true
+        totalGamesPlayed:
+          type: integer
+          description: The total number of games played.
+          format: int32
+      additionalProperties: false
+      description: Response model for player information.
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          format: int32
+          nullable: true
+        detail:
+          type: string
+          nullable: true
+        instance:
+          type: string
+          nullable: true
+      additionalProperties: { }
+    ShipKind:
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+      type: integer
+      format: int32
+    ShipOrientation:
+      enum:
+        - 0
+        - 1
+        - 2
+      type: integer
+      format: int32

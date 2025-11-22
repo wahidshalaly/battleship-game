@@ -145,8 +145,16 @@ docs/
 └── design.md                   # Detailed technical design with diagrams
 ```
 
----
+### How to Generate OpenAPI Documentation
 
-**Last Updated**: August 1, 2025
-**Version**: 1.1
-**Maintained by**: Development Team
+**Restore local tools**
+
+`dotnet tool restore`
+
+**Build the project first**
+
+`dotnet build .\src\BattleshipGame.WebAPI\BattleshipGame.WebAPI.csproj`
+
+**Generate the OpenAPI YAML document**
+
+`dotnet swagger tofile --output .\docs\openapi.yaml --yaml .\src\BattleshipGame.WebAPI\bin\Debug\net8.0\BattleshipGame.WebAPI.dll v1`
