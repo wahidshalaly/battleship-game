@@ -37,7 +37,9 @@ public class GameApiSimulationTests(
 
     private async Task VerifyGameState(Guid gameId, GameState gameState)
     {
-        var getGameResult = await _client.GetFromJsonAsync<GameModel>($"/api/games/{gameId}");
+        var getGameResult = await _client.GetFromJsonAsync<GetGameQueryResult>(
+            $"/api/games/{gameId}"
+        );
         getGameResult.Should().NotBeNull();
         getGameResult.State.Should().Be(gameState);
     }

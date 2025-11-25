@@ -17,13 +17,13 @@ namespace BattleshipGame.UnitTests.Application.Features.Games.Commands;
 public class AddShipCommandHandlerTests
 {
     private readonly IGameRepository _gameRepository;
-    private readonly AddShipCommandHandler _handler;
+    private readonly AddShipHandler _handler;
 
     public AddShipCommandHandlerTests()
     {
         _gameRepository = A.Fake<IGameRepository>();
         var eventDispatcher = A.Fake<IDomainEventDispatcher>();
-        _handler = new AddShipCommandHandler(_gameRepository, eventDispatcher);
+        _handler = new AddShipHandler(_gameRepository, eventDispatcher);
     }
 
     [Theory]
@@ -47,8 +47,7 @@ public class AddShipCommandHandlerTests
         var result = await _handler.Handle(command, cancellationToken);
 
         // Assert
-        result.Should().NotBeNull();
-        result.ShipId.Should().NotBe(Guid.Empty);
+        result.Should().NotBe(Guid.Empty);
     }
 
     [Fact]

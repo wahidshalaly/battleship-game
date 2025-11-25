@@ -15,14 +15,14 @@ namespace BattleshipGame.UnitTests.Application.Features.Games.Queries.GetGame;
 public class GetGameQueryHandlerTests
 {
     private readonly IGameRepository _gameRepository;
-    private readonly GetGameQueryHandler _handler;
+    private readonly GetGameHandler _handler;
     private readonly GameFixture _gameFixture = new();
     private readonly CancellationToken _cancellationToken = CancellationToken.None;
 
     public GetGameQueryHandlerTests()
     {
         _gameRepository = A.Fake<IGameRepository>();
-        _handler = new GetGameQueryHandler(_gameRepository);
+        _handler = new GetGameHandler(_gameRepository);
     }
 
     [Fact]

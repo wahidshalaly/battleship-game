@@ -35,18 +35,18 @@ public class GamesController(
         CancellationToken cancellationToken
     )
     {
-        var result = await mediator.Send(
+        var gameId = await mediator.Send(
             new CreateGameCommand(new PlayerId(request.PlayerId), request.BoardSize),
             cancellationToken
         );
 
         logger.LogInformation(
             "New Game: {GameId} for Player: {PlayerId}",
-            result.GameId,
+            gameId,
             request.PlayerId
         );
 
-        return CreatedAtAction(nameof(GetGame), new { id = result.GameId.Value }, result.GameId);
+        return CreatedAtAction(nameof(GetGame), new { id = gameId }, gameId);
     }
 
     /// <summary>
@@ -57,16 +57,16 @@ public class GamesController(
     /// <response code="404">Game not found.</response>
     /// <response code="500">Internal server error.</response>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(GameModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GetGameQueryResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<GameModel>> GetGame(
+    public async Task<ActionResult<GetGameQueryResult>> GetGame(
         [FromRoute] Guid id,
         CancellationToken cancellationToken
     )
     {
         var query = new GetGameQuery(new GameId(id));
-        var result = await mediator.Send<GameModel?>(query, cancellationToken);
+        var result = await mediator.Send<GetGameQueryResult?>(query, cancellationToken);
         if (result is null)
         {
             return NotFound(
@@ -89,7 +89,7 @@ public class GamesController(
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Guid>> AddShip(
+    public async Task<ActionResult> AddShip(
         [FromRoute] Guid id,
         [FromBody] AddShipRequest request,
         CancellationToken cancellationToken
@@ -107,7 +107,7 @@ public class GamesController(
 
             var result = await mediator.Send(addShipCommand, cancellationToken);
 
-            return Ok(result.ShipId);
+            return Ok(result);
         }
         catch (GameNotFoundException)
         {
@@ -157,26 +157,12 @@ public class GamesController(
         CancellationToken cancellationToken
     )
     {
-        var game = await gameRepository.GetByIdAsync(new GameId(id), cancellationToken);
-
-        if (game is null)
-        {
-            return NotFound(
-                new ProblemDetails
-                {
-                    Title = "Game Not Found",
-                    Detail = $"Game with ID '{id}' was not found.",
-                    Status = StatusCodes.Status404NotFound,
-                }
-            );
-        }
-
         try
         {
-            var cellState = game.Attack(request.Side, request.Cell);
-            await gameRepository.SaveAsync(game, cancellationToken);
+            var attackCell = new AttackCellCommand(new GameId(id), request.Side, request.Cell);
+            var result = await mediator.Send(attackCell, cancellationToken);
 
-            return Ok(cellState);
+            return Ok(result);
         }
         catch (ArgumentException exception)
         {
@@ -195,9 +181,9 @@ public class GamesController(
     /// Retrieves a game state.
     /// </summary>
     [HttpGet("{id:guid}/state")]
-    [ProducesResponseType(typeof(GameStateModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GameStateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<GameStateModel>> GetGameState(
+    public async Task<ActionResult<GameStateResponse>> GetGameState(
         [FromRoute] Guid id,
         CancellationToken cancellationToken
     )
@@ -218,7 +204,7 @@ public class GamesController(
 
         // For demo, winner is null unless state is GameOver
         var winner = game.State == GameState.GameOver ? game.PlayerId.Value : (Guid?)null;
-        return new GameStateModel(game.State.ToString(), winner);
+        return new GameStateResponse(game.State.ToString(), winner);
     }
 }
 
@@ -233,4 +219,4 @@ public record AddShipRequest(
 
 public record AttackRequest(BoardSide Side, string Cell);
 
-public record GameStateModel(string State, Guid? Winner);
+public record GameStateResponse(string State, Guid? Winner);

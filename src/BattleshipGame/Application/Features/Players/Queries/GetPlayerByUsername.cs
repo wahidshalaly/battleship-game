@@ -7,39 +7,29 @@ namespace BattleshipGame.Application.Features.Players.Queries;
 /// Query to get a player by username.
 /// </summary>
 /// <param name="Username">The player's username.</param>
-public record GetPlayerByUsernameQuery(string Username) : IRequest<GetPlayerResult>;
+public record GetPlayerByUsernameQuery(string Username) : IRequest<GetPlayerQueryResult>;
 
 /// <summary>
 /// Handler for getting a player by username.
 /// </summary>
-public class GetPlayerByUsernameQueryHandler
-    : IRequestHandler<GetPlayerByUsernameQuery, GetPlayerResult?>
+/// <remarks>
+/// Initializes a new instance of the GetPlayerByUsernameQueryHandler class.
+/// </remarks>
+/// <param name="playerRepository">The player repository.</param>
+public class GetPlayerByUsernameHandler(IPlayerRepository playerRepository)
+    : IRequestHandler<GetPlayerByUsernameQuery, GetPlayerQueryResult?>
 {
-    private readonly IPlayerRepository _playerRepository;
-
-    /// <summary>
-    /// Initializes a new instance of the GetPlayerByUsernameQueryHandler class.
-    /// </summary>
-    /// <param name="playerRepository">The player repository.</param>
-    public GetPlayerByUsernameQueryHandler(IPlayerRepository playerRepository)
-    {
-        _playerRepository = playerRepository;
-    }
-
     /// <inheritdoc />
-    public async Task<GetPlayerResult?> Handle(
+    public async Task<GetPlayerQueryResult?> Handle(
         GetPlayerByUsernameQuery request,
         CancellationToken cancellationToken
     )
     {
-        var player = await _playerRepository.GetByUsernameAsync(
-            request.Username,
-            cancellationToken
-        );
+        var player = await playerRepository.GetByUsernameAsync(request.Username, cancellationToken);
 
         return player is null
             ? null
-            : new GetPlayerResult(
+            : new GetPlayerQueryResult(
                 player.Id,
                 player.Username,
                 player.ActiveGameId?.Value,

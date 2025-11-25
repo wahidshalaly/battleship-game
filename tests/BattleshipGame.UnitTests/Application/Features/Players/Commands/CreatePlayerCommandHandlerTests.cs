@@ -39,8 +39,7 @@ public class CreatePlayerCommandHandlerTests
         var result = await _handler.Handle(command, _cancellationToken);
 
         // Assert
-        result.Should().NotBeNull();
-        result.PlayerId.Should().NotBe(new PlayerId(Guid.Empty));
+        result.Should().NotBeEmpty();
 
         A.CallTo(() => _repository.UsernameExistsAsync(username, _cancellationToken))
             .MustHaveHappenedOnceExactly();

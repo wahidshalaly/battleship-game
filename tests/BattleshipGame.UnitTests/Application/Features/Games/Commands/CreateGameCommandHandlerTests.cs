@@ -17,14 +17,14 @@ namespace BattleshipGame.UnitTests.Application.Features.Games.Commands;
 public class CreateGameCommandHandlerTests
 {
     private readonly IGameRepository _gameRepository;
-    private readonly CreateGameCommandHandler _handler;
+    private readonly CreateGameHandler _handler;
 
     public CreateGameCommandHandlerTests()
     {
-        var logger = A.Fake<ILogger<CreateGameCommandHandler>>();
+        var logger = A.Fake<ILogger<CreateGameHandler>>();
         _gameRepository = A.Fake<IGameRepository>();
         var eventDispatcher = A.Fake<IDomainEventDispatcher>();
-        _handler = new CreateGameCommandHandler(logger, _gameRepository, eventDispatcher);
+        _handler = new CreateGameHandler(logger, _gameRepository, eventDispatcher);
     }
 
     [Fact]
@@ -43,8 +43,7 @@ public class CreateGameCommandHandlerTests
         var result = await _handler.Handle(command, cancellationToken);
 
         // Assert
-        result.Should().NotBeNull();
-        result.GameId.Should().NotBe(Guid.Empty);
+        result.Should().NotBe(Guid.Empty);
 
         A.CallTo(() =>
                 _gameRepository.SaveAsync(
@@ -74,7 +73,7 @@ public class CreateGameCommandHandlerTests
         var result = await _handler.Handle(command, cancellationToken);
 
         // Assert
-        result.GameId.Should().NotBe(Guid.Empty);
+        result.Should().NotBe(Guid.Empty);
 
         A.CallTo(() =>
                 _gameRepository.SaveAsync(

@@ -8,28 +8,19 @@ namespace BattleshipGame.Application.Features.Players.Commands;
 /// Command to create a new player.
 /// </summary>
 /// <param name="Username">The player's username.</param>
-public record CreatePlayerCommand(string Username) : IRequest<CreatePlayerResult>;
-
-/// <summary>
-/// Result of creating a player.
-/// </summary>
-/// <param name="PlayerId">The created player's identifier.</param>
-public record CreatePlayerResult(PlayerId PlayerId);
+public record CreatePlayerCommand(string Username) : IRequest<Guid>;
 
 /// <summary>
 /// Handler for creating a new player.
 /// </summary>
 /// <param name="playerRepository">The player repository.</param>
 public class CreatePlayerCommandHandler(IPlayerRepository playerRepository)
-    : IRequestHandler<CreatePlayerCommand, CreatePlayerResult>
+    : IRequestHandler<CreatePlayerCommand, Guid>
 {
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
     /// <inheritdoc />
-    public async Task<CreatePlayerResult> Handle(
-        CreatePlayerCommand request,
-        CancellationToken cancellationToken
-    )
+    public async Task<Guid> Handle(CreatePlayerCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Username))
         {
@@ -51,6 +42,6 @@ public class CreatePlayerCommandHandler(IPlayerRepository playerRepository)
         // Save player
         await playerRepository.SaveAsync(player, cancellationToken);
 
-        return new CreatePlayerResult(playerId);
+        return playerId;
     }
 }

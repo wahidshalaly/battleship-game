@@ -14,12 +14,12 @@ namespace BattleshipGame.UnitTests.Application.Features.Players.Queries;
 public class GetPlayerByUsernameQueryHandlerTests
 {
     private readonly IPlayerRepository _playerRepository;
-    private readonly GetPlayerByUsernameQueryHandler _handler;
+    private readonly GetPlayerByUsernameHandler _handler;
 
     public GetPlayerByUsernameQueryHandlerTests()
     {
         _playerRepository = A.Fake<IPlayerRepository>();
-        _handler = new GetPlayerByUsernameQueryHandler(_playerRepository);
+        _handler = new GetPlayerByUsernameHandler(_playerRepository);
     }
 
     [Fact]

@@ -47,18 +47,18 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
         try
         {
             var command = new CreatePlayerCommand(request.Username);
-            var result = await mediator.Send(command, cancellationToken);
+            var playerId = await mediator.Send(command, cancellationToken);
 
             logger.LogInformation(
                 "Player created with ID: {PlayerId}, Username: {Username}",
-                result.PlayerId.Value,
+                playerId,
                 command.Username
             );
 
             return CreatedAtAction(
-                nameof(GetPlayer),
-                new { id = result.PlayerId.Value },
-                result.PlayerId
+                nameof(GetPlayerById),
+                new { id = playerId },
+                playerId
             );
         }
         catch (InvalidOperationException ex)
@@ -81,14 +81,14 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The player information.</returns>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(PlayerModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PlayerResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PlayerModel>> GetPlayer(
+    public async Task<ActionResult<PlayerResponse>> GetPlayerById(
         Guid id,
         CancellationToken cancellationToken
     )
     {
-        var query = new GetPlayerQuery(new PlayerId(id));
+        var query = new GetPlayerByIdQuery(new PlayerId(id));
         var result = await mediator.Send(query, cancellationToken);
 
         if (result is null)
@@ -103,7 +103,7 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
             );
         }
 
-        var response = new PlayerModel(
+        var response = new PlayerResponse(
             result.PlayerId.Value,
             result.Username,
             result.ActiveGameId,
@@ -120,9 +120,9 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The player information.</returns>
     [HttpGet("{username:alpha}")]
-    [ProducesResponseType(typeof(PlayerModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PlayerResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PlayerModel>> GetPlayerByUsername(
+    public async Task<ActionResult<PlayerResponse>> GetPlayerByUsername(
         string username,
         CancellationToken cancellationToken
     )
@@ -142,7 +142,7 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
             );
         }
 
-        var response = new PlayerModel(
+        var response = new PlayerResponse(
             result.PlayerId.Value,
             result.Username,
             result.ActiveGameId,
@@ -166,4 +166,4 @@ public record CreatePlayerRequest(string Username);
 /// <param name="Username">The player's username.</param>
 /// <param name="ActiveGameId">The currently active game ID, if any.</param>
 /// <param name="TotalGamesPlayed">The total number of games played.</param>
-public record PlayerModel(Guid Id, string Username, Guid? ActiveGameId, int TotalGamesPlayed);
+public record PlayerResponse(Guid Id, string Username, Guid? ActiveGameId, int TotalGamesPlayed);

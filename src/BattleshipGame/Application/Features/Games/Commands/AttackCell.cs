@@ -13,14 +13,7 @@ namespace BattleshipGame.Application.Features.Games.Commands;
 /// <param name="BoardSide">The board side to attack.</param>
 /// <param name="CellCode">The cell code to attack (e.g., "A1", "B5").</param>
 public record AttackCellCommand(GameId GameId, BoardSide BoardSide, string CellCode)
-    : IRequest<AttackCellResult>;
-
-/// <summary>
-/// Result of a cell attack operation.
-/// </summary>
-/// <param name="IsHit">Whether the attack was a hit.</param>
-/// <param name="IsGameOver">Whether the game is over after this attack.</param>
-public record AttackCellResult(bool IsHit, bool IsGameOver);
+    : IRequest<CellState>;
 
 /// <summary>
 /// Handles the AttackCellCommand and demonstrates proper event dispatching.
@@ -28,19 +21,19 @@ public record AttackCellResult(bool IsHit, bool IsGameOver);
 /// <param name="logger">The logger instance.</param>
 /// <param name="gameRepository">The game repository.</param>
 /// <param name="eventDispatcher">The domain event dispatcher.</param>
-public class AttackCellCommandHandler(
-    ILogger<AttackCellCommandHandler> logger,
+public class AttackCellHandler(
+    ILogger<AttackCellHandler> logger,
     IGameRepository gameRepository,
     IDomainEventDispatcher eventDispatcher
-) : IRequestHandler<AttackCellCommand, AttackCellResult>
+) : IRequestHandler<AttackCellCommand, CellState>
 {
     /// <summary>
     /// Handles the attack cell command.
     /// </summary>
     /// <param name="request">The attack cell command.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The attack result.</returns>
-    public async Task<AttackCellResult> Handle(
+    /// <returns>The cell state after attack.</returns>
+    public async Task<CellState> Handle(
         AttackCellCommand request,
         CancellationToken cancellationToken
     )
@@ -70,16 +63,13 @@ public class AttackCellCommandHandler(
         game.ClearDomainEvents();
 
         logger.LogInformation(
-            "Attack processed successfully for game {GameId}, cell {CellCode}",
+            "Attack processed successfully for game {GameId}, cell {CellCode}, result: {CellState}",
             request.GameId,
-            request.CellCode
+            request.CellCode,
+            cellState
         );
 
         // 6. Return result
-        // Check if game is over by testing both boards
-        return new AttackCellResult(
-            IsHit: cellState == CellState.Hit,
-            IsGameOver: game.IsGameOver(request.BoardSide)
-        );
+        return cellState;
     }
 }

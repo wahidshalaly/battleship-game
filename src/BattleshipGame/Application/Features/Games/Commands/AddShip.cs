@@ -20,19 +20,14 @@ public record AddShipCommand(
     ShipKind Kind,
     ShipOrientation Orientation,
     string BowCode
-) : IRequest<AddShipResult>;
+) : IRequest<Guid>;
 
-public record AddShipResult(Guid ShipId);
-
-internal class AddShipCommandHandler(
+public class AddShipHandler(
     IGameRepository gameRepository,
     IDomainEventDispatcher eventDispatcher
-) : IRequestHandler<AddShipCommand, AddShipResult>
+) : IRequestHandler<AddShipCommand, Guid>
 {
-    public async Task<AddShipResult> Handle(
-        AddShipCommand request,
-        CancellationToken cancellationToken
-    )
+    public async Task<Guid> Handle(AddShipCommand request, CancellationToken cancellationToken)
     {
         // Load the game aggregate
         var game =
@@ -53,6 +48,6 @@ internal class AddShipCommandHandler(
         // Dispatch any domain events raised by the AddShip method
         await eventDispatcher.DispatchEventsAsync(game, cancellationToken);
 
-        return new AddShipResult(shipId);
+        return shipId;
     }
 }

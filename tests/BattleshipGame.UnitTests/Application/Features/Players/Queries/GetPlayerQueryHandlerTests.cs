@@ -14,12 +14,12 @@ namespace BattleshipGame.UnitTests.Application.Features.Players.Queries;
 public class GetPlayerQueryHandlerTests
 {
     private readonly IPlayerRepository _playerRepository;
-    private readonly GetPlayerQueryHandler _handler;
+    private readonly GetPlayerByIdHandler _handler;
 
     public GetPlayerQueryHandlerTests()
     {
         _playerRepository = A.Fake<IPlayerRepository>();
-        _handler = new GetPlayerQueryHandler(_playerRepository);
+        _handler = new GetPlayerByIdHandler(_playerRepository);
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class GetPlayerQueryHandlerTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerQuery(playerId);
+        var query = new GetPlayerByIdQuery(playerId);
         var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, "TestPlayer", null, 0);
@@ -53,7 +53,7 @@ public class GetPlayerQueryHandlerTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerQuery(playerId);
+        var query = new GetPlayerByIdQuery(playerId);
         var cancellationToken = CancellationToken.None;
 
         A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cancellationToken))
@@ -74,7 +74,7 @@ public class GetPlayerQueryHandlerTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerQuery(playerId);
+        var query = new GetPlayerByIdQuery(playerId);
         var cancellationToken = CancellationToken.None;
         var expectedException = new InvalidOperationException("Database connection failed");
 
@@ -95,7 +95,7 @@ public class GetPlayerQueryHandlerTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var activeGameId = new GameId(Guid.NewGuid());
-        var query = new GetPlayerQuery(playerId);
+        var query = new GetPlayerByIdQuery(playerId);
         var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, "PlayerWithGame", activeGameId, 0);
@@ -116,7 +116,7 @@ public class GetPlayerQueryHandlerTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerQuery(playerId);
+        var query = new GetPlayerByIdQuery(playerId);
         var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, "ExperiencedPlayer", null, 3);
@@ -138,7 +138,7 @@ public class GetPlayerQueryHandlerTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var activeGameId = new GameId(Guid.NewGuid());
-        var query = new GetPlayerQuery(playerId);
+        var query = new GetPlayerByIdQuery(playerId);
         var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, "ActivePlayer", activeGameId, 5);
@@ -163,7 +163,7 @@ public class GetPlayerQueryHandlerTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerQuery(playerId);
+        var query = new GetPlayerByIdQuery(playerId);
         var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, username, null, 0);
@@ -183,7 +183,7 @@ public class GetPlayerQueryHandlerTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerQuery(playerId);
+        var query = new GetPlayerByIdQuery(playerId);
         var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
@@ -201,7 +201,7 @@ public class GetPlayerQueryHandlerTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var activeGameId = new GameId(Guid.NewGuid());
-        var query = new GetPlayerQuery(playerId);
+        var query = new GetPlayerByIdQuery(playerId);
         var cancellationToken = CancellationToken.None;
         const string expectedUsername = "CompleteTestPlayer";
         const int expectedHistoryCount = 7;
@@ -234,7 +234,7 @@ public class GetPlayerQueryHandlerTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerQuery(playerId);
+        var query = new GetPlayerByIdQuery(playerId);
         var cancellationToken = CancellationToken.None;
 
         var player = CreatePlayer(playerId, "TestPlayer", null, historyCount);

@@ -12,14 +12,7 @@ namespace BattleshipGame.Application.Features.Games.Commands;
 /// </summary>
 /// <param name="PlayerId">The player creating the game.</param>
 /// <param name="BoardSize">The size of the game board (optional, defaults to 10).</param>
-public record CreateGameCommand(PlayerId PlayerId, int? BoardSize = 10)
-    : IRequest<CreateGameResult>;
-
-/// <summary>
-/// Result of creating a game.
-/// </summary>
-/// <param name="GameId">The created game's identifier.</param>
-public record CreateGameResult(GameId GameId);
+public record CreateGameCommand(PlayerId PlayerId, int? BoardSize = 10) : IRequest<Guid>;
 
 /// <summary>
 /// Handler for creating a new game.
@@ -27,11 +20,11 @@ public record CreateGameResult(GameId GameId);
 /// <param name="logger">The logger instance.</param>
 /// <param name="gameRepository">The game repository.</param>
 /// <param name="eventDispatcher">The domain event dispatcher.</param>
-public class CreateGameCommandHandler(
-    ILogger<CreateGameCommandHandler> logger,
+public class CreateGameHandler(
+    ILogger<CreateGameHandler> logger,
     IGameRepository gameRepository,
     IDomainEventDispatcher eventDispatcher
-) : IRequestHandler<CreateGameCommand, CreateGameResult>
+) : IRequestHandler<CreateGameCommand, Guid>
 {
     /// <summary>
     /// Handles <see cref="CreateGameCommand"/> and returns <see cref="CreateGameResult"/>.
@@ -39,10 +32,7 @@ public class CreateGameCommandHandler(
     /// <param name="request">The create game command.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The attack result.</returns>
-    public async Task<CreateGameResult> Handle(
-        CreateGameCommand request,
-        CancellationToken cancellationToken
-    )
+    public async Task<Guid> Handle(CreateGameCommand request, CancellationToken cancellationToken)
     {
         logger.LogInformation(
             "Creating new game for player {PlayerId} with board size {BoardSize}",
@@ -68,6 +58,6 @@ public class CreateGameCommandHandler(
             request.PlayerId
         );
 
-        return new CreateGameResult(game.Id);
+        return game.Id;
     }
 }
