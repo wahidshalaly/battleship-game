@@ -1,4 +1,5 @@
-﻿using BattleshipGame.Domain.DomainModel.GameAggregate;
+﻿using BattleshipGame.Application.Exceptions;
+using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate.Events;
 using BattleshipGame.SharedKernel;
 
@@ -65,7 +66,9 @@ public sealed class Player : AggregateRoot<PlayerId>
     public void JoinGame(GameId gameId)
     {
         if (IsInActiveGame)
-            throw new InvalidOperationException("Player is already in an active game.");
+        {
+            throw new PlayerIsInActiveException(Id);
+        }
 
         ActiveGameId = gameId;
         AddDomainEvent(new PlayerJoinedGameEvent(Id, gameId, Username));
@@ -78,7 +81,9 @@ public sealed class Player : AggregateRoot<PlayerId>
     public void LeaveGame()
     {
         if (!IsInActiveGame)
-            throw new InvalidOperationException("Player is not in an active game.");
+        {
+            throw new PlayerIsNotInActiveException(Id);
+        }
 
         var gameId = ActiveGameId!;
         _gameHistory.Add(gameId);

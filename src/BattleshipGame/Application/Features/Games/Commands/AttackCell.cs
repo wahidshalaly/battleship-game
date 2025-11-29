@@ -1,5 +1,6 @@
 ﻿using BattleshipGame.Application.Common.Services;
 using BattleshipGame.Application.Contracts.Persistence;
+using BattleshipGame.Application.Exceptions;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -48,7 +49,7 @@ public class AttackCellHandler(
         // 1. Load aggregate
         var game =
             await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
-            ?? throw new InvalidOperationException($"Game {request.GameId} not found");
+            ?? throw new GameNotFoundException(request.GameId);
 
         // 2. Execute domain operation (this will raise domain events)
         var cellState = game.Attack(request.BoardSide, request.CellCode);
