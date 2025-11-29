@@ -17,7 +17,7 @@ public class RandomAttackStrategy(IGameRepository gameRepository) : IComputerOpp
         var game =
             await gameRepository.GetByIdAsync(gameId, CancellationToken.None)
             ?? throw new GameNotFoundException(gameId);
-        var availableCellCodes = game.GetAvailableCellCodes(BoardSide.Own);
+        var availableCellCodes = game.GetAvailableCellCodes(BoardSide.Player);
         return availableCellCodes.First();
     }
 }

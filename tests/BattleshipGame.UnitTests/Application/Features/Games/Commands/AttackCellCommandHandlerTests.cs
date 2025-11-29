@@ -37,7 +37,7 @@ public class AttackCellCommandHandlerTests
     public async Task Handle_WhenAttackHitsOccupiedCell_ShouldReturnHitResultAndDispatchEvents()
     {
         // Arrange
-        const BoardSide boardSide = BoardSide.Opp;
+        const BoardSide boardSide = BoardSide.Opponent;
         var game = _gameFixture.CreateReadyGame();
         var command = new AttackCellCommand(game.Id, boardSide, Ship1Location);
 
@@ -64,7 +64,7 @@ public class AttackCellCommandHandlerTests
     {
         // Arrange
         const string cellCode = "F1"; // Empty cell
-        const BoardSide boardSide = BoardSide.Opp;
+        const BoardSide boardSide = BoardSide.Opponent;
         var game = _gameFixture.CreateReadyGame(); // Ship at A1, attacking B1
         var command = new AttackCellCommand(game.Id, boardSide, cellCode);
 
@@ -89,7 +89,7 @@ public class AttackCellCommandHandlerTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        const BoardSide boardSide = BoardSide.Opp;
+        const BoardSide boardSide = BoardSide.Opponent;
         var game = _gameFixture.CreateReadyGame(playerId);
         var shipIds = game.GetShips(boardSide);
         var cells = shipIds.SelectMany(shipId => game.GetShipPosition(boardSide, shipId)).ToList();
@@ -120,7 +120,7 @@ public class AttackCellCommandHandlerTests
     {
         // Arrange
         const string cellCode = "A1";
-        const BoardSide boardSide = BoardSide.Opp;
+        const BoardSide boardSide = BoardSide.Opponent;
         var gameId = new GameId(Guid.NewGuid());
         var command = new AttackCellCommand(gameId, boardSide, cellCode);
 
@@ -145,7 +145,7 @@ public class AttackCellCommandHandlerTests
     {
         // Arrange
         const string cellCode = "A1";
-        const BoardSide boardSide = BoardSide.Opp;
+        const BoardSide boardSide = BoardSide.Opponent;
         var game = _gameFixture.CreateReadyGame();
         var command = new AttackCellCommand(game.Id, boardSide, cellCode);
 

@@ -35,7 +35,7 @@ public class CellAttackedEventTests
         var game = new Game(playerId);
 
         // Act
-        game.Attack(BoardSide.Opp, "A1");
+        game.Attack(BoardSide.Opponent, "A1");
 
         // Assert
         var cellAttackedEvents = game.DomainEvents.OfType<CellAttackedEvent>().ToList();
@@ -55,10 +55,10 @@ public class CellAttackedEventTests
         var game = new Game(playerId);
 
         // Set up a ship on opponent board
-        game.AddShip(BoardSide.Opp, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        game.AddShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
 
         // Act
-        game.Attack(BoardSide.Opp, "A1");
+        game.Attack(BoardSide.Opponent, "A1");
 
         // Assert
         var cellAttackedEvents = game.DomainEvents.OfType<CellAttackedEvent>().ToList();

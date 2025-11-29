@@ -69,11 +69,11 @@ public class GameApiSimulationTests(
         {
             await _client.PostAsJsonAsync(
                 $"/api/games/{gameId}/ships",
-                new AddShipRequest(BoardSide.Own, kind, orientation, bowCode)
+                new AddShipRequest(BoardSide.Player, kind, orientation, bowCode)
             );
             await _client.PostAsJsonAsync(
                 $"/api/games/{gameId}/ships",
-                new AddShipRequest(BoardSide.Opp, kind, orientation, bowCode)
+                new AddShipRequest(BoardSide.Opponent, kind, orientation, bowCode)
             );
         }
     }
@@ -88,7 +88,7 @@ public class GameApiSimulationTests(
             {
                 var response = await _client.PostAsJsonAsync(
                     $"/api/games/{gameId}/attacks",
-                    new AttackRequest(BoardSide.Opp, cellCode)
+                    new AttackRequest(BoardSide.Opponent, cellCode)
                 );
                 response.EnsureSuccessStatusCode();
                 var cellState = await response.Content.ReadFromJsonAsync<CellState>();

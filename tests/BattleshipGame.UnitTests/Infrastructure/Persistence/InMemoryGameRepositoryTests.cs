@@ -92,7 +92,7 @@ public class InMemoryGameRepositoryTests
         await _repository.SaveAsync(game, _cancellationToken);
 
         // Modify the game
-        game.Attack(BoardSide.Own, "A1");
+        game.Attack(BoardSide.Player, "A1");
 
         // Act
         await _repository.SaveAsync(game, _cancellationToken);
@@ -339,7 +339,7 @@ public class InMemoryGameRepositoryTests
         await _repository.SaveAsync(game, _cancellationToken);
 
         // Act - Attack a cell to change game state
-        game.Attack(BoardSide.Own, "A1");
+        game.Attack(BoardSide.Player, "A1");
         await _repository.SaveAsync(game, _cancellationToken);
 
         // Retrieve updated game

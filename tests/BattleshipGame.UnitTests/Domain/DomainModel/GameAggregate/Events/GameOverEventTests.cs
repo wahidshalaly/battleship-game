@@ -11,8 +11,8 @@ namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate.Events;
 public class GameOverEventTests
 {
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void Ctor_WhenValidParameters_ShouldCreateEvent(BoardSide winnerSide)
     {
         var gameId = new GameId(Guid.NewGuid());
@@ -27,8 +27,8 @@ public class GameOverEventTests
     }
 
     [Theory]
-    [InlineData(BoardSide.Own, BoardSide.Opp)]
-    [InlineData(BoardSide.Opp, BoardSide.Own)]
+    [InlineData(BoardSide.Player, BoardSide.Opponent)]
+    [InlineData(BoardSide.Opponent, BoardSide.Player)]
     public void Attack_WhenGameOver_ShouldRaiseGameOverEvent(
         BoardSide attackedSide,
         BoardSide attackerSide

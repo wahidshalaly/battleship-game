@@ -11,8 +11,8 @@ namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate.Events;
 public class ShipSunkEventTests
 {
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void Ctor_WhenValidParameters_ShouldCreateEvent(BoardSide attackedSide)
     {
         // Arrange
@@ -32,8 +32,8 @@ public class ShipSunkEventTests
     }
 
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void Attack_WhenDestroyerSunk_ShouldRaiseShipSunkEvent(BoardSide attackedSide)
     {
         // Arrange
@@ -61,8 +61,8 @@ public class ShipSunkEventTests
     }
 
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void Attack_WhenCarrierSunk_ShouldRaiseShipSunkEvent(BoardSide attackedSide)
     {
         // Arrange
@@ -97,10 +97,10 @@ public class ShipSunkEventTests
         var game = new Game(playerId);
 
         // Add a Destroyer (2 cells) to opponent board
-        game.AddShip(BoardSide.Opp, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        game.AddShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
 
         // Act - Attack only one cell of the destroyer (not sinking it)
-        game.Attack(BoardSide.Opp, "A1"); // Hit first cell only
+        game.Attack(BoardSide.Opponent, "A1"); // Hit first cell only
 
         // Assert
         var shipSunkEvents = game.DomainEvents.OfType<ShipSunkEvent>().ToList();
@@ -115,18 +115,18 @@ public class ShipSunkEventTests
         var game = new Game(playerId);
 
         // Add two Destroyers to opponent board
-        game.AddShip(BoardSide.Opp, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
-        game.AddShip(BoardSide.Opp, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
+        game.AddShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        game.AddShip(BoardSide.Opponent, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
 
         // Act - Sink both destroyers
         // Sink first destroyer
-        game.Attack(BoardSide.Opp, "A1");
-        game.Attack(BoardSide.Opp, "A2");
+        game.Attack(BoardSide.Opponent, "A1");
+        game.Attack(BoardSide.Opponent, "A2");
 
         // Sink second destroyer
-        game.Attack(BoardSide.Opp, "C1");
-        game.Attack(BoardSide.Opp, "C2");
-        game.Attack(BoardSide.Opp, "C3");
+        game.Attack(BoardSide.Opponent, "C1");
+        game.Attack(BoardSide.Opponent, "C2");
+        game.Attack(BoardSide.Opponent, "C3");
 
         // Assert
         var shipSunkEvents = game.DomainEvents.OfType<ShipSunkEvent>().ToList();
@@ -134,7 +134,7 @@ public class ShipSunkEventTests
 
         // All events should be for the same game and attacked side
         shipSunkEvents.Should().OnlyContain(e => e.GameId == game.Id);
-        shipSunkEvents.Should().OnlyContain(e => e.AttackedSide == BoardSide.Opp);
+        shipSunkEvents.Should().OnlyContain(e => e.AttackedSide == BoardSide.Opponent);
 
         // Each event should have different ship IDs
         var shipIds = shipSunkEvents.Select(e => e.ShipId).ToList();
@@ -149,10 +149,10 @@ public class ShipSunkEventTests
         var game = new Game(playerId);
 
         // Add a ship to opponent board but attack empty cell
-        game.AddShip(BoardSide.Opp, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        game.AddShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
 
         // Act - Attack empty cell
-        game.Attack(BoardSide.Opp, "B1");
+        game.Attack(BoardSide.Opponent, "B1");
 
         // Assert
         var shipSunkEvents = game.DomainEvents.OfType<ShipSunkEvent>().ToList();

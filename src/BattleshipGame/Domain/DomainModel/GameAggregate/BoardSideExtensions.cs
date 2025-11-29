@@ -8,8 +8,8 @@ public static class BoardSideExtensions
     {
         return side switch
         {
-            BoardSide.Own => BoardSide.Opp,
-            BoardSide.Opp => BoardSide.Own,
+            BoardSide.Player => BoardSide.Opponent,
+            BoardSide.Opponent => BoardSide.Player,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(side),
                 side,

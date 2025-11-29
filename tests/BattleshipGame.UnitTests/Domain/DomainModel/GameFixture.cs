@@ -19,8 +19,8 @@ public class GameFixture
         playerId ??= new PlayerId(Guid.NewGuid());
 
         var game = CreateNewGame(playerId);
-        AddShipsOnBoard(game, BoardSide.Own);
-        AddShipsOnBoard(game, BoardSide.Opp);
+        AddShipsOnBoard(game, BoardSide.Player);
+        AddShipsOnBoard(game, BoardSide.Opponent);
         return game;
     }
 

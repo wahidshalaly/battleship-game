@@ -6,6 +6,6 @@
 public enum BoardSide
 {
     None = 0,
-    Own = 1,
-    Opp = 2,
+    Player = 1,
+    Opponent = 2,
 }

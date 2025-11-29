@@ -8,8 +8,8 @@ namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate;
 public class BoardSideExtensionsTests
 {
     [Theory]
-    [InlineData(BoardSide.Own, BoardSide.Opp)]
-    [InlineData(BoardSide.Opp, BoardSide.Own)]
+    [InlineData(BoardSide.Player, BoardSide.Opponent)]
+    [InlineData(BoardSide.Opponent, BoardSide.Player)]
     public void OppositeSide_WhenValid_ReturnsOpposite(BoardSide boardSide, BoardSide oppositeSide)
     {
         boardSide.OppositeSide().Should().Be(oppositeSide);

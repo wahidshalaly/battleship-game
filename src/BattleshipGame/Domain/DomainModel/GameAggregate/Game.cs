@@ -30,7 +30,7 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
 
     public GameState State { get; private set; } = GameState.Started;
 
-    public BoardSide CurrentTurn { get; private set; } = BoardSide.Own;
+    public BoardSide CurrentTurn { get; private set; } = BoardSide.Player;
 
     public ShipId AddShip(
         BoardSide side,
@@ -100,7 +100,7 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
 
     public bool IsBoardReady(BoardSide boardSide) => BoardSelector(boardSide).IsReady;
 
-    public bool IsReady => IsBoardReady(BoardSide.Own) && IsBoardReady(BoardSide.Opp);
+    public bool IsReady => IsBoardReady(BoardSide.Player) && IsBoardReady(BoardSide.Opponent);
 
     public IReadOnlyCollection<string> GetAvailableCellCodes(BoardSide boardSide)
     {
@@ -130,8 +130,8 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
     {
         return side switch
         {
-            BoardSide.Own => _ownBoard,
-            BoardSide.Opp => _oppBoard,
+            BoardSide.Player => _ownBoard,
+            BoardSide.Opponent => _oppBoard,
             BoardSide.None => throw new InvalidOperationException(ErrorMessages.InvalidBoardSide),
             _ => throw new ArgumentOutOfRangeException(
                 nameof(side),

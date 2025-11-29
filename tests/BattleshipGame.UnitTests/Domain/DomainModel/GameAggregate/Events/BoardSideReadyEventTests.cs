@@ -11,8 +11,8 @@ namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate.Events;
 public class BoardSideReadyEventTests
 {
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void Ctor_WhenValidParameters_ShouldCreateEvent(BoardSide boardSide)
     {
         // Arrange
@@ -30,8 +30,8 @@ public class BoardSideReadyEventTests
     }
 
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void AddShip_WhenBoardSideBecomesReady_ShouldRaiseBoardSideReadyEvent(
         BoardSide boardSide
     )
@@ -67,9 +67,9 @@ public class BoardSideReadyEventTests
         var game = new Game(playerId);
 
         // Act - Add only some ships (not all required)
-        game.AddShip(BoardSide.Own, ShipKind.Battleship, ShipOrientation.Vertical, "A1");
-        game.AddShip(BoardSide.Own, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
-        game.AddShip(BoardSide.Own, ShipKind.Destroyer, ShipOrientation.Vertical, "E1");
+        game.AddShip(BoardSide.Player, ShipKind.Battleship, ShipOrientation.Vertical, "A1");
+        game.AddShip(BoardSide.Player, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
+        game.AddShip(BoardSide.Player, ShipKind.Destroyer, ShipOrientation.Vertical, "E1");
         // Missing Submarine and Carrier
 
         // Assert
@@ -85,26 +85,26 @@ public class BoardSideReadyEventTests
         var game = new Game(playerId);
 
         // Act - Make Own side ready first
-        game.AddShip(BoardSide.Own, ShipKind.Battleship, ShipOrientation.Vertical, "A1");
-        game.AddShip(BoardSide.Own, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
-        game.AddShip(BoardSide.Own, ShipKind.Destroyer, ShipOrientation.Vertical, "E1");
-        game.AddShip(BoardSide.Own, ShipKind.Submarine, ShipOrientation.Vertical, "G1");
-        game.AddShip(BoardSide.Own, ShipKind.Carrier, ShipOrientation.Vertical, "I1");
+        game.AddShip(BoardSide.Player, ShipKind.Battleship, ShipOrientation.Vertical, "A1");
+        game.AddShip(BoardSide.Player, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
+        game.AddShip(BoardSide.Player, ShipKind.Destroyer, ShipOrientation.Vertical, "E1");
+        game.AddShip(BoardSide.Player, ShipKind.Submarine, ShipOrientation.Vertical, "G1");
+        game.AddShip(BoardSide.Player, ShipKind.Carrier, ShipOrientation.Vertical, "I1");
 
         // Then make Opp side ready
-        game.AddShip(BoardSide.Opp, ShipKind.Battleship, ShipOrientation.Vertical, "A1");
-        game.AddShip(BoardSide.Opp, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
-        game.AddShip(BoardSide.Opp, ShipKind.Destroyer, ShipOrientation.Vertical, "E1");
-        game.AddShip(BoardSide.Opp, ShipKind.Submarine, ShipOrientation.Vertical, "G1");
-        game.AddShip(BoardSide.Opp, ShipKind.Carrier, ShipOrientation.Vertical, "I1");
+        game.AddShip(BoardSide.Opponent, ShipKind.Battleship, ShipOrientation.Vertical, "A1");
+        game.AddShip(BoardSide.Opponent, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
+        game.AddShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "E1");
+        game.AddShip(BoardSide.Opponent, ShipKind.Submarine, ShipOrientation.Vertical, "G1");
+        game.AddShip(BoardSide.Opponent, ShipKind.Carrier, ShipOrientation.Vertical, "I1");
 
         // Assert
         var boardSideReadyEvents = game.DomainEvents.OfType<BoardSideReadyEvent>().ToList();
         boardSideReadyEvents.Should().HaveCount(2);
 
         // Should have one event for each board side
-        boardSideReadyEvents.Should().Contain(e => e.BoardSide == BoardSide.Own);
-        boardSideReadyEvents.Should().Contain(e => e.BoardSide == BoardSide.Opp);
+        boardSideReadyEvents.Should().Contain(e => e.BoardSide == BoardSide.Player);
+        boardSideReadyEvents.Should().Contain(e => e.BoardSide == BoardSide.Opponent);
         boardSideReadyEvents.Should().OnlyContain(e => e.GameId == game.Id);
     }
 }

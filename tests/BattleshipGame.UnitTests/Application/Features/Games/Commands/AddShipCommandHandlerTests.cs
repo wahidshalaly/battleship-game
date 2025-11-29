@@ -58,7 +58,7 @@ public class AddShipCommandHandlerTests
         var gameId = new GameId(Guid.NewGuid());
         var command = new AddShipCommand(
             gameId,
-            BoardSide.Own,
+            BoardSide.Player,
             ShipKind.Battleship,
             ShipOrientation.Horizontal,
             bowCode

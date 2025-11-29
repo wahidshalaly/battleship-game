@@ -24,8 +24,8 @@ public class GameTests
     }
 
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void AddShips_WhenCountLessThanAllowance_IsReadyIsFalse(BoardSide boardSide)
     {
         var game = _fixture.CreateNewGame(_playerId);
@@ -40,8 +40,8 @@ public class GameTests
     }
 
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void AddShips_WhenCountEqualsAllowance_IsReadyIsTrue(BoardSide boardSide)
     {
         var game = new Game(_playerId);
@@ -58,8 +58,8 @@ public class GameTests
     }
 
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void AddShips_WhenExceedAllowance_ThrowsException(BoardSide boardSide)
     {
         var game = new Game(_playerId);
@@ -85,12 +85,12 @@ public class GameTests
     public void IsGameOver_WhenAllShipsSunk_IsTrue()
     {
         var game = _fixture.CreateNewGame(_playerId);
-        game.AddShip(BoardSide.Own, ShipKind.Cruiser, ShipOrientation.Vertical, "A1");
-        game.Attack(BoardSide.Own, "A1");
-        game.Attack(BoardSide.Own, "A2");
-        game.Attack(BoardSide.Own, "A3");
+        game.AddShip(BoardSide.Player, ShipKind.Cruiser, ShipOrientation.Vertical, "A1");
+        game.Attack(BoardSide.Player, "A1");
+        game.Attack(BoardSide.Player, "A2");
+        game.Attack(BoardSide.Player, "A3");
 
-        game.IsGameOver(BoardSide.Own).Should().BeTrue();
+        game.IsGameOver(BoardSide.Player).Should().BeTrue();
     }
 
     [Fact]
@@ -105,8 +105,8 @@ public class GameTests
     }
 
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void AddShip_WhenValidParameters_ShouldReturnShipId(BoardSide boardSide)
     {
         var game = _fixture.CreateNewGame(_playerId);
@@ -118,8 +118,8 @@ public class GameTests
     }
 
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void Attack_WhenValidCell_ShouldNotThrow(BoardSide boardSide)
     {
         var game = _fixture.CreateNewGame(_playerId);
@@ -130,8 +130,8 @@ public class GameTests
     }
 
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void Attack_WhenSameCell_ShouldThrowException(BoardSide boardSide)
     {
         var game = _fixture.CreateNewGame(_playerId);
@@ -149,8 +149,8 @@ public class GameTests
     {
         var game = _fixture.CreateReadyGame();
 
-        game.IsBoardReady(BoardSide.Own).Should().BeTrue();
-        game.IsBoardReady(BoardSide.Opp).Should().BeTrue();
+        game.IsBoardReady(BoardSide.Player).Should().BeTrue();
+        game.IsBoardReady(BoardSide.Opponent).Should().BeTrue();
         game.State.Should().Be(GameState.BoardsAreReady);
 
         game.DomainEvents.Should().NotBeEmpty();
@@ -161,13 +161,13 @@ public class GameTests
     {
         var game = _fixture.CreateNewGame(_playerId);
 
-        game.IsGameOver(BoardSide.Own).Should().BeFalse();
-        game.IsGameOver(BoardSide.Opp).Should().BeFalse();
+        game.IsGameOver(BoardSide.Player).Should().BeFalse();
+        game.IsGameOver(BoardSide.Opponent).Should().BeFalse();
     }
 
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void IsGameOver_WhenPartiallyAttacked_ShouldBeFalse(BoardSide boardSide)
     {
         var game = _fixture.CreateReadyGame(_playerId);
@@ -178,8 +178,8 @@ public class GameTests
     }
 
     [Theory]
-    [InlineData(BoardSide.Own)]
-    [InlineData(BoardSide.Opp)]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
     public void IsGameOver_WhenBoardIsLost_ShouldBeTrue(BoardSide winnerSide)
     {
         var game = _fixture.CreateCompletedGame(_playerId, winnerSide);
@@ -192,15 +192,15 @@ public class GameTests
     public void GetShips_WhenBoardsAreEmpty_ShouldReturnNothing()
     {
         var game = _fixture.CreateNewGame(_playerId);
-        game.GetShips(BoardSide.Own).Should().BeEmpty();
-        game.GetShips(BoardSide.Opp).Should().BeEmpty();
+        game.GetShips(BoardSide.Player).Should().BeEmpty();
+        game.GetShips(BoardSide.Opponent).Should().BeEmpty();
     }
 
     [Fact]
     public void GetShips_WhenBoardsAreReady_ShouldReturnShips()
     {
         var game = _fixture.CreateReadyGame();
-        game.GetShips(BoardSide.Own).Should().HaveCount(ShipAllowance);
-        game.GetShips(BoardSide.Opp).Should().HaveCount(ShipAllowance);
+        game.GetShips(BoardSide.Player).Should().HaveCount(ShipAllowance);
+        game.GetShips(BoardSide.Opponent).Should().HaveCount(ShipAllowance);
     }
 }
