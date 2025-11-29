@@ -22,10 +22,8 @@ public record AddShipCommand(
     string BowCode
 ) : IRequest<Guid>;
 
-public class AddShipHandler(
-    IGameRepository gameRepository,
-    IDomainEventDispatcher eventDispatcher
-) : IRequestHandler<AddShipCommand, Guid>
+public class AddShipHandler(IGameRepository gameRepository, IDomainEventDispatcher eventDispatcher)
+    : IRequestHandler<AddShipCommand, Guid>
 {
     public async Task<Guid> Handle(AddShipCommand request, CancellationToken cancellationToken)
     {

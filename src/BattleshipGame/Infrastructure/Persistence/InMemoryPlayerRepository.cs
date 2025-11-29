@@ -40,7 +40,9 @@ public class InMemoryPlayerRepository : IPlayerRepository
     /// <inheritdoc />
     public Task<bool> UsernameExistsAsync(string username, CancellationToken cancellationToken)
     {
-        var exists = _players.Values.Any(p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase));
+        var exists = _players.Values.Any(p =>
+            string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase)
+        );
 
         return Task.FromResult(exists);
     }

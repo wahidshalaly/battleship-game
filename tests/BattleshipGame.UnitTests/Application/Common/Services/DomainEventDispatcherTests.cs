@@ -38,7 +38,9 @@ public class DomainEventDispatcherTests
         var publishedEvents = new List<IDomainEvent>();
 
         A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, cancellationToken))
-            .Invokes((IDomainEvent domainEvent, CancellationToken _) => publishedEvents.Add(domainEvent))
+            .Invokes(
+                (IDomainEvent domainEvent, CancellationToken _) => publishedEvents.Add(domainEvent)
+            )
             .Returns(Task.CompletedTask);
 
         // Act
@@ -64,7 +66,8 @@ public class DomainEventDispatcherTests
         await _dispatcher.DispatchEventsAsync(game, cancellationToken);
 
         // Assert
-        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, cancellationToken)).MustNotHaveHappened();
+        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, cancellationToken))
+            .MustNotHaveHappened();
     }
 
     [Fact]
@@ -79,7 +82,9 @@ public class DomainEventDispatcherTests
 
         var publishedEvents = new List<IDomainEvent>();
         A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, cancellationToken))
-            .Invokes((IDomainEvent domainEvent, CancellationToken _) => publishedEvents.Add(domainEvent))
+            .Invokes(
+                (IDomainEvent domainEvent, CancellationToken _) => publishedEvents.Add(domainEvent)
+            )
             .Returns(Task.CompletedTask);
 
         // Act

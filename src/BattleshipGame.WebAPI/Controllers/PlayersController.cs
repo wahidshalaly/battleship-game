@@ -55,11 +55,7 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
                 command.Username
             );
 
-            return CreatedAtAction(
-                nameof(GetPlayerById),
-                new { id = playerId },
-                playerId
-            );
+            return CreatedAtAction(nameof(GetPlayerById), new { id = playerId }, playerId);
         }
         catch (InvalidOperationException ex)
         {

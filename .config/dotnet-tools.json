@@ -3,11 +3,10 @@
   "isRoot": true,
   "tools": {
     "csharpier": {
-      "version": "1.0.1",
+      "version": "1.2.1",
       "commands": [
         "csharpier"
-      ],
-      "rollForward": false
+      ]
     },
     "swashbuckle.aspnetcore.cli": {
       "version": "6.9.0",
