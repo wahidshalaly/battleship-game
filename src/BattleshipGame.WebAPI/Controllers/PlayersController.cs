@@ -1,7 +1,6 @@
-using BattleshipGame.Application.Features.Players.Commands;
-using BattleshipGame.Application.Features.Players.Queries;
+using BattleshipGame.Application.Exceptions;
+using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BattleshipGame.WebAPI.Controllers;
@@ -10,11 +9,11 @@ namespace BattleshipGame.WebAPI.Controllers;
 /// Provides endpoints for managing players.
 /// </summary>
 /// <param name="logger">The logger.</param>
-/// <param name="mediator">The mediator.</param>
+/// <param name="playerService">The player application service.</param>
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class PlayersController(ILogger<PlayersController> logger, IMediator mediator)
+public class PlayersController(ILogger<PlayersController> logger, IPlayerService playerService)
     : ControllerBase
 {
     /// <summary>
@@ -32,42 +31,16 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
         CancellationToken cancellationToken
     )
     {
-        if (string.IsNullOrWhiteSpace(request.Username))
-        {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Invalid Username",
-                    Detail = "Username cannot be null or whitespace.",
-                    Status = StatusCodes.Status400BadRequest,
-                }
-            );
-        }
+        // Delegate to service for creation + validation
+        var playerId = await playerService.CreateAsync(request.Username, cancellationToken);
 
-        try
-        {
-            var command = new CreatePlayerCommand(request.Username);
-            var playerId = await mediator.Send(command, cancellationToken);
+        logger.LogInformation(
+            "Player created with ID: {PlayerId}, Username: {Username}",
+            playerId,
+            request.Username
+        );
 
-            logger.LogInformation(
-                "Player created with ID: {PlayerId}, Username: {Username}",
-                playerId,
-                command.Username
-            );
-
-            return CreatedAtAction(nameof(GetPlayerById), new { id = playerId }, playerId);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(
-                new ProblemDetails
-                {
-                    Title = "Username Already Exists",
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status409Conflict,
-                }
-            );
-        }
+        return CreatedAtAction(nameof(GetPlayerById), new { id = playerId.Value }, playerId.Value);
     }
 
     /// <summary>
@@ -84,21 +57,9 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
         CancellationToken cancellationToken
     )
     {
-        var query = new GetPlayerByIdQuery(new PlayerId(id));
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result is null)
-        {
-            return NotFound(
-                new ProblemDetails
-                {
-                    Title = "Player Not Found",
-                    Detail = $"Player with ID '{id}' was not found.",
-                    Status = StatusCodes.Status404NotFound,
-                }
-            );
-        }
-
+        var result =
+            await playerService.GetByIdAsync(new PlayerId(id), cancellationToken)
+            ?? throw new PlayerNotFoundException(id);
         var response = new PlayerResponse(
             result.PlayerId.Value,
             result.Username,
@@ -123,21 +84,9 @@ public class PlayersController(ILogger<PlayersController> logger, IMediator medi
         CancellationToken cancellationToken
     )
     {
-        var query = new GetPlayerByUsernameQuery(username);
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result is null)
-        {
-            return NotFound(
-                new ProblemDetails
-                {
-                    Title = "Player Not Found",
-                    Detail = $"Player with username '{username}' was not found.",
-                    Status = StatusCodes.Status404NotFound,
-                }
-            );
-        }
-
+        var result =
+            await playerService.GetByUsernameAsync(username, cancellationToken)
+            ?? throw new PlayerNotFoundException(username);
         var response = new PlayerResponse(
             result.PlayerId.Value,
             result.Username,
