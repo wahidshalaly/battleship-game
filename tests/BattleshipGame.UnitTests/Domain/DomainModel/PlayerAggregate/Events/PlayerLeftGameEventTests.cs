@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using BattleshipGame.Application.Exceptions;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate.Events;
@@ -110,7 +111,7 @@ public class PlayerLeftGameEventTests
         // Act & Assert
         var act = () => player.LeaveGame();
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<PlayerIsNotInActiveException>();
 
         var playerLeftGameEvents = player.DomainEvents.OfType<PlayerLeftGameEvent>().ToList();
         playerLeftGameEvents.Should().BeEmpty();

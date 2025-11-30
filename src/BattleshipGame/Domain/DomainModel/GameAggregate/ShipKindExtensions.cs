@@ -1,6 +1,4 @@
-﻿using BattleshipGame.Domain.Common;
-
-namespace BattleshipGame.Domain.DomainModel.GameAggregate;
+﻿namespace BattleshipGame.Domain.DomainModel.GameAggregate;
 
 public static class ShipKindExtensions
 {

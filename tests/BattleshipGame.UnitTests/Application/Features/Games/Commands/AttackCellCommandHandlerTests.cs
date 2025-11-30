@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BattleshipGame.Application.Common.Services;
 using BattleshipGame.Application.Contracts.Persistence;
+using BattleshipGame.Application.Exceptions;
 using BattleshipGame.Application.Features.Games.Commands;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
@@ -128,11 +129,11 @@ public class AttackCellCommandHandlerTests
             .Returns<Game?>(null);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var exception = await Assert.ThrowsAsync<GameNotFoundException>(() =>
             _handler.Handle(command, _cancellationToken)
         );
 
-        exception.Message.Should().Contain($"Game {gameId} not found");
+        exception.Message.Should().Be($"Game `{gameId.Value}` is not found.");
 
         A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, _cancellationToken))
             .MustNotHaveHappened();

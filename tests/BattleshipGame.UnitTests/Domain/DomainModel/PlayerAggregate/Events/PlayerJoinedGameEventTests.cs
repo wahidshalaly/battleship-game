@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using BattleshipGame.Application.Exceptions;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate.Events;
@@ -121,7 +122,7 @@ public class PlayerJoinedGameEventTests
         var act = () => player.JoinGame(gameId2);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<PlayerIsInActiveException>();
         player.DomainEvents.Should().HaveCount(initialEventCount); // No additional events
 
         var playerJoinedGameEvents = player.DomainEvents.OfType<PlayerJoinedGameEvent>().ToList();

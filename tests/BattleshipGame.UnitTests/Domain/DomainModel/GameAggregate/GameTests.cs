@@ -24,6 +24,33 @@ public class GameTests
     }
 
     [Theory]
+    [InlineData(10)]
+    [InlineData(15)]
+    [InlineData(20)]
+    [InlineData(26)]
+    public void Ctor_CreateBoardWithCustomSize(int boardSize)
+    {
+        var game = new Game(_playerId, boardSize);
+
+        game.Id.Should().NotBe(Guid.Empty);
+        game.State.Should().Be(GameState.Started);
+    }
+
+    [Theory]
+    [InlineData(-5)]
+    [InlineData(0)]
+    [InlineData(5)]
+    [InlineData(9)]
+    [InlineData(27)]
+    [InlineData(35)]
+    public void Ctor_WithInvalidBoardSize_ShouldThrowArgumentException(int boardSize)
+    {
+        var act = () => new Game(_playerId, boardSize);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Theory]
     [InlineData(BoardSide.Player)]
     [InlineData(BoardSide.Opponent)]
     public void AddShips_WhenCountLessThanAllowance_IsReadyIsFalse(BoardSide boardSide)

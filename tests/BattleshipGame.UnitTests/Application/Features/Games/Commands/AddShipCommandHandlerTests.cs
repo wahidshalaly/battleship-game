@@ -74,7 +74,7 @@ public class AddShipCommandHandlerTests
         // Assert
         await act.Should()
             .ThrowAsync<GameNotFoundException>()
-            .WithMessage($"Game with ID {gameId.Value} not found.");
+            .WithMessage($"Game `{gameId.Value}` is not found.");
     }
 
     public static System.Collections.Generic.IEnumerable<object[]> DifferentShipSetups()

@@ -62,7 +62,7 @@ public class PlayerTests
     }
 
     [Fact]
-    public void JoinGame_WhenAlreadyInActiveGame_ShouldThrowInvalidOperationException()
+    public void JoinGame_WhenAlreadyInActiveGame_ShouldThrowPlayerIsInActiveException()
     {
         var player = new Player(_playerId, _validUsername);
         var gameId1 = new GameId(Guid.NewGuid());
@@ -72,8 +72,7 @@ public class PlayerTests
 
         var act = () => player.JoinGame(gameId2);
 
-        const string exceptionMessage = "Player is already in an active game.";
-        act.Should().Throw<InvalidOperationException>().WithMessage(exceptionMessage);
+        act.Should().Throw<BattleshipGame.Application.Exceptions.PlayerIsInActiveException>();
     }
 
     [Fact]
@@ -100,14 +99,13 @@ public class PlayerTests
     }
 
     [Fact]
-    public void LeaveGame_WhenNotInActiveGame_ShouldThrowInvalidOperationException()
+    public void LeaveGame_WhenNotInActiveGame_ShouldThrowPlayerIsNotInActiveException()
     {
         var player = new Player(_playerId, _validUsername);
 
         var act = () => player.LeaveGame();
 
-        const string exceptionMessage = "Player is not in an active game.";
-        act.Should().Throw<InvalidOperationException>().WithMessage(exceptionMessage);
+        act.Should().Throw<BattleshipGame.Application.Exceptions.PlayerIsNotInActiveException>();
     }
 
     [Fact]
