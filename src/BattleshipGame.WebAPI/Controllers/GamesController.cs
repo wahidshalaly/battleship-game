@@ -1,7 +1,6 @@
-using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Application.Exceptions;
-using BattleshipGame.Application.Features.Games.Commands;
 using BattleshipGame.Application.Features.Games.Queries;
+using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using MediatR;
@@ -13,14 +12,14 @@ namespace BattleshipGame.WebAPI.Controllers;
 /// Provides endpoints for managing games.
 /// </summary>
 /// <param name="logger">The logger.</param>
+/// <param name="gameplayService">The gameplay application service.</param>
 /// <param name="mediator">The mediator.</param>
-/// <param name="gameRepository">The game repository (for operations not yet converted to MediatR).</param>
 [ApiController]
 [Route("api/[controller]")]
 public class GamesController(
     ILogger<GamesController> logger,
-    IMediator mediator,
-    IGameRepository gameRepository
+    IGameplayService gameplayService,
+    IMediator mediator
 ) : ControllerBase
 {
     /// <summary>
@@ -35,8 +34,9 @@ public class GamesController(
         CancellationToken cancellationToken
     )
     {
-        var gameId = await mediator.Send(
-            new CreateGameCommand(new PlayerId(request.PlayerId), request.BoardSize),
+        var gameId = await gameplayService.StartNewGameAsync(
+            new PlayerId(request.PlayerId),
+            request.BoardSize ?? 10,
             cancellationToken
         );
 
@@ -46,7 +46,7 @@ public class GamesController(
             request.PlayerId
         );
 
-        return CreatedAtAction(nameof(GetGame), new { id = gameId }, gameId);
+        return CreatedAtAction(nameof(GetGame), new { id = gameId.Value }, gameId.Value);
     }
 
     /// <summary>
@@ -66,20 +66,11 @@ public class GamesController(
     )
     {
         var query = new GetGameQuery(new GameId(id));
-        var result = await mediator.Send<GetGameQueryResult?>(query, cancellationToken);
-        if (result is null)
-        {
-            return NotFound(
-                new ProblemDetails
-                {
-                    Title = "Game Not Found",
-                    Detail = $"Game with ID '{id}' was not found.",
-                    Status = StatusCodes.Status404NotFound,
-                }
-            );
-        }
+        var game =
+            await mediator.Send(query, cancellationToken)
+            ?? throw new GameNotFoundException(new GameId(id));
 
-        return Ok(result);
+        return Ok(game);
     }
 
     /// <summary>
@@ -95,53 +86,16 @@ public class GamesController(
         CancellationToken cancellationToken
     )
     {
-        try
-        {
-            var addShipCommand = new AddShipCommand(
-                new GameId(id),
-                request.Side,
-                request.ShipKind,
-                request.Orientation,
-                request.BowCode
-            );
+        var shipId = await gameplayService.PlaceShipAsync(
+            new GameId(id),
+            request.Side,
+            request.ShipKind,
+            request.Orientation,
+            request.BowCode,
+            cancellationToken
+        );
 
-            var result = await mediator.Send(addShipCommand, cancellationToken);
-
-            return Ok(result);
-        }
-        catch (GameNotFoundException)
-        {
-            return NotFound(
-                new ProblemDetails
-                {
-                    Title = "Game Not Found",
-                    Detail = $"Game with ID '{id}' was not found.",
-                    Status = StatusCodes.Status404NotFound,
-                }
-            );
-        }
-        catch (InvalidOperationException exception)
-        {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Ship Placement Error",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status400BadRequest,
-                }
-            );
-        }
-        catch (ArgumentException exception)
-        {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Invalid Ship Parameters",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status400BadRequest,
-                }
-            );
-        }
+        return Ok(shipId.Value);
     }
 
     /// <summary>
@@ -157,24 +111,14 @@ public class GamesController(
         CancellationToken cancellationToken
     )
     {
-        try
-        {
-            var attackCell = new AttackCellCommand(new GameId(id), request.Side, request.Cell);
-            var result = await mediator.Send(attackCell, cancellationToken);
+        var result = await gameplayService.AttackAsync(
+            new GameId(id),
+            request.Side,
+            request.Cell,
+            cancellationToken
+        );
 
-            return Ok(result);
-        }
-        catch (ArgumentException exception)
-        {
-            return BadRequest(
-                new ProblemDetails
-                {
-                    Title = "Invalid Attack",
-                    Detail = exception.Message,
-                    Status = StatusCodes.Status400BadRequest,
-                }
-            );
-        }
+        return Ok(result.CellState);
     }
 
     /// <summary>
@@ -188,22 +132,13 @@ public class GamesController(
         CancellationToken cancellationToken
     )
     {
-        var game = await gameRepository.GetByIdAsync(new GameId(id), cancellationToken);
-
-        if (game is null)
-        {
-            return NotFound(
-                new ProblemDetails
-                {
-                    Title = "Game Not Found",
-                    Detail = $"Game with ID '{id}' was not found.",
-                    Status = StatusCodes.Status404NotFound,
-                }
-            );
-        }
+        var query = new GetGameQuery(new GameId(id));
+        var game =
+            await mediator.Send(query, cancellationToken)
+            ?? throw new GameNotFoundException(new GameId(id));
 
         // For demo, winner is null unless state is GameOver
-        var winner = game.State == GameState.GameOver ? game.PlayerId.Value : (Guid?)null;
+        var winner = game.State == GameState.GameOver ? game.PlayerId : (Guid?)null;
         return new GameStateResponse(game.State.ToString(), winner);
     }
 }

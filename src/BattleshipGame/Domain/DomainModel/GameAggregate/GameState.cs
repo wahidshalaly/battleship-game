@@ -8,6 +8,6 @@ public enum GameState
     None = 0,
     Started = 1,
     BoardsAreReady = 2,
-    InProgress = 3,
+    GameOn = 3,
     GameOver = 4,
 }

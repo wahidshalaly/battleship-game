@@ -1,3 +1,4 @@
+using BattleshipGame.Application.Features.Games.Queries;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.WebAPI.Controllers;
 using FluentAssertions;

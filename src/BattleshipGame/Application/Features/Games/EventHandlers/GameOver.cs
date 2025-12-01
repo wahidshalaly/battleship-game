@@ -7,19 +7,13 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// <summary>
 /// Handles the GameOverEvent domain event and executes side effects.
 /// </summary>
-public class GameOverEventHandler : INotificationHandler<GameOverEvent>
+/// <remarks>
+/// Initializes a new instance of the GameOverEventHandler class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+internal class GameOverEventHandler(ILogger<GameOverEventHandler> logger)
+    : INotificationHandler<GameOverEvent>
 {
-    private readonly ILogger<GameOverEventHandler> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the GameOverEventHandler class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    public GameOverEventHandler(ILogger<GameOverEventHandler> logger)
-    {
-        _logger = logger;
-    }
-
     /// <summary>
     /// Handles the GameOverEvent and executes side effects.
     /// </summary>
@@ -44,7 +38,7 @@ public class GameOverEventHandler : INotificationHandler<GameOverEvent>
     {
         // Example: Update player statistics in database
         // This is a side effect that shouldn't be in domain logic
-        _logger.LogInformation("Updating statistics for game {GameId}", gameOverEvent.GameId);
+        logger.LogInformation("Updating statistics for game {GameId}", gameOverEvent.GameId);
 
         // In real implementation, you might:
         // - Update winner's win count based on WinnerSide
@@ -58,7 +52,7 @@ public class GameOverEventHandler : INotificationHandler<GameOverEvent>
     private async Task NotifyPlayers(GameOverEvent gameOverEvent)
     {
         // Example: Send notifications via SignalR, email, push notifications
-        _logger.LogInformation(
+        logger.LogInformation(
             "Sending game over notifications for game {GameId}, winner: {WinnerSide}",
             gameOverEvent.GameId,
             gameOverEvent.WinnerSide
@@ -76,7 +70,7 @@ public class GameOverEventHandler : INotificationHandler<GameOverEvent>
     private void LogGameCompletion(GameOverEvent gameOverEvent)
     {
         // Example: Structured logging for analytics and monitoring
-        _logger.LogInformation(
+        logger.LogInformation(
             "Game completed: {GameId}, Winner: {WinnerSide}",
             gameOverEvent.GameId,
             gameOverEvent.WinnerSide

@@ -8,7 +8,7 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// Handles the BoardsReadyEvent domain event and executes side effects.
 /// </summary>
 /// <param name="logger">The logger instance.</param>
-public class BoardsReadyEventHandler(ILogger<BoardsReadyEventHandler> logger)
+internal class BoardsReadyEventHandler(ILogger<BoardsReadyEventHandler> logger)
     : INotificationHandler<BoardsReadyEvent>
 {
     /// <summary>

@@ -8,7 +8,7 @@ namespace BattleshipGame.Application.Features.Games.Queries;
 /// Query to get a game by ID.
 /// </summary>
 /// <param name="GameId">The game identifier.</param>
-public record GetGameQuery(GameId GameId) : IRequest<GetGameQueryResult>;
+public record GetGameQuery(GameId GameId) : IRequest<GetGameQueryResult?>;
 
 /// <summary>
 /// Result of getting a game.

@@ -25,6 +25,26 @@ For latest SDKs documentations, use Context 7.
 - Format using `dotnet format` or IDE auto-formatting tools.
 - Prioritize readability, testability, and SOLID principles.
 
+## C# Conventions
+- Use
+
+- Use PascalCase for class, method, and property names.
+- Use camelCase for local variables and method parameters.
+- Use `var` for local variable declarations when the type is obvious.
+- Use expression-bodied members for simple getters and methods.
+- Use string interpolation (`$"Hello {name}"`) instead of `String.Format`.
+- Use `using` statements for IDisposable objects.
+- Use `Async` suffix for asynchronous methods.
+- Use `I` prefix for interface names (e.g., `IRepository`).
+- Use `nameof()` operator for referencing member names in exceptions and logging.
+- Use primary contructor syntax for dependency injection.
+- Use `record` types for immutable data structures.
+- Use `switch` expressions for concise conditional logic.
+- Use pattern matching for type checks and casts.
+- Use `??` and `?.` operators for null handling.
+- Use `throw` expressions for concise exception throwing.
+- Import static classes when using their members to reduce verbosity.
+
 ## 🧶 Patterns
 
 ### ✅ Patterns to Follow

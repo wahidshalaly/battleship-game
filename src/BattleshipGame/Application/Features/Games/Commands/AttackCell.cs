@@ -22,7 +22,7 @@ public record AttackCellCommand(GameId GameId, BoardSide BoardSide, string CellC
 /// <param name="logger">The logger instance.</param>
 /// <param name="gameRepository">The game repository.</param>
 /// <param name="eventDispatcher">The domain event dispatcher.</param>
-public class AttackCellHandler(
+internal class AttackCellHandler(
     ILogger<AttackCellHandler> logger,
     IGameRepository gameRepository,
     IDomainEventDispatcher eventDispatcher

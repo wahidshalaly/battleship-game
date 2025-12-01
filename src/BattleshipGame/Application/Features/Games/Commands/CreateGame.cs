@@ -20,7 +20,7 @@ public record CreateGameCommand(PlayerId PlayerId, int? BoardSize = 10) : IReque
 /// <param name="logger">The logger instance.</param>
 /// <param name="gameRepository">The game repository.</param>
 /// <param name="eventDispatcher">The domain event dispatcher.</param>
-public class CreateGameHandler(
+internal class CreateGameHandler(
     ILogger<CreateGameHandler> logger,
     IGameRepository gameRepository,
     IDomainEventDispatcher eventDispatcher

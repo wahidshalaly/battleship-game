@@ -8,19 +8,13 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// <summary>
 /// Handles the CellAttackedEvent domain event and executes side effects.
 /// </summary>
-public class CellAttackedEventHandler : INotificationHandler<CellAttackedEvent>
+/// <remarks>
+/// Initializes a new instance of the CellAttackedEventHandler class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+internal class CellAttackedEventHandler(ILogger<CellAttackedEventHandler> logger)
+    : INotificationHandler<CellAttackedEvent>
 {
-    private readonly ILogger<CellAttackedEventHandler> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the CellAttackedEventHandler class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    public CellAttackedEventHandler(ILogger<CellAttackedEventHandler> logger)
-    {
-        _logger = logger;
-    }
-
     /// <summary>
     /// Handles the CellAttackedEvent and executes side effects.
     /// </summary>
@@ -44,7 +38,7 @@ public class CellAttackedEventHandler : INotificationHandler<CellAttackedEvent>
     private async Task SendRealTimeUpdate(CellAttackedEvent cellAttackedEvent)
     {
         // Example: Send real-time updates via SignalR to connected clients
-        _logger.LogInformation(
+        logger.LogInformation(
             "Sending real-time update for attack on {CellCode} in game {BoardId}, result: {CellState}",
             cellAttackedEvent.CellCode,
             cellAttackedEvent.BoardId,
@@ -62,7 +56,7 @@ public class CellAttackedEventHandler : INotificationHandler<CellAttackedEvent>
     private async Task TrackAttackAnalytics(CellAttackedEvent cellAttackedEvent)
     {
         // Example: Track game analytics for data analysis
-        _logger.LogInformation(
+        logger.LogInformation(
             "Tracking analytics for attack: Game {BoardId}, Cell {CellCode}, State {CellState}",
             cellAttackedEvent.BoardId,
             cellAttackedEvent.CellCode,
@@ -83,7 +77,7 @@ public class CellAttackedEventHandler : INotificationHandler<CellAttackedEvent>
         // Example: Check for achievement unlocks
         if (cellAttackedEvent.CellState == CellState.Hit)
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Hit detected - checking for achievements in game {BoardId}",
                 cellAttackedEvent.BoardId
             );
