@@ -6,9 +6,9 @@ using MediatR;
 
 namespace BattleshipGame.Application.Features.Games.Commands;
 
-public record OpponentAttackCommand(GameId GameId) : IRequest<AttackResultDto>;
+public record OpponentAttackCommand(GameId GameId) : IRequest<OpponentAttackResult>;
 
-public record AttackResultDto(
+public record OpponentAttackResult(
     string CellCode,
     CellState CellState,
     bool IsGameOver,
@@ -18,9 +18,9 @@ public record AttackResultDto(
 internal class OpponentAttackHandler(
     IGameRepository gameRepository,
     IComputerOpponentStrategy opponentStrategy
-) : IRequestHandler<OpponentAttackCommand, AttackResultDto>
+) : IRequestHandler<OpponentAttackCommand, OpponentAttackResult>
 {
-    public async Task<AttackResultDto> Handle(
+    public async Task<OpponentAttackResult> Handle(
         OpponentAttackCommand request,
         CancellationToken cancellationToken
     )
@@ -35,7 +35,7 @@ internal class OpponentAttackHandler(
         var targetCell = await opponentStrategy.SelectNextAttack(request.GameId);
         var cellState = game.Attack(BoardSide.Player, targetCell);
         await gameRepository.SaveAsync(game, cancellationToken);
-        return new AttackResultDto(
+        return new OpponentAttackResult(
             targetCell,
             cellState,
             game.State == GameState.GameOver,

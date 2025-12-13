@@ -1,4 +1,7 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Reflection;
+using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -9,6 +12,19 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
 ) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
+    // Cache property extractors per type to avoid repeated reflection
+    private static readonly ConcurrentDictionary<Type, List<PropertyExtractor>> _extractorCache =
+        new();
+
+    private record PropertyExtractor(string Name, Func<object, object?> GetValue);
+
+    // JSON serialization options for logging
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        WriteIndented = false,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
@@ -17,43 +33,248 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
     {
         var requestName = typeof(TRequest).Name;
         var correlationId = Activity.Current?.TraceId.ToString() ?? string.Empty;
-        using var scope = logger.BeginScope(
-            new Dictionary<string, object>
+
+        // Extract entity context from request
+        var requestContext = ExtractEntityContext(request);
+
+        // Build scope with correlation ID, request name, and entity context
+        var scopeData = new Dictionary<string, object>
+        {
+            ["CorrelationId"] = correlationId,
+            ["Request"] = requestName,
+        };
+
+        foreach (var kvp in requestContext)
+        {
+            scopeData[kvp.Key] = kvp.Value;
+
+            // Also add to Activity for distributed tracing
+            Activity.Current?.SetTag(ConvertToSnakeCase(kvp.Key), kvp.Value.ToString());
+        }
+
+        using var scope = logger.BeginScope(scopeData);
+
+        // Log with entity context
+        var contextString = requestContext.Any()
+            ? $" [{string.Join(", ", requestContext.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]"
+            : string.Empty;
+
+        // Log request with full payload at Debug level
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            try
             {
-                ["CorrelationId"] = correlationId,
-                ["Request"] = requestName,
+                var requestJson = JsonSerializer.Serialize(request, _jsonOptions);
+                logger.LogDebug(
+                    "Handling {Request}{Context} with payload: {RequestPayload}",
+                    requestName,
+                    contextString,
+                    requestJson
+                );
             }
-        );
-        logger.LogInformation(
-            "Handling {Request} (corr={CorrelationId})",
-            requestName,
-            correlationId
-        );
+            catch
+            {
+                // Fallback if serialization fails
+                logger.LogInformation("Handling {Request}{Context}", requestName, contextString);
+            }
+        }
+        else
+        {
+            logger.LogInformation("Handling {Request}{Context}", requestName, contextString);
+        }
 
         var sw = Stopwatch.StartNew();
         try
         {
             var response = await next();
             sw.Stop();
-            logger.LogInformation(
-                "Handled {Request} in {Elapsed} ms (corr={CorrelationId})",
-                requestName,
-                sw.ElapsedMilliseconds,
-                correlationId
-            );
+
+            // Extract entity IDs from response
+            var responseContext = ExtractEntityContext(response);
+            var responseContextString = responseContext.Any()
+                ? $" [{string.Join(", ", responseContext.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]"
+                : string.Empty;
+
+            // Add response context to Activity
+            foreach (var kvp in responseContext)
+            {
+                Activity.Current?.SetTag(
+                    $"response.{ConvertToSnakeCase(kvp.Key)}",
+                    kvp.Value.ToString()
+                );
+            }
+
+            // Log response at Debug level with payload
+            if (logger.IsEnabled(LogLevel.Debug))
+            {
+                try
+                {
+                    var responseJson = JsonSerializer.Serialize(response, _jsonOptions);
+                    logger.LogDebug(
+                        "Handled {Request} in {Elapsed}ms{Context} - Response: {ResponsePayload}",
+                        requestName,
+                        sw.ElapsedMilliseconds,
+                        responseContextString,
+                        responseJson
+                    );
+                }
+                catch
+                {
+                    logger.LogInformation(
+                        "Handled {Request} in {Elapsed}ms{Context}",
+                        requestName,
+                        sw.ElapsedMilliseconds,
+                        responseContextString
+                    );
+                }
+            }
+            else
+            {
+                logger.LogInformation(
+                    "Handled {Request} in {Elapsed}ms{Context}",
+                    requestName,
+                    sw.ElapsedMilliseconds,
+                    responseContextString
+                );
+            }
+
             return response;
         }
         catch (Exception ex)
         {
             sw.Stop();
-            logger.LogError(
-                ex,
-                "Error handling {Request} after {Elapsed} ms (corr={CorrelationId})",
-                requestName,
-                sw.ElapsedMilliseconds,
-                correlationId
-            );
+
+            // Always log request payload on errors, even if not in Debug mode
+            try
+            {
+                var requestJson = JsonSerializer.Serialize(request, _jsonOptions);
+                logger.LogError(
+                    ex,
+                    "Error handling {Request} after {Elapsed}ms{Context} - Request: {RequestPayload}",
+                    requestName,
+                    sw.ElapsedMilliseconds,
+                    contextString,
+                    requestJson
+                );
+            }
+            catch
+            {
+                // Fallback if serialization fails
+                logger.LogError(
+                    ex,
+                    "Error handling {Request} after {Elapsed}ms{Context}",
+                    requestName,
+                    sw.ElapsedMilliseconds,
+                    contextString
+                );
+            }
+
             throw;
         }
+    }
+
+    /// <summary>
+    /// Extracts entity IDs and important context from request/response objects.
+    /// Uses cached reflection to minimize performance overhead.
+    /// </summary>
+    private static Dictionary<string, object> ExtractEntityContext(object? obj)
+    {
+        var context = new Dictionary<string, object>();
+
+        if (obj is null)
+            return context;
+
+        var objType = obj.GetType();
+
+        // For Guid responses (like CreatePlayer/CreateGame that return Guid directly)
+        if (obj is Guid guid)
+        {
+            context["EntityId"] = guid;
+            return context;
+        }
+
+        // Get or build extractors for this type (cached)
+        var extractors = _extractorCache.GetOrAdd(objType, BuildExtractors);
+
+        // Execute cached extractors
+        foreach (var extractor in extractors)
+        {
+            try
+            {
+                var value = extractor.GetValue(obj);
+                if (value is not null)
+                {
+                    context[extractor.Name] = value;
+                }
+            }
+            catch
+            {
+                // Skip properties that fail to read
+            }
+        }
+
+        return context;
+    }
+
+    /// <summary>
+    /// Builds property extractors for a type (called once per type and cached).
+    /// </summary>
+    private static List<PropertyExtractor> BuildExtractors(Type type)
+    {
+        var extractors = new List<PropertyExtractor>();
+        var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        foreach (var prop in properties)
+        {
+            var propName = prop.Name;
+
+            // Look for entity ID properties and important context
+            if (
+                propName.EndsWith("Id", StringComparison.OrdinalIgnoreCase)
+                || propName is "Username" or "GameState" or "State" or "Side"
+            )
+            {
+                // Check if this is an EntityId wrapper type that needs unwrapping
+                var propType = prop.PropertyType;
+                var valueProperty = propType.GetProperty("Value");
+
+                if (valueProperty is not null && propType.Name.EndsWith("Id"))
+                {
+                    // Create extractor that unwraps EntityId -> Guid
+                    extractors.Add(
+                        new PropertyExtractor(
+                            propName,
+                            obj =>
+                            {
+                                var wrapper = prop.GetValue(obj);
+                                return wrapper is not null ? valueProperty.GetValue(wrapper) : null;
+                            }
+                        )
+                    );
+                }
+                else
+                {
+                    // Create direct property extractor
+                    extractors.Add(new PropertyExtractor(propName, prop.GetValue));
+                }
+            }
+        }
+
+        return extractors;
+    }
+
+    /// <summary>
+    /// Converts PascalCase to snake_case for OpenTelemetry conventions.
+    /// </summary>
+    private static string ConvertToSnakeCase(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        var result = string.Concat(
+            input.Select((c, i) => i > 0 && char.IsUpper(c) ? $"_{c}" : c.ToString())
+        );
+
+        return result.ToLowerInvariant();
     }
 }

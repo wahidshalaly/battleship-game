@@ -34,12 +34,6 @@ internal class CreateGameHandler(
     /// <returns>The attack result.</returns>
     public async Task<Guid> Handle(CreateGameCommand request, CancellationToken cancellationToken)
     {
-        logger.LogInformation(
-            "Creating new game for player {PlayerId} with board size {BoardSize}",
-            request.PlayerId,
-            request.BoardSize ?? 10
-        );
-
         // 1. Create new game (this may raise domain events)
         var game = new Game(request.PlayerId, request.BoardSize ?? 10);
 
@@ -51,12 +45,6 @@ internal class CreateGameHandler(
 
         // 4. Clear events from aggregate
         game.ClearDomainEvents();
-
-        logger.LogInformation(
-            "Successfully created game {GameId} for player {PlayerId}",
-            game.Id,
-            request.PlayerId
-        );
 
         return game.Id;
     }

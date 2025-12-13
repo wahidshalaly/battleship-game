@@ -15,16 +15,10 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
         CancellationToken cancellationToken
     )
     {
-        logger.LogInformation(
-            "Starting new game for player {PlayerId} size {BoardSize}",
-            playerId,
-            boardSize
-        );
         var guid = await mediator.Send(
             new Features.Games.Commands.StartNewGameCommand(playerId, boardSize),
             cancellationToken
         );
-        logger.LogInformation("Game {GameId} created for player {PlayerId}", guid, playerId);
         return new GameId(guid);
     }
 
@@ -45,27 +39,25 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
             side,
             gameId
         );
-        var shipGuid = await mediator.Send(
+        var guid = await mediator.Send(
             new Features.Games.Commands.AddShipCommand(gameId, side, kind, orientation, bowCode),
             cancellationToken
         );
         logger.LogInformation(
             "Ship {ShipId} placed on {Side} for game {GameId}",
-            shipGuid,
+            guid,
             side,
             gameId
         );
-        return new ShipId(shipGuid);
+        return new ShipId(guid);
     }
 
     public async Task StartGameplayAsync(GameId gameId, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Starting gameplay for game {GameId}", gameId);
         await mediator.Send(
             new Features.Games.Commands.StartGameplayCommand(gameId),
             cancellationToken
         );
-        logger.LogInformation("Gameplay confirmed for game {GameId}", gameId);
     }
 
     public async Task<AttackResult> AttackAsync(
@@ -87,21 +79,21 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
             cancellationToken
         );
         // Build preliminary result; a follow-up opponent move may alter state but we re-query if needed via status check
-        var status = await mediator.Send(
+        var gameResult = await mediator.Send(
             new Features.Games.Commands.CheckGameStatusCommand(gameId),
             cancellationToken
         );
-        var result = new AttackResult(
+        var attackResult = new AttackResult(
             cellCode,
             cellState,
             targetSide,
-            status?.IsGameOver ?? false,
-            status?.Winner ?? BoardSide.None
+            gameResult?.IsGameOver ?? false,
+            gameResult?.Winner ?? BoardSide.None
         );
         if (
             attacker == BoardSide.Player
             && targetSide == BoardSide.Opponent
-            && (status is null || !status.IsGameOver)
+            && (gameResult is null || !gameResult.IsGameOver)
         )
         {
             logger.LogInformation("Opponent counter-attack initiating for game {GameId}", gameId);
@@ -116,7 +108,7 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
                 opponent.IsGameOver
             );
         }
-        return result;
+        return attackResult;
     }
 
     public async Task<AttackResult> OpponentAttackAsync(
@@ -124,17 +116,16 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
         CancellationToken cancellationToken
     )
     {
-        logger.LogInformation("Opponent attack for game {GameId}", gameId);
-        var attackDto = await mediator.Send(
+        var attackResult = await mediator.Send(
             new Features.Games.Commands.OpponentAttackCommand(gameId),
             cancellationToken
         );
         return new AttackResult(
-            attackDto.CellCode,
-            attackDto.CellState,
+            attackResult.CellCode,
+            attackResult.CellState,
             BoardSide.Opponent,
-            attackDto.IsGameOver,
-            attackDto.Winner
+            attackResult.IsGameOver,
+            attackResult.Winner
         );
     }
 
@@ -143,20 +134,16 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
         CancellationToken cancellationToken
     )
     {
-        logger.LogInformation("Checking status for game {GameId}", gameId);
-        var status = await mediator.Send(
+        var gameResult = await mediator.Send(
             new Features.Games.Commands.CheckGameStatusCommand(gameId),
             cancellationToken
         );
-        return status;
+        return gameResult;
     }
 
     public async Task EndGameAsync(GameId gameId, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Ending game {GameId}", gameId);
         await mediator.Send(new Features.Games.Commands.EndGameCommand(gameId), cancellationToken);
-        logger.LogInformation("Game {GameId} ended.", gameId);
     }
 }
 
-// DTO records moved to dedicated files for clarity.

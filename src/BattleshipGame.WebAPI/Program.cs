@@ -10,6 +10,7 @@ using BattleshipGame.WebAPI.Middleware;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,9 +21,41 @@ builder.AddServiceDefaults();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<DomainContextEnricherFilter>();
+    options.Filters.Add<ValidationLoggingFilter>();
 });
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+
+// Configure API behavior for validation errors
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+
+        var errors = context
+            .ModelState.Where(x => x.Value?.Errors.Count > 0)
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+            );
+
+        logger.LogWarning(
+            "Model binding/validation failed for {ActionName}. Errors: {@Errors}",
+            context.ActionDescriptor.DisplayName,
+            errors
+        );
+
+        return new BadRequestObjectResult(
+            new ValidationProblemDetails(context.ModelState)
+            {
+                Title = "One or more validation errors occurred.",
+                Status = StatusCodes.Status400BadRequest,
+                Instance = context.HttpContext.Request.Path,
+            }
+        );
+    };
+});
 
 // Configure routing to use lowercase URLs
 builder.Services.Configure<RouteOptions>(options =>
@@ -67,6 +100,9 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
+// Add request/response logging middleware (should be first to capture all requests)
+app.UseMiddleware<RequestResponseLoggingMiddleware>();
+
 // Add exception handling middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -75,7 +111,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
