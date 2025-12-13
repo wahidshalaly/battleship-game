@@ -11,28 +11,9 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using MediatR;
 using Microsoft.OpenApi.Models;
-using Serilog;
-using Serilog.Events;
-using Serilog.Formatting.Json;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Configure Serilog
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-    .Enrich.FromLogContext()
-    .Enrich.WithProcessId()
-    .Enrich.WithThreadId()
-    .WriteTo.Console(new JsonFormatter())
-    .WriteTo.File(
-        new JsonFormatter(),
-        path: "logs/app-.json",
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 7
-    )
-    .CreateLogger();
-
-builder.Host.UseSerilog();
+builder.AddServiceDefaults();
 
 // Add services to the container.
 
@@ -86,17 +67,6 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-// Add Serilog HTTP request logging
-app.UseSerilogRequestLogging(opts =>
-{
-    opts.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
-    {
-        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
-        diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
-        diagnosticContext.Set("RemoteIP", httpContext.Connection.RemoteIpAddress);
-    };
-});
-
 // Add exception handling middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -106,10 +76,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapSwagger();
+
 app.UseHttpsRedirection();
 app.UseAuthorization();
+
+app.MapSwagger();
+app.MapDefaultEndpoints();
 app.MapControllers();
+
 app.Run();
 
 public partial class Program;
