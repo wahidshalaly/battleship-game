@@ -30,7 +30,7 @@ public class GameApiSimulationTests(
         await PlaceShips(gameId);
         await VerifyGameState(gameId, GameState.BoardsAreReady);
 
-        // 4. Attack all Opp ship positions
+        // 4. Attack all Opponent ship positions
         await AttackShips(gameId);
         await VerifyGameState(gameId, GameState.GameOver);
     }

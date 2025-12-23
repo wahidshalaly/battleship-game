@@ -36,7 +36,7 @@ internal static class ErrorMessages
     public const string InvalidShipAttack = "Cell does not belong to ship position.";
 
     public const string InvalidBoardSide =
-        "Invalid board side. Allowed values are either `Own` or `Opp`.";
+        "Invalid board side. Allowed values are either `Player` or `Opponent`.";
 
     public const string InvalidShipOrientation =
         "Invalid ship orientation. Allowed values are either `Horizontal` or `Vertical`.";

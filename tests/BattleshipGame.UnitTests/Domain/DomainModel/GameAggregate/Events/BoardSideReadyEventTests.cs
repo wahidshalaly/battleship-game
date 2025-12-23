@@ -84,14 +84,14 @@ public class BoardSideReadyEventTests
         var playerId = new PlayerId(Guid.NewGuid());
         var game = new Game(playerId);
 
-        // Act - Make Own side ready first
+        // Act - Make Player side ready first
         game.AddShip(BoardSide.Player, ShipKind.Battleship, ShipOrientation.Vertical, "A1");
         game.AddShip(BoardSide.Player, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
         game.AddShip(BoardSide.Player, ShipKind.Destroyer, ShipOrientation.Vertical, "E1");
         game.AddShip(BoardSide.Player, ShipKind.Submarine, ShipOrientation.Vertical, "G1");
         game.AddShip(BoardSide.Player, ShipKind.Carrier, ShipOrientation.Vertical, "I1");
 
-        // Then make Opp side ready
+        // Then make Opponent side ready
         game.AddShip(BoardSide.Opponent, ShipKind.Battleship, ShipOrientation.Vertical, "A1");
         game.AddShip(BoardSide.Opponent, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
         game.AddShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "E1");

@@ -91,7 +91,8 @@ All entities use strongly-typed identifiers inheriting from `EntityId`:
 #### CellState
 - **Clear**: Unoccupied and not attacked
 - **Occupied**: Contains a ship
-- **Hit**: Has been attacked
+- **Hit**: Has been attacked (occupied cell targeted)
+- **Missed**: Has been attacked (empty cell targeted)
 
 #### ShipKind with Sizes
 - **Destroyer**: 2 cells
@@ -105,8 +106,8 @@ All entities use strongly-typed identifiers inheriting from `EntityId`:
 - **Horizontal**: Ships placed horizontally
 
 #### BoardSide
-- **Own**: Player's own board
-- **Opp**: Opponent's board
+- **Player**: Player's own board
+- **Opponent**: Opponent's board
 
 #### GameState
 - **None**: Initial state

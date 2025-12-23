@@ -63,30 +63,57 @@ graph TB
 - **Entities**: `Game`, `Board`, `Ship` (with identity and lifecycle)
 - **Value Objects**: `Cell`, strongly-typed IDs (immutable objects)
 - **Aggregates**: `GameAggregate`, `PlayerAggregate` (consistency boundaries)
-- **Domain Events**: Event-driven communication
+- **Domain Events**: Event-driven communication via `IDomainEvent`, `DomainEvent<T>` base classes
 - **Business Rules**: Game logic, validation, and constraints
+
+**Domain Events Implemented**:
+- `CellAttackedEvent`: Raised when a cell is attacked
+- `GameOverEvent`: Raised when game concludes
+- `ShipSunkEvent`: Raised when a ship is destroyed
+- `BoardsReadyEvent`: Raised when both boards are ready for gameplay
+- `PlayerJoinedGameEvent`: Raised when player joins game
+- `PlayerLeftGameEvent`: Raised when player leaves game
 
 **Dependencies**: None (pure domain logic)
 
 ### 2. Application Layer (`BattleshipGame/Application`)
-**Purpose**: Orchestrates domain objects to fulfill use cases.
+**Purpose**: Orchestrates domain objects to fulfill use cases using CQRS pattern.
 
 **Components**:
-- **Application Services**: `IGameService`, `GameService`
-- **Use Cases**: Game creation, ship placement, attack handling
-- **DTOs**: Data transfer objects for inter-layer communication
-- **Interfaces**: Repository contracts and external service abstractions
+- **Application Services**:
+  - `IGameplayService`, `GameplayService` - Orchestrates game lifecycle
+  - `IPlayerService`, `PlayerService` - Manages player operations
+- **Commands**: `CreateGameCommand`, `PlaceShipCommand`, `AttackCommand` (handlers via MediatR)
+- **Queries**: `GetGameQuery`, `GetPlayerQuery`, `GetPlayerByUsernameQuery` (handlers via MediatR)
+- **DTOs**: Data transfer objects for inter-layer communication (`GetGameQueryResult`, `GetPlayerQueryResult`)
+- **Repository Contracts**: `IGameRepository`, `IPlayerRepository` (abstraction for persistence)
+- **Domain Event Dispatcher**: `IDomainEventDispatcher` - Publishes domain events through MediatR
+
+**Event Dispatch Pattern**:
+- Domain events are raised within aggregate roots using `AddDomainEvent()`
+- `DomainEventDispatcher` publishes events to MediatR for decoupled handling
+- Event handlers can implement cross-cutting concerns (notifications, logging, etc.)
+- Aggregates maintain `IReadOnlyList<IDomainEvent>` of pending events
 
 **Dependencies**: Domain Layer only
 
 ### 3. Infrastructure Layer (`BattleshipGame/Infrastructure`)
 **Purpose**: Implements external concerns and data persistence.
 
-**Components** (planned):
-- **Repositories**: `GameRepository`, `PlayerRepository`
-- **Data Access**: Entity Framework Core DbContext
-- **External Services**: Authentication, logging, notifications
+**Components**:
+- **Repositories** (currently in-memory):
+  - `InMemoryGameRepository`: Implements `IGameRepository` for game persistence
+  - `InMemoryPlayerRepository`: Implements `IPlayerRepository` for player persistence
+  - Methods: `GetByIdAsync()`, `SaveAsync()`, `DeleteAsync()`, `GetAllAsync()`, `UsernameExistsAsync()`
+- **Data Access** (planned): Entity Framework Core DbContext for database integration
+- **External Services** (planned): Authentication, logging, notifications
 - **Adapters**: Third-party integrations
+
+**Repository Pattern Benefits**:
+- Abstracts data access details from application layer
+- Enables easy switching between in-memory and persistent storage
+- Facilitates testing through mock implementations
+- Provides consistent data access interface
 
 **Dependencies**: Domain Layer, Application Layer
 
@@ -111,6 +138,15 @@ public interface IGameRepository
     Task<Game?> GetByIdAsync(GameId id);
     Task SaveAsync(Game game);
     Task DeleteAsync(GameId id);
+    Task<IEnumerable<Game>> GetAllAsync();
+}
+
+public interface IPlayerRepository
+{
+    Task<Player?> GetByIdAsync(PlayerId id);
+    Task<PlayerId> SaveAsync(Player player);
+    Task<Player?> GetByUsernameAsync(string username);
+    Task<bool> UsernameExistsAsync(string username);
 }
 ```
 
@@ -132,14 +168,32 @@ public record GameId(Guid Value) : EntityId(Value);
 public record ShipId(Guid Value) : EntityId(Value);
 ```
 
-### Domain Events
+### Domain Events Pattern
 Enables loose coupling and cross-cutting concerns:
 ```csharp
-public abstract class DomainEvent : IDomainEvent
+public abstract class DomainEvent<T> : IDomainEvent
+    where T : class
 {
-    public DateTime OccurredOn { get; }
+    public Guid EventId { get; init; } = Guid.NewGuid();
+    public DateTime OccurredOn { get; init; } = DateTime.UtcNow;
+    public Type EventType { get; init; } = typeof(T);
 }
 ```
+
+**Event Flow**:
+1. Aggregate raises domain event: `AddDomainEvent(new CellAttackedEvent(...))`
+2. Event is stored in aggregate's `DomainEvents` collection
+3. Application layer dispatches events: `await eventDispatcher.DispatchEventsAsync(aggregate)`
+4. `DomainEventDispatcher` publishes each event through MediatR
+5. MediatR routes events to corresponding event handlers
+6. Handlers implement side effects (logging, notifications, state updates)
+7. Aggregate clears events: `aggregate.ClearDomainEvents()`
+
+**Benefits**:
+- Decouples domain from application concerns
+- Enables audit trail and event replay capabilities
+- Supports event sourcing (future enhancement)
+- Clean separation of core logic from side effects
 
 ## Data Flow
 

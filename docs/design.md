@@ -142,13 +142,38 @@ classDiagram
 ```mermaid
 classDiagram
     %% Application Services
-    class IGameService {
+    class IGameplayService {
         <<Interface>>
-        +GameId StartGame(Guid, Guid)
+        +Task~GameId~ StartNewGameAsync(PlayerId, int)
+        +Task~ShipId~ PlaceShipAsync(GameId, BoardSide, ShipKind, ShipOrientation, string)
+        +Task StartGameplayAsync(GameId)
+        +Task~AttackResult~ AttackAsync(GameId, BoardSide, string)
+        +Task~AttackResult~ OpponentAttackAsync(GameId)
+        +Task~GameResult?~ CheckGameStatusAsync(GameId)
+        +Task EndGameAsync(GameId)
     }
 
-    class GameService {
-        +GameId StartGame(Guid, Guid)
+    class GameplayService {
+        +Task~GameId~ StartNewGameAsync(PlayerId, int)
+        +Task~ShipId~ PlaceShipAsync(GameId, BoardSide, ShipKind, ShipOrientation, string)
+        +Task StartGameplayAsync(GameId)
+        +Task~AttackResult~ AttackAsync(GameId, BoardSide, string)
+        +Task~AttackResult~ OpponentAttackAsync(GameId)
+        +Task~GameResult?~ CheckGameStatusAsync(GameId)
+        +Task EndGameAsync(GameId)
+    }
+
+    class IPlayerService {
+        <<Interface>>
+        +Task~PlayerId~ CreateAsync(string)
+        +Task~GetPlayerQueryResult?~ GetByIdAsync(PlayerId)
+        +Task~GetPlayerQueryResult?~ GetByUsernameAsync(string)
+    }
+
+    class PlayerService {
+        +Task~PlayerId~ CreateAsync(string)
+        +Task~GetPlayerQueryResult?~ GetByIdAsync(PlayerId)
+        +Task~GetPlayerQueryResult?~ GetByUsernameAsync(string)
     }
 
     %% Repository Interfaces
@@ -157,11 +182,39 @@ classDiagram
         +Task~Game?~ GetByIdAsync(GameId)
         +Task SaveAsync(Game)
         +Task DeleteAsync(GameId)
+        +Task~IEnumerable~Game~~ GetAllAsync()
     }
 
-    GameService ..|> IGameService
-    GameService ..> IGameRepository : depends on
-    GameService ..> Game : creates
+    class IPlayerRepository {
+        <<Interface>>
+        +Task~Player?~ GetByIdAsync(PlayerId)
+        +Task~PlayerId~ SaveAsync(Player)
+        +Task~Player?~ GetByUsernameAsync(string)
+        +Task~bool~ UsernameExistsAsync(string)
+    }
+
+    %% CQRS via MediatR
+    class Commands {
+        <<CQRS>>
+        CreateGameCommand
+        PlaceShipCommand
+        AttackCommand
+    }
+
+    class Queries {
+        <<CQRS>>
+        GetGameQuery
+        GetPlayerQuery
+    }
+
+    GameplayService ..|> IGameplayService
+    PlayerService ..|> IPlayerService
+    GameplayService ..> IGameRepository : depends on
+    GameplayService ..> IMediator : sends Commands/Queries
+    PlayerService ..> IPlayerRepository : depends on
+    PlayerService ..> IMediator : sends Commands/Queries
+    Commands ..> Game : operates on
+    Queries ..> Game : retrieves
 ```
 
 ## Web API Layer Design
