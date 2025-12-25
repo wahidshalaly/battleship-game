@@ -53,13 +53,13 @@ public class GameTests
     [Theory]
     [InlineData(BoardSide.Player)]
     [InlineData(BoardSide.Opponent)]
-    public void AddShips_WhenCountLessThanAllowance_IsReadyIsFalse(BoardSide boardSide)
+    public void PlaceShips_WhenCountLessThanAllowance_IsReadyIsFalse(BoardSide boardSide)
     {
         var game = _fixture.CreateNewGame(_playerId);
 
-        game.AddShip(boardSide, ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
-        game.AddShip(boardSide, ShipKind.Battleship, ShipOrientation.Horizontal, "A2");
-        game.AddShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A5");
+        game.PlaceShip(boardSide, ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
+        game.PlaceShip(boardSide, ShipKind.Battleship, ShipOrientation.Horizontal, "A2");
+        game.PlaceShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A5");
 
         game.Id.Should().NotBe(Guid.Empty);
         game.State.Should().Be(GameState.Started);
@@ -69,15 +69,15 @@ public class GameTests
     [Theory]
     [InlineData(BoardSide.Player)]
     [InlineData(BoardSide.Opponent)]
-    public void AddShips_WhenCountEqualsAllowance_IsReadyIsTrue(BoardSide boardSide)
+    public void PlaceShips_WhenCountEqualsAllowance_IsReadyIsTrue(BoardSide boardSide)
     {
         var game = new Game(_playerId);
 
-        game.AddShip(boardSide, ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
-        game.AddShip(boardSide, ShipKind.Battleship, ShipOrientation.Horizontal, "A2");
-        game.AddShip(boardSide, ShipKind.Cruiser, ShipOrientation.Horizontal, "A3");
-        game.AddShip(boardSide, ShipKind.Submarine, ShipOrientation.Horizontal, "A4");
-        game.AddShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A5");
+        game.PlaceShip(boardSide, ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
+        game.PlaceShip(boardSide, ShipKind.Battleship, ShipOrientation.Horizontal, "A2");
+        game.PlaceShip(boardSide, ShipKind.Cruiser, ShipOrientation.Horizontal, "A3");
+        game.PlaceShip(boardSide, ShipKind.Submarine, ShipOrientation.Horizontal, "A4");
+        game.PlaceShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A5");
 
         game.Id.Should().NotBe(Guid.Empty);
         game.State.Should().Be(GameState.Started);
@@ -87,17 +87,17 @@ public class GameTests
     [Theory]
     [InlineData(BoardSide.Player)]
     [InlineData(BoardSide.Opponent)]
-    public void AddShips_WhenExceedAllowance_ThrowsException(BoardSide boardSide)
+    public void PlaceShips_WhenExceedAllowance_ThrowsException(BoardSide boardSide)
     {
         var game = new Game(_playerId);
-        game.AddShip(boardSide, ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
-        game.AddShip(boardSide, ShipKind.Battleship, ShipOrientation.Horizontal, "A2");
-        game.AddShip(boardSide, ShipKind.Cruiser, ShipOrientation.Horizontal, "A3");
-        game.AddShip(boardSide, ShipKind.Submarine, ShipOrientation.Horizontal, "A4");
-        game.AddShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A5");
+        game.PlaceShip(boardSide, ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
+        game.PlaceShip(boardSide, ShipKind.Battleship, ShipOrientation.Horizontal, "A2");
+        game.PlaceShip(boardSide, ShipKind.Cruiser, ShipOrientation.Horizontal, "A3");
+        game.PlaceShip(boardSide, ShipKind.Submarine, ShipOrientation.Horizontal, "A4");
+        game.PlaceShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A5");
 
         Action act = () =>
-            game.AddShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A6");
+            game.PlaceShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A6");
 
         act.Should()
             .Throw<InvalidOperationException>()
@@ -112,7 +112,7 @@ public class GameTests
     public void IsGameOver_WhenAllShipsSunk_IsTrue()
     {
         var game = _fixture.CreateNewGame(_playerId);
-        game.AddShip(BoardSide.Player, ShipKind.Cruiser, ShipOrientation.Vertical, "A1");
+        game.PlaceShip(BoardSide.Player, ShipKind.Cruiser, ShipOrientation.Vertical, "A1");
         game.Attack(BoardSide.Player, "A1");
         game.Attack(BoardSide.Player, "A2");
         game.Attack(BoardSide.Player, "A3");
@@ -134,11 +134,16 @@ public class GameTests
     [Theory]
     [InlineData(BoardSide.Player)]
     [InlineData(BoardSide.Opponent)]
-    public void AddShip_WhenValidParameters_ShouldReturnShipId(BoardSide boardSide)
+    public void PlaceShip_WhenValidParameters_ShouldReturnShipId(BoardSide boardSide)
     {
         var game = _fixture.CreateNewGame(_playerId);
 
-        var shipId = game.AddShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A1");
+        var shipId = game.PlaceShip(
+            boardSide,
+            ShipKind.Destroyer,
+            ShipOrientation.Horizontal,
+            "A1"
+        );
 
         shipId.Should().NotBeNull();
         shipId.Value.Should().NotBeEmpty();
@@ -178,7 +183,7 @@ public class GameTests
 
         game.IsBoardReady(BoardSide.Player).Should().BeTrue();
         game.IsBoardReady(BoardSide.Opponent).Should().BeTrue();
-        game.State.Should().Be(GameState.BoardsAreReady);
+        game.State.Should().Be(GameState.Ready);
 
         game.DomainEvents.Should().NotBeEmpty();
     }

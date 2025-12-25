@@ -58,9 +58,9 @@ internal class Board : Entity<BoardId>
     /// <param name="orientation">The orientation of the ship</param>
     /// <param name="bowCode">The bow position of the ship</param>
     /// <exception cref="ArgumentException">Thrown when the ship placement is invalid</exception>
-    public ShipId AddShip(ShipKind shipKind, ShipOrientation orientation, string bowCode)
+    public ShipId PlaceShip(ShipKind shipKind, ShipOrientation orientation, string bowCode)
     {
-        ValidateBeforeAddShip(shipKind, orientation, bowCode, out var bow, out var stern);
+        ValidateBeforePlaceShip(shipKind, orientation, bowCode, out var bow, out var stern);
 
         var cells = GetShipCells(bow, stern).ToList();
         var position = cells.Select(c => c.Code).ToList();
@@ -109,7 +109,7 @@ internal class Board : Entity<BoardId>
         }
     }
 
-    private void ValidateBeforeAddShip(
+    private void ValidateBeforePlaceShip(
         ShipKind kind,
         ShipOrientation orientation,
         string bowCode,

@@ -18,10 +18,11 @@ internal class EndGameHandler(IGameRepository gameRepository) : IRequestHandler<
         if (game.State == GameState.GameOver)
             return;
 
+        throw new NotImplementedException();
+
         // Force game to end; winner cannot be derived here (manual termination)
-        // Domain event not raised to avoid semantic ambiguity.
-        typeof(Game).GetProperty("State")?.SetValue(game, GameState.GameOver); // fallback if setter restricted
+        // game.EndGame(); // or use GameplayService to encapsulate this logic
         // Persist changes
-        await gameRepository.SaveAsync(game, cancellationToken);
+        // await gameRepository.SaveAsync(game, cancellationToken);
     }
 }

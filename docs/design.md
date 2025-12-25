@@ -24,7 +24,7 @@ classDiagram
         +int BoardSize
         +GameState State
         +Game(PlayerId, int)
-        +ShipId AddShip(BoardSide, ShipKind, ShipOrientation, string)
+        +ShipId PlaceShip(BoardSide, ShipKind, ShipOrientation, string)
         +void Attack(BoardSide, string)
         +bool IsGameOver(BoardSide)
         +bool IsReady(BoardSide)
@@ -45,7 +45,7 @@ classDiagram
         +bool IsReady
         +bool IsGameOver
         +Board(int)
-        +ShipId AddShip(ShipKind, ShipOrientation, string)
+        +ShipId PlaceShip(ShipKind, ShipOrientation, string)
         +void Attack(string)
     }
 
@@ -227,7 +227,7 @@ classDiagram
         -Dictionary~Guid,Game~ _games$
         +ActionResult~GameModel~ CreateGame(CreateGameRequest)
         +ActionResult~GameModel~ GetGame(Guid)
-        +ActionResult~Guid~ AddShip(Guid, AddShipRequest)
+        +ActionResult~Guid~ PlaceShip(Guid, PlaceShipRequest)
         +IActionResult Attack(Guid, AttackRequest)
         +ActionResult~GameStateModel~ GetGameState(Guid)
     }
@@ -238,7 +238,7 @@ classDiagram
         +int? BoardSize
     }
 
-    class AddShipRequest {
+    class PlaceShipRequest {
         +BoardSide Side
         +ShipKind ShipKind
         +ShipOrientation Orientation
@@ -263,7 +263,7 @@ classDiagram
     }
 
     GamesController ..> CreateGameRequest
-    GamesController ..> AddShipRequest
+    GamesController ..> PlaceShipRequest
     GamesController ..> AttackRequest
     GamesController ..> GameModel
     GamesController ..> GameStateModel

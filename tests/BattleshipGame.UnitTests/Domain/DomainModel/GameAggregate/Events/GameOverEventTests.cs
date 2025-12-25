@@ -39,13 +39,13 @@ public class GameOverEventTests
         var game = new Game(playerId);
 
         // Set up minimal ships for quick game over - single destroyer (2 cells)
-        game.AddShip(attackerSide, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
-        game.AddShip(attackerSide, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
-        game.AddShip(attackerSide, ShipKind.Submarine, ShipOrientation.Vertical, "E1");
-        game.AddShip(attackerSide, ShipKind.Battleship, ShipOrientation.Vertical, "G1");
-        game.AddShip(attackerSide, ShipKind.Carrier, ShipOrientation.Vertical, "I1");
+        game.PlaceShip(attackerSide, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        game.PlaceShip(attackerSide, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
+        game.PlaceShip(attackerSide, ShipKind.Submarine, ShipOrientation.Vertical, "E1");
+        game.PlaceShip(attackerSide, ShipKind.Battleship, ShipOrientation.Vertical, "G1");
+        game.PlaceShip(attackerSide, ShipKind.Carrier, ShipOrientation.Vertical, "I1");
 
-        game.AddShip(attackedSide, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        game.PlaceShip(attackedSide, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
 
         // Act - Attack all cells of the destroyer to sink it and end the game
         game.Attack(attackedSide, "A1"); // Hit first cell

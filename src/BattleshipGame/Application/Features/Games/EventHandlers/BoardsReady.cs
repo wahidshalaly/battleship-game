@@ -5,19 +5,19 @@ using Microsoft.Extensions.Logging;
 namespace BattleshipGame.Application.Features.Games.EventHandlers;
 
 /// <summary>
-/// Handles the BoardsReadyEvent domain event and executes side effects.
+/// Handles the GameReadyEvent domain event and executes side effects.
 /// </summary>
 /// <param name="logger">The logger instance.</param>
 internal class BoardsReadyEventHandler(ILogger<BoardsReadyEventHandler> logger)
-    : INotificationHandler<BoardsReadyEvent>
+    : INotificationHandler<GameReadyEvent>
 {
     /// <summary>
-    /// Handles the BoardsReadyEvent and executes side effects.
+    /// Handles the GameReadyEvent and executes side effects.
     /// </summary>
     /// <param name="notification">The boards ready event.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task Handle(BoardsReadyEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(GameReadyEvent notification, CancellationToken cancellationToken)
     {
         // Infrastructure layer side effects - these don't belong in the domain
 
@@ -31,12 +31,12 @@ internal class BoardsReadyEventHandler(ILogger<BoardsReadyEventHandler> logger)
         await SetupSessionTracking(notification);
     }
 
-    private async Task NotifyGameStart(BoardsReadyEvent boardsReadyEvent)
+    private async Task NotifyGameStart(GameReadyEvent gameReadyEvent)
     {
         // Example: Notify all players that the game is ready to start
         logger.LogInformation(
             "Notifying players that game {GameId} is ready to start",
-            boardsReadyEvent.GameId
+            gameReadyEvent.GameId
         );
 
         // In real implementation, you might:
@@ -48,10 +48,10 @@ internal class BoardsReadyEventHandler(ILogger<BoardsReadyEventHandler> logger)
         await Task.Delay(10, CancellationToken.None); // Simulate async work
     }
 
-    private async Task InitializeGameMonitoring(BoardsReadyEvent boardsReadyEvent)
+    private async Task InitializeGameMonitoring(GameReadyEvent gameReadyEvent)
     {
         // Example: Set up monitoring and logging for the active game
-        logger.LogInformation("Initializing monitoring for game {GameId}", boardsReadyEvent.GameId);
+        logger.LogInformation("Initializing monitoring for game {GameId}", gameReadyEvent.GameId);
 
         // In real implementation, you might:
         // - Create monitoring dashboards for this game session
@@ -62,12 +62,12 @@ internal class BoardsReadyEventHandler(ILogger<BoardsReadyEventHandler> logger)
         await Task.Delay(5, CancellationToken.None); // Simulate async work
     }
 
-    private async Task SetupSessionTracking(BoardsReadyEvent boardsReadyEvent)
+    private async Task SetupSessionTracking(GameReadyEvent gameReadyEvent)
     {
         // Example: Initialize session analytics and tracking
         logger.LogInformation(
             "Setting up session tracking for game {GameId}",
-            boardsReadyEvent.GameId
+            gameReadyEvent.GameId
         );
 
         // In real implementation, you might:

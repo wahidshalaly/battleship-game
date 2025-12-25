@@ -80,9 +80,9 @@ public class GamesController(
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> AddShip(
+    public async Task<ActionResult> PlaceShip(
         [FromRoute] Guid id,
-        [FromBody] AddShipRequest request,
+        [FromBody] PlaceShipRequest request,
         CancellationToken cancellationToken
     )
     {
@@ -145,7 +145,7 @@ public class GamesController(
 
 public record CreateGameRequest(Guid PlayerId, int? BoardSize = 10);
 
-public record AddShipRequest(
+public record PlaceShipRequest(
     BoardSide Side,
     ShipKind ShipKind,
     ShipOrientation Orientation,

@@ -226,9 +226,9 @@ sequenceDiagram
     participant Ship
 
     Client->>API: POST /api/games/{id}/ships
-    API->>Domain: AddShip(side, kind, orientation, bow)
-    Domain->>Board: AddShip(kind, orientation, bow)
-    Board->>Board: ValidateBeforeAddShip(...)
+    API->>Domain: PlaceShip(side, kind, orientation, bow)
+    Domain->>Board: PlaceShip(kind, orientation, bow)
+    Board->>Board: ValidateBeforePlaceShip(...)
     Board->>Ship: new Ship(kind, position)
     Ship-->>Board: Ship instance
     Board-->>Domain: ShipId

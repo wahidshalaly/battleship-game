@@ -32,7 +32,7 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
 
     public BoardSide CurrentTurn { get; private set; } = BoardSide.Player;
 
-    public ShipId AddShip(
+    public ShipId PlaceShip(
         BoardSide side,
         ShipKind kind,
         ShipOrientation orientation,
@@ -40,18 +40,18 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
     )
     {
         var board = BoardSelector(side);
-        var shipId = board.AddShip(kind, orientation, bowCode);
+        var shipId = board.PlaceShip(kind, orientation, bowCode);
 
         if (BoardSelector(side).IsReady)
         {
-            AddDomainEvent(new BoardSideReadyEvent(Id, side));
+            AddDomainEvent(new BoardReadyEvent(Id, side));
         }
 
         // Check if both boards are now ready and raise event
         if (IsReady)
         {
-            State = GameState.BoardsAreReady;
-            AddDomainEvent(new BoardsReadyEvent(Id));
+            State = GameState.Ready;
+            AddDomainEvent(new GameReadyEvent(Id));
         }
 
         return shipId;
@@ -69,7 +69,7 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
         var (cellState, shipId, shipSunk) = board.Attack(cellCode);
 
         // Raise domain event for cell attack
-        AddDomainEvent(new CellAttackedEvent(Id, cellCode, cellState));
+        AddDomainEvent(new UnderAttackEvent(Id, cellCode, cellState));
         if (cellState != CellState.Hit)
             return cellState;
 

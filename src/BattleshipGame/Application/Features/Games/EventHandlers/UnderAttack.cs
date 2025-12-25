@@ -6,22 +6,22 @@ using Microsoft.Extensions.Logging;
 namespace BattleshipGame.Application.Features.Games.EventHandlers;
 
 /// <summary>
-/// Handles the CellAttackedEvent domain event and executes side effects.
+/// Handles the UnderAttackEvent domain event and executes side effects.
 /// </summary>
 /// <remarks>
-/// Initializes a new instance of the CellAttackedEventHandler class.
+/// Initializes a new instance of the UnderAttackEventHandler class.
 /// </remarks>
 /// <param name="logger">The logger instance.</param>
-internal class CellAttackedEventHandler(ILogger<CellAttackedEventHandler> logger)
-    : INotificationHandler<CellAttackedEvent>
+internal class UnderAttackEventHandler(ILogger<UnderAttackEventHandler> logger)
+    : INotificationHandler<UnderAttackEvent>
 {
     /// <summary>
-    /// Handles the CellAttackedEvent and executes side effects.
+    /// Handles the UnderAttackEvent and executes side effects.
     /// </summary>
-    /// <param name="notification">The cell attacked event.</param>
+    /// <param name="notification">The under attack event.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task Handle(CellAttackedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(UnderAttackEvent notification, CancellationToken cancellationToken)
     {
         // Infrastructure layer side effects - these don't belong in the domain
 
@@ -35,14 +35,14 @@ internal class CellAttackedEventHandler(ILogger<CellAttackedEventHandler> logger
         await CheckAchievements(notification);
     }
 
-    private async Task SendRealTimeUpdate(CellAttackedEvent cellAttackedEvent)
+    private async Task SendRealTimeUpdate(UnderAttackEvent underAttackEvent)
     {
         // Example: Send real-time updates via SignalR to connected clients
         logger.LogInformation(
             "Sending real-time update for attack on {CellCode} in game {BoardId}, result: {CellState}",
-            cellAttackedEvent.CellCode,
-            cellAttackedEvent.BoardId,
-            cellAttackedEvent.CellState
+            underAttackEvent.CellCode,
+            underAttackEvent.BoardId,
+            underAttackEvent.CellState
         );
 
         // In real implementation, you might:
@@ -53,14 +53,14 @@ internal class CellAttackedEventHandler(ILogger<CellAttackedEventHandler> logger
         await Task.Delay(5, CancellationToken.None); // Simulate async work
     }
 
-    private async Task TrackAttackAnalytics(CellAttackedEvent cellAttackedEvent)
+    private async Task TrackAttackAnalytics(UnderAttackEvent underAttackEvent)
     {
         // Example: Track game analytics for data analysis
         logger.LogInformation(
             "Tracking analytics for attack: Game {BoardId}, Cell {CellCode}, State {CellState}",
-            cellAttackedEvent.BoardId,
-            cellAttackedEvent.CellCode,
-            cellAttackedEvent.CellState
+            underAttackEvent.BoardId,
+            underAttackEvent.CellCode,
+            underAttackEvent.CellState
         );
 
         // In real implementation, you might:
@@ -72,14 +72,14 @@ internal class CellAttackedEventHandler(ILogger<CellAttackedEventHandler> logger
         await Task.Delay(5, CancellationToken.None); // Simulate async work
     }
 
-    private async Task CheckAchievements(CellAttackedEvent cellAttackedEvent)
+    private async Task CheckAchievements(UnderAttackEvent underAttackEvent)
     {
         // Example: Check for achievement unlocks
-        if (cellAttackedEvent.CellState == CellState.Hit)
+        if (underAttackEvent.CellState == CellState.Hit)
         {
             logger.LogInformation(
                 "Hit detected - checking for achievements in game {BoardId}",
-                cellAttackedEvent.BoardId
+                underAttackEvent.BoardId
             );
 
             // In real implementation, you might:

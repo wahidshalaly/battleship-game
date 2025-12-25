@@ -8,7 +8,7 @@ using Xunit;
 
 namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate.Events;
 
-public class CellAttackedEventTests
+public class UnderAttackEventTests
 {
     [Fact]
     public void Ctor_WhenValidParameters_ShouldCreateEvent()
@@ -17,14 +17,14 @@ public class CellAttackedEventTests
         const string code = "A1";
         const CellState cellState = CellState.Occupied;
 
-        var cellAttackedEvent = new CellAttackedEvent(gameId, code, cellState);
+        var cellAttackedEvent = new UnderAttackEvent(gameId, code, cellState);
         cellAttackedEvent.BoardId.Should().Be(gameId);
         cellAttackedEvent.CellCode.Should().Be(code);
         cellAttackedEvent.CellState.Should().Be(cellState);
 
         cellAttackedEvent.EventId.Should().NotBeEmpty();
         cellAttackedEvent.OccurredOn.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        cellAttackedEvent.EventType.Should().Be(typeof(CellAttackedEvent));
+        cellAttackedEvent.EventType.Should().Be(typeof(UnderAttackEvent));
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class CellAttackedEventTests
         game.Attack(BoardSide.Opponent, "A1");
 
         // Assert
-        var cellAttackedEvents = game.DomainEvents.OfType<CellAttackedEvent>().ToList();
+        var cellAttackedEvents = game.DomainEvents.OfType<UnderAttackEvent>().ToList();
         cellAttackedEvents.Should().HaveCount(1);
 
         var cellAttackedEvent = cellAttackedEvents.First();
@@ -55,13 +55,13 @@ public class CellAttackedEventTests
         var game = new Game(playerId);
 
         // Set up a ship on opponent board
-        game.AddShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        game.PlaceShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
 
         // Act
         game.Attack(BoardSide.Opponent, "A1");
 
         // Assert
-        var cellAttackedEvents = game.DomainEvents.OfType<CellAttackedEvent>().ToList();
+        var cellAttackedEvents = game.DomainEvents.OfType<UnderAttackEvent>().ToList();
         cellAttackedEvents.Should().HaveCount(1);
 
         var cellAttackedEvent = cellAttackedEvents.First();

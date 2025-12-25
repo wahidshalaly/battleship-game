@@ -3,7 +3,6 @@ using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using MediatR;
-using Microsoft.Extensions.Logging;
 
 namespace BattleshipGame.Application.Features.Games.Commands;
 
@@ -17,21 +16,19 @@ public record CreateGameCommand(PlayerId PlayerId, int? BoardSize = 10) : IReque
 /// <summary>
 /// Handler for creating a new game.
 /// </summary>
-/// <param name="logger">The logger instance.</param>
 /// <param name="gameRepository">The game repository.</param>
 /// <param name="eventDispatcher">The domain event dispatcher.</param>
 internal class CreateGameHandler(
-    ILogger<CreateGameHandler> logger,
     IGameRepository gameRepository,
     IDomainEventDispatcher eventDispatcher
 ) : IRequestHandler<CreateGameCommand, Guid>
 {
     /// <summary>
-    /// Handles <see cref="CreateGameCommand"/> and returns <see cref="CreateGameResult"/>.
+    /// Handles <see cref="CreateGameCommand"/> and returns the new game ID.
     /// </summary>
     /// <param name="request">The create game command.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The attack result.</returns>
+    /// <returns>The new game ID.</returns>
     public async Task<Guid> Handle(CreateGameCommand request, CancellationToken cancellationToken)
     {
         // 1. Create new game (this may raise domain events)

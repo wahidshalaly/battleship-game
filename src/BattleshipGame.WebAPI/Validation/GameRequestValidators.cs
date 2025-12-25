@@ -14,9 +14,9 @@ public sealed class CreateGameRequestValidator : AbstractValidator<CreateGameReq
     }
 }
 
-public sealed class AddShipRequestValidator : AbstractValidator<AddShipRequest>
+public sealed class PlaceShipRequestValidator : AbstractValidator<PlaceShipRequest>
 {
-    public AddShipRequestValidator()
+    public PlaceShipRequestValidator()
     {
         RuleFor(x => x.Side).IsInEnum();
         RuleFor(x => x.ShipKind).IsInEnum();

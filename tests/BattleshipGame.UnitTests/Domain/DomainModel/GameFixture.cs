@@ -19,8 +19,8 @@ public class GameFixture
         playerId ??= new PlayerId(Guid.NewGuid());
 
         var game = CreateNewGame(playerId);
-        AddShipsOnBoard(game, BoardSide.Player);
-        AddShipsOnBoard(game, BoardSide.Opponent);
+        PlaceShipsOnBoard(game, BoardSide.Player);
+        PlaceShipsOnBoard(game, BoardSide.Opponent);
         return game;
     }
 
@@ -48,12 +48,12 @@ public class GameFixture
         }
     }
 
-    private void AddShipsOnBoard(Game game, BoardSide boardSide)
+    private void PlaceShipsOnBoard(Game game, BoardSide boardSide)
     {
-        game.AddShip(boardSide, ShipKind.Battleship, ShipOrientation.Vertical, "A1");
-        game.AddShip(boardSide, ShipKind.Cruiser, ShipOrientation.Vertical, "B1");
-        game.AddShip(boardSide, ShipKind.Destroyer, ShipOrientation.Vertical, "C1");
-        game.AddShip(boardSide, ShipKind.Submarine, ShipOrientation.Vertical, "D1");
-        game.AddShip(boardSide, ShipKind.Carrier, ShipOrientation.Vertical, "E1");
+        game.PlaceShip(boardSide, ShipKind.Battleship, ShipOrientation.Vertical, "A1");
+        game.PlaceShip(boardSide, ShipKind.Cruiser, ShipOrientation.Vertical, "B1");
+        game.PlaceShip(boardSide, ShipKind.Destroyer, ShipOrientation.Vertical, "C1");
+        game.PlaceShip(boardSide, ShipKind.Submarine, ShipOrientation.Vertical, "D1");
+        game.PlaceShip(boardSide, ShipKind.Carrier, ShipOrientation.Vertical, "E1");
     }
 }

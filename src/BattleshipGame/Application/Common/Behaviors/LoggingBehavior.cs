@@ -12,16 +12,9 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
 ) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    // Cache property extractors per type to avoid repeated reflection
-    private static readonly ConcurrentDictionary<Type, List<PropertyExtractor>> _extractorCache =
-        new();
-
-    private record PropertyExtractor(string Name, Func<object, object?> GetValue);
-
     // JSON serialization options for logging
-    private static readonly JsonSerializerOptions _jsonOptions = new()
+    private readonly JsonSerializerOptions _jsonOptions = new()
     {
-        WriteIndented = false,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
@@ -83,17 +76,18 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
             logger.LogInformation("Handling {Request}{Context}", requestName, contextString);
         }
 
-        var sw = Stopwatch.StartNew();
+        var stopwatch = Stopwatch.StartNew();
         try
         {
-            var response = await next();
-            sw.Stop();
+            var response = await next(cancellationToken);
+            stopwatch.Stop();
 
             // Extract entity IDs from response
             var responseContext = ExtractEntityContext(response);
-            var responseContextString = responseContext.Any()
-                ? $" [{string.Join(", ", responseContext.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]"
-                : string.Empty;
+            var responseContextString =
+                responseContext.Count > 0
+                    ? $" [{string.Join(", ", responseContext.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]"
+                    : string.Empty;
 
             // Add response context to Activity
             foreach (var kvp in responseContext)
@@ -113,7 +107,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
                     logger.LogDebug(
                         "Handled {Request} in {Elapsed}ms{Context} - Response: {ResponsePayload}",
                         requestName,
-                        sw.ElapsedMilliseconds,
+                        stopwatch.ElapsedMilliseconds,
                         responseContextString,
                         responseJson
                     );
@@ -123,7 +117,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
                     logger.LogInformation(
                         "Handled {Request} in {Elapsed}ms{Context}",
                         requestName,
-                        sw.ElapsedMilliseconds,
+                        stopwatch.ElapsedMilliseconds,
                         responseContextString
                     );
                 }
@@ -133,7 +127,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
                 logger.LogInformation(
                     "Handled {Request} in {Elapsed}ms{Context}",
                     requestName,
-                    sw.ElapsedMilliseconds,
+                    stopwatch.ElapsedMilliseconds,
                     responseContextString
                 );
             }
@@ -142,7 +136,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
         }
         catch (Exception ex)
         {
-            sw.Stop();
+            stopwatch.Stop();
 
             // Always log request payload on errors, even if not in Debug mode
             try
@@ -152,7 +146,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
                     ex,
                     "Error handling {Request} after {Elapsed}ms{Context} - Request: {RequestPayload}",
                     requestName,
-                    sw.ElapsedMilliseconds,
+                    stopwatch.ElapsedMilliseconds,
                     contextString,
                     requestJson
                 );
@@ -164,7 +158,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
                     ex,
                     "Error handling {Request} after {Elapsed}ms{Context}",
                     requestName,
-                    sw.ElapsedMilliseconds,
+                    stopwatch.ElapsedMilliseconds,
                     contextString
                 );
             }
@@ -172,6 +166,27 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
             throw;
         }
     }
+
+    /// <summary>
+    /// Converts PascalCase to snake_case for OpenTelemetry conventions.
+    /// </summary>
+    private static string ConvertToSnakeCase(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        var result = string.Concat(
+            input.Select((c, i) => i > 0 && char.IsUpper(c) ? $"_{c}" : c.ToString())
+        );
+
+        return result.ToLowerInvariant();
+    }
+
+    // Cache property extractors per type to avoid repeated reflection
+    private static readonly ConcurrentDictionary<Type, List<PropertyExtractor>> _extractorCache =
+        new();
+
+    private record PropertyExtractor(string Name, Func<object, object?> GetValue);
 
     /// <summary>
     /// Extracts entity IDs and important context from request/response objects.
@@ -231,7 +246,9 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
             // Look for entity ID properties and important context
             if (
                 propName.EndsWith("Id", StringComparison.OrdinalIgnoreCase)
-                || propName is "Username" or "GameState" or "State" or "Side"
+                || propName.Contains("State")
+                || propName.Contains("Side")
+                || propName is "Username"
             )
             {
                 // Check if this is an EntityId wrapper type that needs unwrapping
@@ -261,20 +278,5 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
         }
 
         return extractors;
-    }
-
-    /// <summary>
-    /// Converts PascalCase to snake_case for OpenTelemetry conventions.
-    /// </summary>
-    private static string ConvertToSnakeCase(string input)
-    {
-        if (string.IsNullOrEmpty(input))
-            return input;
-
-        var result = string.Concat(
-            input.Select((c, i) => i > 0 && char.IsUpper(c) ? $"_{c}" : c.ToString())
-        );
-
-        return result.ToLowerInvariant();
     }
 }

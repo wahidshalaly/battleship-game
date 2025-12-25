@@ -13,20 +13,20 @@ namespace BattleshipGame.Application.Features.Games.Commands;
 /// <param name="GameId">The game identifier.</param>
 /// <param name="BoardSide">The board side to attack.</param>
 /// <param name="CellCode">The cell code to attack (e.g., "A1", "B5").</param>
-public record AttackCellCommand(GameId GameId, BoardSide BoardSide, string CellCode)
+public record AttackCommand(GameId GameId, BoardSide BoardSide, string CellCode)
     : IRequest<CellState>;
 
 /// <summary>
-/// Handles the AttackCellCommand and demonstrates proper event dispatching.
+/// Handles the AttackCommand and demonstrates proper event dispatching.
 /// </summary>
 /// <param name="logger">The logger instance.</param>
 /// <param name="gameRepository">The game repository.</param>
 /// <param name="eventDispatcher">The domain event dispatcher.</param>
-internal class AttackCellHandler(
-    ILogger<AttackCellHandler> logger,
+internal class AttackHandler(
+    ILogger<AttackHandler> logger,
     IGameRepository gameRepository,
     IDomainEventDispatcher eventDispatcher
-) : IRequestHandler<AttackCellCommand, CellState>
+) : IRequestHandler<AttackCommand, CellState>
 {
     /// <summary>
     /// Handles the attack cell command.
@@ -34,18 +34,8 @@ internal class AttackCellHandler(
     /// <param name="request">The attack cell command.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The cell state after attack.</returns>
-    public async Task<CellState> Handle(
-        AttackCellCommand request,
-        CancellationToken cancellationToken
-    )
+    public async Task<CellState> Handle(AttackCommand request, CancellationToken cancellationToken)
     {
-        logger.LogInformation(
-            "Processing attack on {BoardSide} board at {CellCode} for game {GameId}",
-            request.BoardSide,
-            request.CellCode,
-            request.GameId
-        );
-
         // 1. Load aggregate
         var game =
             await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
@@ -64,7 +54,7 @@ internal class AttackCellHandler(
         game.ClearDomainEvents();
 
         logger.LogInformation(
-            "Attack processed successfully for game {GameId}, cell {CellCode}, result: {CellState}",
+            "Attack! Game {GameId} X Cell {CellCode}, result: {CellState}",
             request.GameId,
             request.CellCode,
             cellState

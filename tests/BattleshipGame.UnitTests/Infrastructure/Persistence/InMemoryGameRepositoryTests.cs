@@ -224,7 +224,7 @@ public class InMemoryGameRepositoryTests
             _cancellationToken
         );
 
-        // Assert - _fixture.CreateReadyGame() creates a game in BoardsAreReady state, not GameOver
+        // Assert - _fixture.CreateReadyGame() creates a game in Ready state, not GameOver
         // So this should return the active game
         result.Should().NotBeNull();
         result.State.Should().NotBe(GameState.GameOver);

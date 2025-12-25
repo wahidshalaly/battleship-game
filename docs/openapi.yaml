@@ -101,13 +101,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AddShipRequest'
+              $ref: '#/components/schemas/PlaceShipRequest'
           text/json:
             schema:
-              $ref: '#/components/schemas/AddShipRequest'
+              $ref: '#/components/schemas/PlaceShipRequest'
           application/*+json:
             schema:
-              $ref: '#/components/schemas/AddShipRequest'
+              $ref: '#/components/schemas/PlaceShipRequest'
       responses:
         '200':
           description: OK
@@ -331,7 +331,7 @@ paths:
                 $ref: '#/components/schemas/ProblemDetails'
 components:
   schemas:
-    AddShipRequest:
+    PlaceShipRequest:
       type: object
       properties:
         side:

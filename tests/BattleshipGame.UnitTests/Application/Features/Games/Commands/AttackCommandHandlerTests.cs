@@ -16,22 +16,22 @@ using Xunit;
 
 namespace BattleshipGame.UnitTests.Application.Features.Games.Commands;
 
-public class AttackCellCommandHandlerTests
+public class AttackCommandHandlerTests
 {
     private const string Ship1Location = "A1";
 
     private readonly IGameRepository _gameRepository;
     private readonly IDomainEventDispatcher _eventDispatcher;
-    private readonly AttackCellHandler _handler;
+    private readonly AttackHandler _handler;
     private readonly GameFixture _gameFixture = new();
     private readonly CancellationToken _cancellationToken = CancellationToken.None;
 
-    public AttackCellCommandHandlerTests()
+    public AttackCommandHandlerTests()
     {
-        var logger = A.Fake<ILogger<AttackCellHandler>>();
+        var logger = A.Fake<ILogger<AttackHandler>>();
         _gameRepository = A.Fake<IGameRepository>();
         _eventDispatcher = A.Fake<IDomainEventDispatcher>();
-        _handler = new AttackCellHandler(logger, _gameRepository, _eventDispatcher);
+        _handler = new AttackHandler(logger, _gameRepository, _eventDispatcher);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class AttackCellCommandHandlerTests
         // Arrange
         const BoardSide boardSide = BoardSide.Opponent;
         var game = _gameFixture.CreateReadyGame();
-        var command = new AttackCellCommand(game.Id, boardSide, Ship1Location);
+        var command = new AttackCommand(game.Id, boardSide, Ship1Location);
 
         A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
         A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken))
@@ -67,7 +67,7 @@ public class AttackCellCommandHandlerTests
         const string cellCode = "F1"; // Empty cell
         const BoardSide boardSide = BoardSide.Opponent;
         var game = _gameFixture.CreateReadyGame(); // Ship at A1, attacking B1
-        var command = new AttackCellCommand(game.Id, boardSide, cellCode);
+        var command = new AttackCommand(game.Id, boardSide, cellCode);
 
         A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
         A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken))
@@ -98,7 +98,7 @@ public class AttackCellCommandHandlerTests
         var restOfCellsToAttach = cells.Except([lastCell]).ToList();
         restOfCellsToAttach.ForEach(cell => game.Attack(boardSide, cell));
 
-        var command = new AttackCellCommand(game.Id, boardSide, lastCell);
+        var command = new AttackCommand(game.Id, boardSide, lastCell);
 
         A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
         A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken))
@@ -123,7 +123,7 @@ public class AttackCellCommandHandlerTests
         const string cellCode = "A1";
         const BoardSide boardSide = BoardSide.Opponent;
         var gameId = new GameId(Guid.NewGuid());
-        var command = new AttackCellCommand(gameId, boardSide, cellCode);
+        var command = new AttackCommand(gameId, boardSide, cellCode);
 
         A.CallTo(() => _gameRepository.GetByIdAsync(gameId, _cancellationToken))
             .Returns<Game?>(null);
@@ -148,7 +148,7 @@ public class AttackCellCommandHandlerTests
         const string cellCode = "A1";
         const BoardSide boardSide = BoardSide.Opponent;
         var game = _gameFixture.CreateReadyGame();
-        var command = new AttackCellCommand(game.Id, boardSide, cellCode);
+        var command = new AttackCommand(game.Id, boardSide, cellCode);
 
         A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
         A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken))

@@ -14,21 +14,21 @@ using Xunit;
 
 namespace BattleshipGame.UnitTests.Application.Features.Games.Commands;
 
-public class AddShipCommandHandlerTests
+public class PlaceShipCommandHandlerTests
 {
     private readonly IGameRepository _gameRepository;
-    private readonly AddShipHandler _handler;
+    private readonly PlaceShipHandler _handler;
 
-    public AddShipCommandHandlerTests()
+    public PlaceShipCommandHandlerTests()
     {
         _gameRepository = A.Fake<IGameRepository>();
         var eventDispatcher = A.Fake<IDomainEventDispatcher>();
-        _handler = new AddShipHandler(_gameRepository, eventDispatcher);
+        _handler = new PlaceShipHandler(_gameRepository, eventDispatcher);
     }
 
     [Theory]
     [MemberData(nameof(DifferentShipSetups))]
-    public async Task Handle_WhenValidCommand_ShouldAddShipAndReturnResult(
+    public async Task Handle_WhenValidCommand_ShouldPlaceShipAndReturnResult(
         BoardSide boardSide,
         ShipKind shipKind,
         ShipOrientation orientation
@@ -38,7 +38,7 @@ public class AddShipCommandHandlerTests
         const string bowCode = "A1";
         var playerId = new PlayerId(Guid.NewGuid());
         var game = new Game(playerId);
-        var command = new AddShipCommand(game.Id, boardSide, shipKind, orientation, bowCode);
+        var command = new PlaceShipCommand(game.Id, boardSide, shipKind, orientation, bowCode);
         var cancellationToken = CancellationToken.None;
 
         A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, cancellationToken)).Returns(game);
@@ -56,7 +56,7 @@ public class AddShipCommandHandlerTests
         // Arrange
         const string bowCode = "A1";
         var gameId = new GameId(Guid.NewGuid());
-        var command = new AddShipCommand(
+        var command = new PlaceShipCommand(
             gameId,
             BoardSide.Player,
             ShipKind.Battleship,

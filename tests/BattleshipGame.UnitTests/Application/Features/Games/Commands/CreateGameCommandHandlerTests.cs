@@ -8,7 +8,6 @@ using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using FakeItEasy;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using static BattleshipGame.Domain.Common.Constants;
 
@@ -21,10 +20,9 @@ public class CreateGameCommandHandlerTests
 
     public CreateGameCommandHandlerTests()
     {
-        var logger = A.Fake<ILogger<CreateGameHandler>>();
         _gameRepository = A.Fake<IGameRepository>();
         var eventDispatcher = A.Fake<IDomainEventDispatcher>();
-        _handler = new CreateGameHandler(logger, _gameRepository, eventDispatcher);
+        _handler = new CreateGameHandler(_gameRepository, eventDispatcher);
     }
 
     [Fact]

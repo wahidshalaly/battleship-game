@@ -102,7 +102,8 @@ public class GetGameQueryHandlerTests
             .Throws(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => _handler.Handle(query, cts.Token)
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            _handler.Handle(query, cts.Token)
         );
     }
 
@@ -131,7 +132,7 @@ public class GetGameQueryHandlerTests
     {
         // Arrange
         const int expectedBoardSize = 10;
-        const GameState expectedState = GameState.BoardsAreReady;
+        const GameState expectedState = GameState.Ready;
 
         var playerId = new PlayerId(Guid.NewGuid());
         var game = _gameFixture.CreateReadyGame(playerId);

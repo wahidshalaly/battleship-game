@@ -17,7 +17,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 // Add services to the container.
-
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<DomainContextEnricherFilter>();
@@ -90,6 +89,7 @@ builder.Services.AddScoped<IPlayerService, PlayerService>();
 
 // Register infrastructure services
 builder.Services.AddScoped<IComputerOpponentStrategy, RandomAttackStrategy>();
+builder.Services.AddKeyedScoped<IComputerOpponentStrategy, SmartAttackStrategy>("AI-Based"); // For future use
 
 // Register repositories (singleton for in-memory, will be scoped when using EF Core)
 builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();

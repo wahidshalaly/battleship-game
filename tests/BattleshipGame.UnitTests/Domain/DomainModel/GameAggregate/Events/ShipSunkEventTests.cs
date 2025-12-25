@@ -41,7 +41,7 @@ public class ShipSunkEventTests
         var game = new Game(playerId);
 
         // Add a Destroyer (2 cells) to the attacked side
-        game.AddShip(attackedSide, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        game.PlaceShip(attackedSide, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
 
         // Act - Attack all cells of the destroyer to sink it
         game.Attack(attackedSide, "A1"); // Hit first cell
@@ -70,7 +70,7 @@ public class ShipSunkEventTests
         var game = new Game(playerId);
 
         // Add a Carrier (5 cells) to the attacked side
-        game.AddShip(attackedSide, ShipKind.Carrier, ShipOrientation.Vertical, "A1");
+        game.PlaceShip(attackedSide, ShipKind.Carrier, ShipOrientation.Vertical, "A1");
 
         // Act - Attack all cells of the carrier to sink it
         game.Attack(attackedSide, "A1"); // Hit first cell
@@ -97,7 +97,7 @@ public class ShipSunkEventTests
         var game = new Game(playerId);
 
         // Add a Destroyer (2 cells) to opponent board
-        game.AddShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        game.PlaceShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
 
         // Act - Attack only one cell of the destroyer (not sinking it)
         game.Attack(BoardSide.Opponent, "A1"); // Hit first cell only
@@ -115,8 +115,8 @@ public class ShipSunkEventTests
         var game = new Game(playerId);
 
         // Add two Destroyers to opponent board
-        game.AddShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
-        game.AddShip(BoardSide.Opponent, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
+        game.PlaceShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        game.PlaceShip(BoardSide.Opponent, ShipKind.Cruiser, ShipOrientation.Vertical, "C1");
 
         // Act - Sink both destroyers
         // Sink first destroyer
@@ -149,7 +149,7 @@ public class ShipSunkEventTests
         var game = new Game(playerId);
 
         // Add a ship to opponent board but attack empty cell
-        game.AddShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        game.PlaceShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
 
         // Act - Attack empty cell
         game.Attack(BoardSide.Opponent, "B1");

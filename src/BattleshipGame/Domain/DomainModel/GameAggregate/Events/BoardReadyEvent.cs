@@ -2,8 +2,7 @@ using BattleshipGame.SharedKernel;
 
 namespace BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 
-public class BoardSideReadyEvent(GameId gameId, BoardSide boardSide)
-    : DomainEvent<BoardSideReadyEvent>
+public class BoardReadyEvent(GameId gameId, BoardSide boardSide) : DomainEvent<BoardReadyEvent>
 {
     /// <summary>
     /// Gets the game identifier.

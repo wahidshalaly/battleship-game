@@ -28,7 +28,7 @@ public class GameApiSimulationTests(
 
         // 3. Place ships for both sides
         await PlaceShips(gameId);
-        await VerifyGameState(gameId, GameState.BoardsAreReady);
+        await VerifyGameState(gameId, GameState.Ready);
 
         // 4. Attack all Opponent ship positions
         await AttackShips(gameId);
@@ -69,11 +69,11 @@ public class GameApiSimulationTests(
         {
             await _client.PostAsJsonAsync(
                 $"/api/games/{gameId}/ships",
-                new AddShipRequest(BoardSide.Player, kind, orientation, bowCode)
+                new PlaceShipRequest(BoardSide.Player, kind, orientation, bowCode)
             );
             await _client.PostAsJsonAsync(
                 $"/api/games/{gameId}/ships",
-                new AddShipRequest(BoardSide.Opponent, kind, orientation, bowCode)
+                new PlaceShipRequest(BoardSide.Opponent, kind, orientation, bowCode)
             );
         }
     }

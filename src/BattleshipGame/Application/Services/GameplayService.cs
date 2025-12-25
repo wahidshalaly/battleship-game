@@ -1,3 +1,4 @@
+using BattleshipGame.Application.Features.Games.Commands;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using MediatR;
@@ -16,7 +17,7 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
     )
     {
         var guid = await mediator.Send(
-            new Features.Games.Commands.StartNewGameCommand(playerId, boardSize),
+            new StartNewGameCommand(playerId, boardSize),
             cancellationToken
         );
         return new GameId(guid);
@@ -40,7 +41,7 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
             gameId
         );
         var guid = await mediator.Send(
-            new Features.Games.Commands.AddShipCommand(gameId, side, kind, orientation, bowCode),
+            new PlaceShipCommand(gameId, side, kind, orientation, bowCode),
             cancellationToken
         );
         logger.LogInformation(
@@ -54,10 +55,7 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
 
     public async Task StartGameplayAsync(GameId gameId, CancellationToken cancellationToken)
     {
-        await mediator.Send(
-            new Features.Games.Commands.StartGameplayCommand(gameId),
-            cancellationToken
-        );
+        await mediator.Send(new StartGameplayCommand(gameId), cancellationToken);
     }
 
     public async Task<AttackResult> AttackAsync(
@@ -75,14 +73,11 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
             gameId
         );
         var cellState = await mediator.Send(
-            new Features.Games.Commands.AttackCellCommand(gameId, targetSide, cellCode),
+            new AttackCommand(gameId, targetSide, cellCode),
             cancellationToken
         );
         // Build preliminary result; a follow-up opponent move may alter state but we re-query if needed via status check
-        var gameResult = await mediator.Send(
-            new Features.Games.Commands.CheckGameStatusCommand(gameId),
-            cancellationToken
-        );
+        var gameResult = await mediator.Send(new CheckGameStatusCommand(gameId), cancellationToken);
         var attackResult = new AttackResult(
             cellCode,
             cellState,
@@ -98,7 +93,7 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
         {
             logger.LogInformation("Opponent counter-attack initiating for game {GameId}", gameId);
             var opponent = await mediator.Send(
-                new Features.Games.Commands.OpponentAttackCommand(gameId),
+                new OpponentAttackCommand(gameId),
                 cancellationToken
             );
             logger.LogInformation(
@@ -117,7 +112,7 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
     )
     {
         var attackResult = await mediator.Send(
-            new Features.Games.Commands.OpponentAttackCommand(gameId),
+            new OpponentAttackCommand(gameId),
             cancellationToken
         );
         return new AttackResult(
@@ -134,16 +129,12 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
         CancellationToken cancellationToken
     )
     {
-        var gameResult = await mediator.Send(
-            new Features.Games.Commands.CheckGameStatusCommand(gameId),
-            cancellationToken
-        );
+        var gameResult = await mediator.Send(new CheckGameStatusCommand(gameId), cancellationToken);
         return gameResult;
     }
 
     public async Task EndGameAsync(GameId gameId, CancellationToken cancellationToken)
     {
-        await mediator.Send(new Features.Games.Commands.EndGameCommand(gameId), cancellationToken);
+        await mediator.Send(new EndGameCommand(gameId), cancellationToken);
     }
 }
-

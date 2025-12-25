@@ -6,13 +6,13 @@ namespace BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 /// Domain event raised when a cell is attacked during gameplay.
 /// </summary>
 /// <remarks>
-/// Initializes a new instance of the CellAttackedEvent class.
+/// Initializes a new instance of the UnderAttackEvent class.
 /// </remarks>
 /// <param name="boardId">The board identifier.</param>
 /// <param name="cellCode">The attacked cell code.</param>
 /// <param name="cellState">The cell cellState after attack</param>
-public class CellAttackedEvent(GameId boardId, string cellCode, CellState cellState)
-    : DomainEvent<CellAttackedEvent>
+public class UnderAttackEvent(GameId boardId, string cellCode, CellState cellState)
+    : DomainEvent<UnderAttackEvent>
 {
     /// <summary>
     /// Gets the game identifier.
