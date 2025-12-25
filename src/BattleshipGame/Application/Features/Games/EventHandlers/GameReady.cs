@@ -8,8 +8,7 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// Handles the GameReadyEvent domain event and executes side effects.
 /// </summary>
 /// <param name="logger">The logger instance.</param>
-internal class BoardsReadyEventHandler(ILogger<BoardsReadyEventHandler> logger)
-    : INotificationHandler<GameReadyEvent>
+internal class GameReady(ILogger<GameReady> logger) : INotificationHandler<GameReadyEvent>
 {
     /// <summary>
     /// Handles the GameReadyEvent and executes side effects.
@@ -21,14 +20,14 @@ internal class BoardsReadyEventHandler(ILogger<BoardsReadyEventHandler> logger)
     {
         // Infrastructure layer side effects - these don't belong in the domain
 
-        // 1. Notify players that the game can start
-        await NotifyGameStart(notification);
+        // // 1. Notify players that the game can start
+        // await NotifyGameStart(notification);
 
-        // 2. Initialize game monitoring
-        await InitializeGameMonitoring(notification);
+        // // 2. Initialize game monitoring
+        // await InitializeGameMonitoring(notification);
 
-        // 3. Setup game session tracking
-        await SetupSessionTracking(notification);
+        // // 3. Setup game session tracking
+        // await SetupSessionTracking(notification);
     }
 
     private async Task NotifyGameStart(GameReadyEvent gameReadyEvent)

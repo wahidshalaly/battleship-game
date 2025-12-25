@@ -17,6 +17,7 @@ internal class UnderAttackEventHandler(ILogger<UnderAttackEventHandler> logger)
 {
     /// <summary>
     /// Handles the UnderAttackEvent and executes side effects.
+    /// This is mainly an example of how to handle domain events for side effects for now.
     /// </summary>
     /// <param name="notification">The under attack event.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -25,14 +26,14 @@ internal class UnderAttackEventHandler(ILogger<UnderAttackEventHandler> logger)
     {
         // Infrastructure layer side effects - these don't belong in the domain
 
-        // 1. Real-time notifications
-        await SendRealTimeUpdate(notification);
+        // // 1. Real-time notifications
+        // await SendRealTimeUpdate(notification);
 
-        // 2. Analytics tracking
-        await TrackAttackAnalytics(notification);
+        // // 2. Analytics tracking
+        // await TrackAttackAnalytics(notification);
 
-        // 3. Achievement checks
-        await CheckAchievements(notification);
+        // // 3. Achievement checks
+        // await CheckAchievements(notification);
     }
 
     private async Task SendRealTimeUpdate(UnderAttackEvent underAttackEvent)

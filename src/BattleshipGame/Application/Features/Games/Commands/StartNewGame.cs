@@ -20,15 +20,15 @@ internal class StartNewGameHandler(
         var player =
             await playerRepository.GetByIdAsync(request.PlayerId, cancellationToken)
             ?? throw new PlayerNotFoundException(request.PlayerId);
+
         var game = new Game(request.PlayerId, request.BoardSize);
         player.JoinGame(game.Id);
+
         await gameRepository.SaveAsync(game, cancellationToken);
         await playerRepository.SaveAsync(player, cancellationToken);
-        logger.LogInformation(
-            "Created game {GameId} for player {PlayerId}",
-            game.Id,
-            request.PlayerId
-        );
+
+        logger.LogInformation("Created {GameId} for {PlayerId}", game.Id, request.PlayerId);
+
         return game.Id;
     }
 }

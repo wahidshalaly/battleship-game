@@ -54,8 +54,8 @@ internal class AttackHandler(
         game.ClearDomainEvents();
 
         logger.LogInformation(
-            "Attack! Game {GameId} X Cell {CellCode}, result: {CellState}",
-            request.GameId,
+            "Attack! {GameId} X {CellCode}, result: {CellState}",
+            request.GameId.Value,
             request.CellCode,
             cellState
         );

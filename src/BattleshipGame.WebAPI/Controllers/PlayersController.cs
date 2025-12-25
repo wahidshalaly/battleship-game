@@ -34,9 +34,10 @@ public class PlayersController(ILogger<PlayersController> logger, IPlayerService
         // Delegate to service for creation + validation
         var playerId = await playerService.CreateAsync(request.Username, cancellationToken);
 
+        // TODO: consider removing sensitive info from logs
         logger.LogInformation(
             "Player created with ID: {PlayerId}, Username: {Username}",
-            playerId,
+            playerId.Value,
             request.Username
         );
 

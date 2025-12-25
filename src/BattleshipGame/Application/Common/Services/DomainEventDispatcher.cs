@@ -40,24 +40,27 @@ public class DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMedia
             try
             {
                 logger.LogDebug(
-                    "Publishing domain event {EventType} for aggregate {AggregateId}",
-                    domainEvent.GetType().Name,
+                    "Publishing domain event {EventType}:{EventId} for aggregate {AggregateId}",
+                    domainEvent.EventType,
+                    domainEvent.EventId,
                     aggregateRoot.Id
                 );
 
                 await mediator.Publish(domainEvent, cancellationToken);
 
-                logger.LogDebug(
-                    "Successfully published domain event {EventType}",
-                    domainEvent.GetType().Name
+                logger.LogInformation(
+                    "Published domain event {EventType}:{EventId}",
+                    domainEvent.EventType,
+                    domainEvent.EventId
                 );
             }
             catch (Exception exception)
             {
                 logger.LogError(
                     exception,
-                    "Failed to publish domain event {EventType} for aggregate {AggregateId}",
-                    domainEvent.GetType().Name,
+                    "Failed to publish domain event {EventType}:{EventId} for aggregate {AggregateId}",
+                    domainEvent.EventType,
+                    domainEvent.EventId,
                     aggregateRoot.Id
                 );
 

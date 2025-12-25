@@ -24,14 +24,14 @@ internal class GameOverEventHandler(ILogger<GameOverEventHandler> logger)
     {
         // Infrastructure layer side effects - these don't belong in the domain
 
-        // 1. Update statistics
-        await UpdateGameStatistics(notification);
+        // // 1. Update statistics
+        // await UpdateGameStatistics(notification);
 
-        // 2. Send notifications to players
-        await NotifyPlayers(notification);
+        // // 2. Send notifications to players
+        // await NotifyPlayers(notification);
 
-        // 3. Log game completion for analytics
-        LogGameCompletion(notification);
+        // // 3. Log game completion for analytics
+        // LogGameCompletion(notification);
     }
 
     private async Task UpdateGameStatistics(GameOverEvent gameOverEvent)

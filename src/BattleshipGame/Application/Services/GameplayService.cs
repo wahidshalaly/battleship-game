@@ -2,13 +2,11 @@ using BattleshipGame.Application.Features.Games.Commands;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using MediatR;
-using Microsoft.Extensions.Logging;
 
 namespace BattleshipGame.Application.Services;
 
 /// <inheritdoc />
-public sealed class GameplayService(IMediator mediator, ILogger<GameplayService> logger)
-    : IGameplayService
+public sealed class GameplayService(IMediator mediator) : IGameplayService
 {
     public async Task<GameId> StartNewGameAsync(
         PlayerId playerId,
@@ -32,31 +30,16 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
         CancellationToken cancellationToken
     )
     {
-        logger.LogInformation(
-            "Placing ship {Kind} {Orientation} at {Bow} on {Side} for game {GameId}",
-            kind,
-            orientation,
-            bowCode,
-            side,
-            gameId
-        );
         var guid = await mediator.Send(
             new PlaceShipCommand(gameId, side, kind, orientation, bowCode),
             cancellationToken
         );
-        logger.LogInformation(
-            "Ship {ShipId} placed on {Side} for game {GameId}",
-            guid,
-            side,
-            gameId
-        );
+
         return new ShipId(guid);
     }
 
-    public async Task StartGameplayAsync(GameId gameId, CancellationToken cancellationToken)
-    {
-        await mediator.Send(new StartGameplayCommand(gameId), cancellationToken);
-    }
+    public Task StartGameplayAsync(GameId gameId, CancellationToken cancellationToken) =>
+        mediator.Send(new StartGameplayCommand(gameId), cancellationToken);
 
     public async Task<AttackResult> AttackAsync(
         GameId gameId,
@@ -66,12 +49,6 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
     )
     {
         var attacker = targetSide.OppositeSide();
-        logger.LogInformation(
-            "{Attacker} attacking {Cell} in game {GameId}",
-            attacker,
-            cellCode,
-            gameId
-        );
         var cellState = await mediator.Send(
             new AttackCommand(gameId, targetSide, cellCode),
             cancellationToken
@@ -91,50 +68,24 @@ public sealed class GameplayService(IMediator mediator, ILogger<GameplayService>
             && (gameResult is null || !gameResult.IsGameOver)
         )
         {
-            logger.LogInformation("Opponent counter-attack initiating for game {GameId}", gameId);
             var opponent = await mediator.Send(
                 new OpponentAttackCommand(gameId),
                 cancellationToken
-            );
-            logger.LogInformation(
-                "Opponent attacked {Cell} => {State} (gameOver={Over})",
-                opponent.CellCode,
-                opponent.CellState,
-                opponent.IsGameOver
             );
         }
         return attackResult;
     }
 
-    public async Task<AttackResult> OpponentAttackAsync(
+    public Task<GameResult?> CheckGameStatusAsync(
         GameId gameId,
         CancellationToken cancellationToken
     )
     {
-        var attackResult = await mediator.Send(
-            new OpponentAttackCommand(gameId),
-            cancellationToken
-        );
-        return new AttackResult(
-            attackResult.CellCode,
-            attackResult.CellState,
-            BoardSide.Opponent,
-            attackResult.IsGameOver,
-            attackResult.Winner
-        );
+        return mediator.Send(new CheckGameStatusCommand(gameId), cancellationToken);
     }
 
-    public async Task<GameResult?> CheckGameStatusAsync(
-        GameId gameId,
-        CancellationToken cancellationToken
-    )
+    public Task EndGameAsync(GameId gameId, CancellationToken cancellationToken)
     {
-        var gameResult = await mediator.Send(new CheckGameStatusCommand(gameId), cancellationToken);
-        return gameResult;
-    }
-
-    public async Task EndGameAsync(GameId gameId, CancellationToken cancellationToken)
-    {
-        await mediator.Send(new EndGameCommand(gameId), cancellationToken);
+        return mediator.Send(new EndGameCommand(gameId), cancellationToken);
     }
 }

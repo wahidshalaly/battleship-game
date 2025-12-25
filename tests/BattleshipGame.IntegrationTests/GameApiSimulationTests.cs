@@ -12,7 +12,17 @@ public class GameApiSimulationTests(
     WebApplicationFactory<Program> factory
 ) : IClassFixture<WebApplicationFactory<Program>>
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly HttpClient _client = factory
+        .WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                logging.AddProvider(new XunitLoggerProvider(output));
+                logging.SetMinimumLevel(LogLevel.Debug);
+            });
+        })
+        .CreateClient();
 
     [Fact]
     public async Task Simulate_Full_Game_Playthrough_Via_Api()
