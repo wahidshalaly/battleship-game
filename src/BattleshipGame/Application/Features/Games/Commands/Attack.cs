@@ -32,23 +32,23 @@ internal class AttackHandler(
     /// Handles the attack cell command.
     /// </summary>
     /// <param name="request">The attack cell command.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns>The cell state after attack.</returns>
-    public async Task<CellState> Handle(AttackCommand request, CancellationToken cancellationToken)
+    public async Task<CellState> Handle(AttackCommand request, CancellationToken ct)
     {
         // 1. Load aggregate
         var game =
-            await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
+            await gameRepository.GetByIdAsync(request.GameId, ct)
             ?? throw new GameNotFoundException(request.GameId);
 
         // 2. Execute domain operation (this will raise domain events)
         var cellState = game.Attack(request.BoardSide, request.CellCode);
 
         // 3. Save the aggregate back to repository
-        await gameRepository.SaveAsync(game, cancellationToken);
+        await gameRepository.SaveAsync(game, ct);
 
         // 4. Dispatch domain events (THIS IS WHERE SIDE EFFECTS HAPPEN)
-        await eventDispatcher.DispatchEventsAsync(game, cancellationToken);
+        await eventDispatcher.DispatchEventsAsync(game, ct);
 
         // 5. Clear events after dispatching
         game.ClearDomainEvents();

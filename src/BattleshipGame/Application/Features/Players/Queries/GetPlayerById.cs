@@ -23,10 +23,10 @@ public class GetPlayerByIdHandler(IPlayerRepository playerRepository)
     /// <inheritdoc />
     public async Task<GetPlayerQueryResult?> Handle(
         GetPlayerByIdQuery request,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
-        var player = await playerRepository.GetByIdAsync(request.PlayerId, cancellationToken);
+        var player = await playerRepository.GetByIdAsync(request.PlayerId, ct);
 
         if (player is null)
             return null;

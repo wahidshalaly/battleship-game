@@ -39,12 +39,12 @@ public class PlaceShipCommandHandlerTests
         var playerId = new PlayerId(Guid.NewGuid());
         var game = new Game(playerId);
         var command = new PlaceShipCommand(game.Id, boardSide, shipKind, orientation, bowCode);
-        var cancellationToken = CancellationToken.None;
+        var ct = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, cancellationToken)).Returns(game);
+        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, ct)).Returns(game);
 
         // Act
-        var result = await _handler.Handle(command, cancellationToken);
+        var result = await _handler.Handle(command, ct);
 
         // Assert
         result.Should().NotBe(Guid.Empty);
@@ -63,13 +63,13 @@ public class PlaceShipCommandHandlerTests
             ShipOrientation.Horizontal,
             bowCode
         );
-        var cancellationToken = CancellationToken.None;
+        var ct = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, cancellationToken))
+        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, ct))
             .Returns(Task.FromResult<Game?>(null));
 
         // Act
-        var act = () => _handler.Handle(command, cancellationToken);
+        var act = () => _handler.Handle(command, ct);
 
         // Assert
         await act.Should()

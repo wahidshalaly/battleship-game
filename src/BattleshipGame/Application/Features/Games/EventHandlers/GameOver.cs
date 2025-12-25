@@ -18,9 +18,9 @@ internal class GameOverEventHandler(ILogger<GameOverEventHandler> logger)
     /// Handles the GameOverEvent and executes side effects.
     /// </summary>
     /// <param name="notification">The game over event.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task Handle(GameOverEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(GameOverEvent notification, CancellationToken ct)
     {
         // Infrastructure layer side effects - these don't belong in the domain
 

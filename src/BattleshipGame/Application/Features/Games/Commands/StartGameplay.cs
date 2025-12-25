@@ -10,16 +10,16 @@ public record StartGameplayCommand(GameId GameId) : IRequest;
 internal class StartGameplayHandler(IGameRepository gameRepository)
     : IRequestHandler<StartGameplayCommand>
 {
-    public async Task Handle(StartGameplayCommand request, CancellationToken cancellationToken)
+    public async Task Handle(StartGameplayCommand request, CancellationToken ct)
     {
         var game =
-            await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
+            await gameRepository.GetByIdAsync(request.GameId, ct)
             ?? throw new GameNotFoundException(request.GameId);
         if (!game.IsReady)
             throw new InvalidOperationException(
                 "Cannot start gameplay until both boards are ready."
             );
         // Domain may transition state implicitly after readiness; persist to be safe
-        await gameRepository.SaveAsync(game, cancellationToken);
+        await gameRepository.SaveAsync(game, ct);
     }
 }

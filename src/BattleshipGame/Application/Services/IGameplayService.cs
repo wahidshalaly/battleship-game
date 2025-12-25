@@ -14,13 +14,9 @@ public interface IGameplayService
     /// </summary>
     /// <param name="playerId"></param>
     /// <param name="boardSize"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    Task<GameId> StartNewGameAsync(
-        PlayerId playerId,
-        int boardSize,
-        CancellationToken cancellationToken
-    );
+    Task<GameId> StartNewGameAsync(PlayerId playerId, int boardSize, CancellationToken ct);
 
     /// <summary>
     /// Places a ship on the specified side of the board.
@@ -30,7 +26,7 @@ public interface IGameplayService
     /// <param name="kind"></param>
     /// <param name="orientation"></param>
     /// <param name="bowCode"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
     Task<ShipId> PlaceShipAsync(
         GameId gameId,
@@ -38,7 +34,7 @@ public interface IGameplayService
         ShipKind kind,
         ShipOrientation orientation,
         string bowCode,
-        CancellationToken cancellationToken
+        CancellationToken ct
     );
 
     /// <summary>
@@ -47,36 +43,36 @@ public interface IGameplayService
     /// <param name="gameId"></param>
     /// <param name="side"></param>
     /// <param name="cellCode"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
     Task<AttackResult> AttackAsync(
         GameId gameId,
         BoardSide side,
         string cellCode,
-        CancellationToken cancellationToken
+        CancellationToken ct
     );
 
     /// <summary>
     /// Starts the gameplay loop for the specified game.
     /// </summary>
     /// <param name="gameId"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    Task StartGameplayAsync(GameId gameId, CancellationToken cancellationToken);
+    Task StartGameplayAsync(GameId gameId, CancellationToken ct);
 
     /// <summary>
     /// Checks the current status of the game.
     /// </summary>
     /// <param name="gameId"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    Task<GameResult?> CheckGameStatusAsync(GameId gameId, CancellationToken cancellationToken);
+    Task<GameResult?> CheckGameStatusAsync(GameId gameId, CancellationToken ct);
 
     /// <summary>
     /// Ends the specified game.
     /// </summary>
     /// <param name="gameId"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    Task EndGameAsync(GameId gameId, CancellationToken cancellationToken);
+    Task EndGameAsync(GameId gameId, CancellationToken ct);
 }

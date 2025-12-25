@@ -11,13 +11,10 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
     public async Task<GameId> StartNewGameAsync(
         PlayerId playerId,
         int boardSize,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
-        var guid = await mediator.Send(
-            new StartNewGameCommand(playerId, boardSize),
-            cancellationToken
-        );
+        var guid = await mediator.Send(new StartNewGameCommand(playerId, boardSize), ct);
         return new GameId(guid);
     }
 
@@ -27,34 +24,31 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
         ShipKind kind,
         ShipOrientation orientation,
         string bowCode,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var guid = await mediator.Send(
             new PlaceShipCommand(gameId, side, kind, orientation, bowCode),
-            cancellationToken
+            ct
         );
 
         return new ShipId(guid);
     }
 
-    public Task StartGameplayAsync(GameId gameId, CancellationToken cancellationToken) =>
-        mediator.Send(new StartGameplayCommand(gameId), cancellationToken);
+    public Task StartGameplayAsync(GameId gameId, CancellationToken ct) =>
+        mediator.Send(new StartGameplayCommand(gameId), ct);
 
     public async Task<AttackResult> AttackAsync(
         GameId gameId,
         BoardSide targetSide,
         string cellCode,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var attacker = targetSide.OppositeSide();
-        var cellState = await mediator.Send(
-            new AttackCommand(gameId, targetSide, cellCode),
-            cancellationToken
-        );
+        var cellState = await mediator.Send(new AttackCommand(gameId, targetSide, cellCode), ct);
         // Build preliminary result; a follow-up opponent move may alter state but we re-query if needed via status check
-        var gameResult = await mediator.Send(new CheckGameStatusCommand(gameId), cancellationToken);
+        var gameResult = await mediator.Send(new CheckGameStatusCommand(gameId), ct);
         var attackResult = new AttackResult(
             cellCode,
             cellState,
@@ -68,24 +62,18 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
             && (gameResult is null || !gameResult.IsGameOver)
         )
         {
-            var opponent = await mediator.Send(
-                new OpponentAttackCommand(gameId),
-                cancellationToken
-            );
+            var opponent = await mediator.Send(new OpponentAttackCommand(gameId), ct);
         }
         return attackResult;
     }
 
-    public Task<GameResult?> CheckGameStatusAsync(
-        GameId gameId,
-        CancellationToken cancellationToken
-    )
+    public Task<GameResult?> CheckGameStatusAsync(GameId gameId, CancellationToken ct)
     {
-        return mediator.Send(new CheckGameStatusCommand(gameId), cancellationToken);
+        return mediator.Send(new CheckGameStatusCommand(gameId), ct);
     }
 
-    public Task EndGameAsync(GameId gameId, CancellationToken cancellationToken)
+    public Task EndGameAsync(GameId gameId, CancellationToken ct)
     {
-        return mediator.Send(new EndGameCommand(gameId), cancellationToken);
+        return mediator.Send(new EndGameCommand(gameId), ct);
     }
 }

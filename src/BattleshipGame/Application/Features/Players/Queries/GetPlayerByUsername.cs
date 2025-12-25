@@ -22,10 +22,10 @@ public class GetPlayerByUsernameHandler(IPlayerRepository playerRepository)
     /// <inheritdoc />
     public async Task<GetPlayerQueryResult?> Handle(
         GetPlayerByUsernameQuery request,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
-        var player = await playerRepository.GetByUsernameAsync(request.Username, cancellationToken);
+        var player = await playerRepository.GetByUsernameAsync(request.Username, ct);
 
         return player is null
             ? null

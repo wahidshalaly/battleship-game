@@ -12,37 +12,31 @@ public interface IGameRepository
     /// Retrieves a game by its identifier.
     /// </summary>
     /// <param name="gameId">The game identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>The game if found, otherwise null.</returns>
-    Task<Game?> GetByIdAsync(GameId gameId, CancellationToken cancellationToken);
+    Task<Game?> GetByIdAsync(GameId gameId, CancellationToken ct);
 
     /// <summary>
     /// Saves a new or existing game.
     /// </summary>
     /// <param name="game">The game to save.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>The saved game identifier.</returns>
-    Task SaveAsync(Game game, CancellationToken cancellationToken);
+    Task SaveAsync(Game game, CancellationToken ct);
 
     /// <summary>
     /// Gets all games for a specific player.
     /// </summary>
     /// <param name="playerId">The player identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>A collection of games for the player.</returns>
-    Task<IReadOnlyCollection<Game>> GetByPlayerIdAsync(
-        PlayerId playerId,
-        CancellationToken cancellationToken
-    );
+    Task<IReadOnlyCollection<Game>> GetByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
 
     /// <summary>
     /// Gets the active game for a specific player, if any.
     /// </summary>
     /// <param name="playerId">The player identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>The active game if found, otherwise null.</returns>
-    Task<Game?> GetActiveGameByPlayerIdAsync(
-        PlayerId playerId,
-        CancellationToken cancellationToken
-    );
+    Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
 }

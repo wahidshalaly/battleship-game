@@ -22,11 +22,11 @@ internal class OpponentAttackHandler(
 {
     public async Task<OpponentAttackResult> Handle(
         OpponentAttackCommand request,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var game =
-            await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
+            await gameRepository.GetByIdAsync(request.GameId, ct)
             ?? throw new GameNotFoundException(request.GameId);
         if (game.State == GameState.GameOver)
             throw new InvalidOperationException("Game already over.");
@@ -34,7 +34,7 @@ internal class OpponentAttackHandler(
             throw new InvalidOperationException("Setup incomplete.");
         var targetCell = await opponentStrategy.SelectNextAttack(request.GameId);
         var cellState = game.Attack(BoardSide.Player, targetCell);
-        await gameRepository.SaveAsync(game, cancellationToken);
+        await gameRepository.SaveAsync(game, ct);
         return new OpponentAttackResult(
             targetCell,
             cellState,

@@ -9,29 +9,26 @@ namespace BattleshipGame.Application.Services;
 public class PlayerService(IMediator mediator) : IPlayerService
 {
     /// <inheritdoc />
-    public async Task<PlayerId> CreateAsync(string username, CancellationToken cancellationToken)
+    public async Task<PlayerId> CreateAsync(string username, CancellationToken ct)
     {
-        var guid = await mediator.Send(new CreatePlayerCommand(username), cancellationToken);
+        var guid = await mediator.Send(new CreatePlayerCommand(username), ct);
         return new PlayerId(guid);
     }
 
     /// <inheritdoc />
-    public async Task<GetPlayerQueryResult?> GetByIdAsync(
-        PlayerId id,
-        CancellationToken cancellationToken
-    )
+    public async Task<GetPlayerQueryResult?> GetByIdAsync(PlayerId id, CancellationToken ct)
     {
-        var result = await mediator.Send(new GetPlayerByIdQuery(id), cancellationToken);
+        var result = await mediator.Send(new GetPlayerByIdQuery(id), ct);
         return result;
     }
 
     /// <inheritdoc />
     public async Task<GetPlayerQueryResult?> GetByUsernameAsync(
         string username,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
-        var result = await mediator.Send(new GetPlayerByUsernameQuery(username), cancellationToken);
+        var result = await mediator.Send(new GetPlayerByUsernameQuery(username), ct);
         return result;
     }
 }

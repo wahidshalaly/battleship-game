@@ -20,7 +20,7 @@ public class CreatePlayerCommandHandler(IPlayerRepository playerRepository)
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
     /// <inheritdoc />
-    public async Task<Guid> Handle(CreatePlayerCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreatePlayerCommand request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Username))
         {
@@ -28,7 +28,7 @@ public class CreatePlayerCommandHandler(IPlayerRepository playerRepository)
         }
 
         // Validate username uniqueness
-        if (await playerRepository.UsernameExistsAsync(request.Username, cancellationToken))
+        if (await playerRepository.UsernameExistsAsync(request.Username, ct))
         {
             throw new InvalidOperationException(
                 $"A player with username '{request.Username}' already exists."
@@ -40,7 +40,7 @@ public class CreatePlayerCommandHandler(IPlayerRepository playerRepository)
         var player = new Player(playerId, request.Username);
 
         // Save player
-        await playerRepository.SaveAsync(player, cancellationToken);
+        await playerRepository.SaveAsync(player, ct);
 
         return playerId;
     }

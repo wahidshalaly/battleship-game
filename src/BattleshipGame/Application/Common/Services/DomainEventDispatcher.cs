@@ -19,11 +19,11 @@ public class DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMedia
     /// Dispatches all domain events from the given aggregate root.
     /// </summary>
     /// <param name="aggregateRoot">The aggregate root containing domain events.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task DispatchEventsAsync<TId>(
         AggregateRoot<TId> aggregateRoot,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
         where TId : EntityId
     {
@@ -46,7 +46,7 @@ public class DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMedia
                     aggregateRoot.Id
                 );
 
-                await mediator.Publish(domainEvent, cancellationToken);
+                await mediator.Publish(domainEvent, ct);
 
                 logger.LogInformation(
                     "Published domain event {EventType}:{EventId}",
@@ -73,17 +73,17 @@ public class DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMedia
     /// Dispatches domain events from multiple aggregate roots.
     /// </summary>
     /// <param name="aggregateRoots">The collection of aggregate roots.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task DispatchEventsAsync<TId>(
         IEnumerable<AggregateRoot<TId>> aggregateRoots,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
         where TId : EntityId
     {
         foreach (var aggregateRoot in aggregateRoots)
         {
-            await DispatchEventsAsync(aggregateRoot, cancellationToken);
+            await DispatchEventsAsync(aggregateRoot, ct);
         }
     }
 }

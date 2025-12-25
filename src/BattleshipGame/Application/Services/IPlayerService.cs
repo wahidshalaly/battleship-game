@@ -12,19 +12,16 @@ public interface IPlayerService
     /// Creates a new player with the specified username.
     /// </summary>
     /// <param name="username"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    Task<PlayerId> CreateAsync(string username, CancellationToken cancellationToken);
+    Task<PlayerId> CreateAsync(string username, CancellationToken ct);
 
     /// <summary>
     /// Gets a player by their unique identifier.
     /// </summary>
     /// <param name="id"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    Task<GetPlayerQueryResult?> GetByIdAsync(PlayerId id, CancellationToken cancellationToken);
-    Task<GetPlayerQueryResult?> GetByUsernameAsync(
-        string username,
-        CancellationToken cancellationToken
-    );
+    Task<GetPlayerQueryResult?> GetByIdAsync(PlayerId id, CancellationToken ct);
+    Task<GetPlayerQueryResult?> GetByUsernameAsync(string username, CancellationToken ct);
 }

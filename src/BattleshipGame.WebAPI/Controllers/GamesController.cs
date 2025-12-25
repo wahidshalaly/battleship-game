@@ -31,13 +31,13 @@ public class GamesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> StartNewGame(
         [FromBody] CreateGameRequest request,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var gameId = await gameplayService.StartNewGameAsync(
             new PlayerId(request.PlayerId),
             request.BoardSize ?? 10,
-            cancellationToken
+            ct
         );
 
         logger.LogInformation(
@@ -62,13 +62,12 @@ public class GamesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<GetGameQueryResult>> GetGame(
         [FromRoute] Guid id,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var query = new GetGameQuery(new GameId(id));
         var game =
-            await mediator.Send(query, cancellationToken)
-            ?? throw new GameNotFoundException(new GameId(id));
+            await mediator.Send(query, ct) ?? throw new GameNotFoundException(new GameId(id));
 
         return Ok(game);
     }
@@ -83,7 +82,7 @@ public class GamesController(
     public async Task<ActionResult> PlaceShip(
         [FromRoute] Guid id,
         [FromBody] PlaceShipRequest request,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var shipId = await gameplayService.PlaceShipAsync(
@@ -92,7 +91,7 @@ public class GamesController(
             request.ShipKind,
             request.Orientation,
             request.BowCode,
-            cancellationToken
+            ct
         );
 
         return Ok(shipId.Value);
@@ -108,14 +107,14 @@ public class GamesController(
     public async Task<ActionResult<CellState>> Attack(
         [FromRoute] Guid id,
         [FromBody] AttackRequest request,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var result = await gameplayService.AttackAsync(
             new GameId(id),
             request.Side,
             request.Cell,
-            cancellationToken
+            ct
         );
 
         return Ok(result.CellState);
@@ -129,13 +128,12 @@ public class GamesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<GameStateResponse>> GetGameState(
         [FromRoute] Guid id,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var query = new GetGameQuery(new GameId(id));
         var game =
-            await mediator.Send(query, cancellationToken)
-            ?? throw new GameNotFoundException(new GameId(id));
+            await mediator.Send(query, ct) ?? throw new GameNotFoundException(new GameId(id));
 
         // For demo, winner is null unless state is GameOver
         var winner = game.State == GameState.GameOver ? game.PlayerId : (Guid?)null;

@@ -11,13 +11,10 @@ public record CheckGameStatusCommand(GameId GameId) : IRequest<GameResult?>;
 public class CheckGameStatusHandler(IGameRepository gameRepository)
     : IRequestHandler<CheckGameStatusCommand, GameResult?>
 {
-    public async Task<GameResult?> Handle(
-        CheckGameStatusCommand request,
-        CancellationToken cancellationToken
-    )
+    public async Task<GameResult?> Handle(CheckGameStatusCommand request, CancellationToken ct)
     {
         var game =
-            await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
+            await gameRepository.GetByIdAsync(request.GameId, ct)
             ?? throw new GameNotFoundException(request.GameId);
 
         if (game.State != GameState.GameOver)

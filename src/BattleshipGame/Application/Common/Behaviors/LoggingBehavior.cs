@@ -21,7 +21,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var requestName = typeof(TRequest).Name;
@@ -79,7 +79,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
         var stopwatch = Stopwatch.StartNew();
         try
         {
-            var response = await next(cancellationToken);
+            var response = await next(ct);
             stopwatch.Stop();
 
             // Extract entity IDs from response

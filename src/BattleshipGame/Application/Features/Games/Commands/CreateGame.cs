@@ -27,18 +27,18 @@ internal class CreateGameHandler(
     /// Handles <see cref="CreateGameCommand"/> and returns the new game ID.
     /// </summary>
     /// <param name="request">The create game command.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns>The new game ID.</returns>
-    public async Task<Guid> Handle(CreateGameCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateGameCommand request, CancellationToken ct)
     {
         // 1. Create new game (this may raise domain events)
         var game = new Game(request.PlayerId, request.BoardSize ?? 10);
 
         // 2. Save aggregate state
-        await gameRepository.SaveAsync(game, cancellationToken);
+        await gameRepository.SaveAsync(game, ct);
 
         // 3. Dispatch domain events (THIS IS WHERE SIDE EFFECTS HAPPEN)
-        await eventDispatcher.DispatchEventsAsync(game, cancellationToken);
+        await eventDispatcher.DispatchEventsAsync(game, ct);
 
         // 4. Clear events from aggregate
         game.ClearDomainEvents();

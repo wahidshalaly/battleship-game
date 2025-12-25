@@ -32,13 +32,13 @@ public class CreateGameCommandHandlerTests
         var playerId = new PlayerId(Guid.NewGuid());
         const int boardSize = 12;
         var command = new CreateGameCommand(playerId, boardSize);
-        var cancellationToken = CancellationToken.None;
+        var ct = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, cancellationToken))
+        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, ct))
             .Returns(Task.FromResult(new GameId(Guid.NewGuid())));
 
         // Act
-        var result = await _handler.Handle(command, cancellationToken);
+        var result = await _handler.Handle(command, ct);
 
         // Assert
         result.Should().NotBe(Guid.Empty);
@@ -50,7 +50,7 @@ public class CreateGameCommandHandlerTests
                         && g.BoardSize == boardSize
                         && g.State == GameState.Started
                     ),
-                    cancellationToken
+                    ct
                 )
             )
             .MustHaveHappenedOnceExactly();
@@ -62,13 +62,13 @@ public class CreateGameCommandHandlerTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var command = new CreateGameCommand(playerId, null);
-        var cancellationToken = CancellationToken.None;
+        var ct = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, cancellationToken))
+        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, ct))
             .Returns(Task.FromResult(new GameId(Guid.NewGuid())));
 
         // Act
-        var result = await _handler.Handle(command, cancellationToken);
+        var result = await _handler.Handle(command, ct);
 
         // Assert
         result.Should().NotBe(Guid.Empty);
@@ -76,7 +76,7 @@ public class CreateGameCommandHandlerTests
         A.CallTo(() =>
                 _gameRepository.SaveAsync(
                     A<Game>.That.Matches(g => g.BoardSize == DefaultBoardSize),
-                    cancellationToken
+                    ct
                 )
             )
             .MustHaveHappenedOnceExactly();

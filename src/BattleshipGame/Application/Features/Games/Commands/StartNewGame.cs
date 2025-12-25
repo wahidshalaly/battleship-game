@@ -15,17 +15,17 @@ internal class StartNewGameHandler(
     IPlayerRepository playerRepository
 ) : IRequestHandler<StartNewGameCommand, Guid>
 {
-    public async Task<Guid> Handle(StartNewGameCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(StartNewGameCommand request, CancellationToken ct)
     {
         var player =
-            await playerRepository.GetByIdAsync(request.PlayerId, cancellationToken)
+            await playerRepository.GetByIdAsync(request.PlayerId, ct)
             ?? throw new PlayerNotFoundException(request.PlayerId);
 
         var game = new Game(request.PlayerId, request.BoardSize);
         player.JoinGame(game.Id);
 
-        await gameRepository.SaveAsync(game, cancellationToken);
-        await playerRepository.SaveAsync(player, cancellationToken);
+        await gameRepository.SaveAsync(game, ct);
+        await playerRepository.SaveAsync(player, ct);
 
         logger.LogInformation("Created {GameId} for {PlayerId}", game.Id, request.PlayerId);
 

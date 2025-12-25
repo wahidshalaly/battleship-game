@@ -27,12 +27,9 @@ internal class GetGameHandler(IGameRepository gameRepository)
     : IRequestHandler<GetGameQuery, GetGameQueryResult?>
 {
     /// <inheritdoc />
-    public async Task<GetGameQueryResult?> Handle(
-        GetGameQuery request,
-        CancellationToken cancellationToken
-    )
+    public async Task<GetGameQueryResult?> Handle(GetGameQuery request, CancellationToken ct)
     {
-        var game = await gameRepository.GetByIdAsync(request.GameId, cancellationToken);
+        var game = await gameRepository.GetByIdAsync(request.GameId, ct);
 
         return game is null
             ? null

@@ -13,14 +13,14 @@ public class InMemoryGameRepository : IGameRepository
     private readonly ConcurrentDictionary<GameId, Game> _games = new();
 
     /// <inheritdoc />
-    public Task<Game?> GetByIdAsync(GameId gameId, CancellationToken cancellationToken)
+    public Task<Game?> GetByIdAsync(GameId gameId, CancellationToken ct)
     {
         _games.TryGetValue(gameId, out var game);
         return Task.FromResult(game);
     }
 
     /// <inheritdoc />
-    public Task SaveAsync(Game game, CancellationToken cancellationToken)
+    public Task SaveAsync(Game game, CancellationToken ct)
     {
         _games.AddOrUpdate(game.Id, game, (_, _) => game);
         return Task.CompletedTask;
@@ -29,7 +29,7 @@ public class InMemoryGameRepository : IGameRepository
     /// <inheritdoc />
     public Task<IReadOnlyCollection<Game>> GetByPlayerIdAsync(
         PlayerId playerId,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var playerGames = _games.Values.Where(g => g.PlayerId == playerId).ToList().AsReadOnly();
@@ -38,10 +38,7 @@ public class InMemoryGameRepository : IGameRepository
     }
 
     /// <inheritdoc />
-    public Task<Game?> GetActiveGameByPlayerIdAsync(
-        PlayerId playerId,
-        CancellationToken cancellationToken
-    )
+    public Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken ct)
     {
         var game = _games.Values.LastOrDefault(g =>
             g.PlayerId == playerId && g.State != GameState.GameOver

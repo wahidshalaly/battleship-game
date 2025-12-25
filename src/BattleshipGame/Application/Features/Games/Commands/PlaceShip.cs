@@ -27,11 +27,11 @@ internal class PlaceShipHandler(
     IDomainEventDispatcher eventDispatcher
 ) : IRequestHandler<PlaceShipCommand, Guid>
 {
-    public async Task<Guid> Handle(PlaceShipCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(PlaceShipCommand request, CancellationToken ct)
     {
         // Load the game aggregate
         var game =
-            await gameRepository.GetByIdAsync(request.GameId, cancellationToken)
+            await gameRepository.GetByIdAsync(request.GameId, ct)
             ?? throw new GameNotFoundException(request.GameId);
 
         // Place the ship to the specified board side
@@ -43,10 +43,10 @@ internal class PlaceShipHandler(
         );
 
         // Save the updated game aggregate
-        await gameRepository.SaveAsync(game, cancellationToken);
+        await gameRepository.SaveAsync(game, ct);
 
         // Dispatch any domain events raised by the PlaceShip method
-        await eventDispatcher.DispatchEventsAsync(game, cancellationToken);
+        await eventDispatcher.DispatchEventsAsync(game, ct);
 
         return shipId;
     }

@@ -34,23 +34,23 @@ public class DomainEventDispatcherTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var game = _fixture.CreateReadyGame(playerId);
-        var cancellationToken = CancellationToken.None;
+        var ct = CancellationToken.None;
         var publishedEvents = new List<IDomainEvent>();
 
-        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, cancellationToken))
+        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, ct))
             .Invokes(
                 (IDomainEvent domainEvent, CancellationToken _) => publishedEvents.Add(domainEvent)
             )
             .Returns(Task.CompletedTask);
 
         // Act
-        await _dispatcher.DispatchEventsAsync(game, cancellationToken);
+        await _dispatcher.DispatchEventsAsync(game, ct);
 
         // Assert
         publishedEvents.Should().HaveCount(game.DomainEvents.Count);
         publishedEvents.Should().ContainItemsAssignableTo<IDomainEvent>();
 
-        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, cancellationToken))
+        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, ct))
             .MustHaveHappened(game.DomainEvents.Count, Times.Exactly);
     }
 
@@ -60,14 +60,13 @@ public class DomainEventDispatcherTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         var game = new Game(playerId);
-        var cancellationToken = CancellationToken.None;
+        var ct = CancellationToken.None;
 
         // Act
-        await _dispatcher.DispatchEventsAsync(game, cancellationToken);
+        await _dispatcher.DispatchEventsAsync(game, ct);
 
         // Assert
-        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, cancellationToken))
-            .MustNotHaveHappened();
+        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, ct)).MustNotHaveHappened();
     }
 
     [Fact]
@@ -78,23 +77,23 @@ public class DomainEventDispatcherTests
         var game1 = _fixture.CreateReadyGame(playerId);
         var game2 = _fixture.CreateReadyGame(playerId);
         var aggregates = new[] { game1, game2 };
-        var cancellationToken = CancellationToken.None;
+        var ct = CancellationToken.None;
 
         var publishedEvents = new List<IDomainEvent>();
-        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, cancellationToken))
+        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, ct))
             .Invokes(
                 (IDomainEvent domainEvent, CancellationToken _) => publishedEvents.Add(domainEvent)
             )
             .Returns(Task.CompletedTask);
 
         // Act
-        await _dispatcher.DispatchEventsAsync(aggregates, cancellationToken);
+        await _dispatcher.DispatchEventsAsync(aggregates, ct);
 
         // Assert
         var totalExpectedEvents = game1.DomainEvents.Count + game2.DomainEvents.Count;
         publishedEvents.Should().HaveCount(totalExpectedEvents);
 
-        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, cancellationToken))
+        A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, ct))
             .MustHaveHappened(totalExpectedEvents, Times.Exactly);
     }
 }

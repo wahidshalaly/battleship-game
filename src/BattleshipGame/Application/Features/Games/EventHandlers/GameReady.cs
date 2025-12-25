@@ -14,9 +14,9 @@ internal class GameReady(ILogger<GameReady> logger) : INotificationHandler<GameR
     /// Handles the GameReadyEvent and executes side effects.
     /// </summary>
     /// <param name="notification">The boards ready event.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task Handle(GameReadyEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(GameReadyEvent notification, CancellationToken ct)
     {
         // Infrastructure layer side effects - these don't belong in the domain
 

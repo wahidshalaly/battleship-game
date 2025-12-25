@@ -20,9 +20,9 @@ internal class UnderAttackEventHandler(ILogger<UnderAttackEventHandler> logger)
     /// This is mainly an example of how to handle domain events for side effects for now.
     /// </summary>
     /// <param name="notification">The under attack event.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task Handle(UnderAttackEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(UnderAttackEvent notification, CancellationToken ct)
     {
         // Infrastructure layer side effects - these don't belong in the domain
 

@@ -13,12 +13,12 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         if (!validators.Any())
         {
-            return await next(cancellationToken);
+            return await next(ct);
         }
 
         var context = new ValidationContext<TRequest>(request);
@@ -26,7 +26,7 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
 
         foreach (var validator in validators)
         {
-            var result = await validator.ValidateAsync(context, cancellationToken);
+            var result = await validator.ValidateAsync(context, ct);
             if (!result.IsValid)
                 failures.AddRange(result.Errors);
         }
@@ -41,6 +41,6 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
             throw new ValidationException(failures);
         }
 
-        return await next(cancellationToken);
+        return await next(ct);
     }
 }
