@@ -1,7 +1,10 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
+using BattleshipGame.Application.Exceptions;
 using BattleshipGame.Domain.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using FluentAssertions;
 using Xunit;
@@ -55,7 +58,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void PlaceShips_WhenCountLessThanAllowance_IsReadyIsFalse(BoardSide boardSide)
     {
-        var game = _fixture.CreateNewGame(_playerId);
+        var game = _fixture.StartNewGame(_playerId);
 
         game.PlaceShip(boardSide, ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
         game.PlaceShip(boardSide, ShipKind.Battleship, ShipOrientation.Horizontal, "A2");
@@ -111,7 +114,7 @@ public class GameTests
     [Fact]
     public void IsGameOver_WhenAllShipsSunk_IsTrue()
     {
-        var game = _fixture.CreateNewGame(_playerId);
+        var game = _fixture.StartNewGame(_playerId);
         game.PlaceShip(BoardSide.Player, ShipKind.Cruiser, ShipOrientation.Vertical, "A1");
         game.Attack(BoardSide.Player, "A1");
         game.Attack(BoardSide.Player, "A2");
@@ -124,7 +127,7 @@ public class GameTests
     public void Ctor_WhenCustomBoardSize_ShouldCreateGameWithSpecifiedSize()
     {
         const int customSize = 15;
-        var game = _fixture.CreateNewGame(_playerId, customSize);
+        var game = _fixture.StartNewGame(_playerId, customSize);
 
         game.BoardSize.Should().Be(customSize);
         game.PlayerId.Should().Be(_playerId);
@@ -136,7 +139,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void PlaceShip_WhenValidParameters_ShouldReturnShipId(BoardSide boardSide)
     {
-        var game = _fixture.CreateNewGame(_playerId);
+        var game = _fixture.StartNewGame(_playerId);
 
         var shipId = game.PlaceShip(
             boardSide,
@@ -154,7 +157,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void Attack_WhenValidCell_ShouldNotThrow(BoardSide boardSide)
     {
-        var game = _fixture.CreateNewGame(_playerId);
+        var game = _fixture.StartNewGame(_playerId);
 
         var act = () => game.Attack(boardSide, "A1");
 
@@ -166,7 +169,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void Attack_WhenSameCell_ShouldThrowException(BoardSide boardSide)
     {
-        var game = _fixture.CreateNewGame(_playerId);
+        var game = _fixture.StartNewGame(_playerId);
         game.Attack(boardSide, "A1");
 
         var act = () => game.Attack(boardSide, "A1");
@@ -191,7 +194,7 @@ public class GameTests
     [Fact]
     public void IsGameOver_WhenNoShipsAttacked_ShouldBeFalse()
     {
-        var game = _fixture.CreateNewGame(_playerId);
+        var game = _fixture.StartNewGame(_playerId);
 
         game.IsGameOver(BoardSide.Player).Should().BeFalse();
         game.IsGameOver(BoardSide.Opponent).Should().BeFalse();
@@ -223,16 +226,42 @@ public class GameTests
     [Fact]
     public void GetShips_WhenBoardsAreEmpty_ShouldReturnNothing()
     {
-        var game = _fixture.CreateNewGame(_playerId);
+        var game = _fixture.StartNewGame(_playerId);
         game.GetShips(BoardSide.Player).Should().BeEmpty();
         game.GetShips(BoardSide.Opponent).Should().BeEmpty();
     }
 
     [Fact]
-    public void GetShips_WhenBoardsAreReady_ShouldReturnShips()
+    public void GetShips_WhenGameReady_ShouldReturnShips()
     {
         var game = _fixture.CreateReadyGame();
         game.GetShips(BoardSide.Player).Should().HaveCount(ShipAllowance);
         game.GetShips(BoardSide.Opponent).Should().HaveCount(ShipAllowance);
+        game.State.Should().Be(GameState.Ready);
+    }
+
+    [Fact]
+    public async Task StartGameplay_WhenGameIsNotReady_ThrowsException()
+    {
+        var game = _fixture.StartNewGame();
+        var act = game.StartGameplay;
+
+        act.Should().Throw<GameNotReadyException>();
+    }
+
+    [Fact]
+    public async Task StartGameplay_WhenGameIsReady_Returns()
+    {
+        var game = _fixture.CreateReadyGame();
+        game.StartGameplay();
+        game.State.Should().Be(GameState.GameOn);
+    }
+
+    [Fact]
+    public async Task StartGameplay_WhenGameIsReady_RaisesGameStartedEvent()
+    {
+        var game = _fixture.CreateReadyGame();
+        game.StartGameplay();
+        game.DomainEvents.Should().ContainSingle(e => e is GameStartedEvent);
     }
 }

@@ -110,14 +110,13 @@ public class GamesController(
         CancellationToken ct
     )
     {
-        var result = await gameplayService.AttackAsync(
+        var result = await gameplayService.PlayerAttackAndCounterAttackAsync(
             new GameId(id),
-            request.Side,
             request.Cell,
             ct
         );
 
-        return Ok(result.CellState);
+        return Ok(result);
     }
 
     /// <summary>
@@ -150,6 +149,6 @@ public record PlaceShipRequest(
     string BowCode
 );
 
-public record AttackRequest(BoardSide Side, string Cell);
+public record AttackRequest(string Cell);
 
 public record GameStateResponse(string State, Guid? Winner);

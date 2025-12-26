@@ -38,36 +38,35 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
     public Task StartGameplayAsync(GameId gameId, CancellationToken ct) =>
         mediator.Send(new StartGameplayCommand(gameId), ct);
 
-    public async Task<AttackResult> AttackAsync(
+    public async Task<GameStatus> PlayerAttackAndCounterAttackAsync(
         GameId gameId,
-        BoardSide targetSide,
         string cellCode,
         CancellationToken ct
     )
     {
-        var attacker = targetSide.OppositeSide();
-        var cellState = await mediator.Send(new AttackCommand(gameId, targetSide, cellCode), ct);
+        var targetSide = BoardSide.Opponent;
+        await mediator.Send(new PlayerAttackCommand(gameId, targetSide, cellCode), ct);
+
         // Build preliminary result; a follow-up opponent move may alter state but we re-query if needed via status check
-        var gameResult = await mediator.Send(new CheckGameStatusCommand(gameId), ct);
-        var attackResult = new AttackResult(
-            cellCode,
-            cellState,
-            targetSide,
-            gameResult?.IsGameOver ?? false,
-            gameResult?.Winner ?? BoardSide.None
-        );
+        var gameStatus = await mediator.Send(new CheckGameStatusCommand(gameId), ct);
+        if (gameStatus.IsGameOver)
+        {
+            return gameStatus;
+        }
+
+        var attacker = targetSide.OppositeSide();
         if (
             attacker == BoardSide.Player
             && targetSide == BoardSide.Opponent
-            && (gameResult is null || !gameResult.IsGameOver)
-        )
-        {
-            var opponent = await mediator.Send(new OpponentAttackCommand(gameId), ct);
-        }
-        return attackResult;
+            && (gameStatus is null || !gameStatus.IsGameOver)
+        ) { }
+
+        await mediator.Send(new OpponentAttackCommand(gameId), ct);
+        gameStatus = await mediator.Send(new CheckGameStatusCommand(gameId), ct);
+        return gameStatus;
     }
 
-    public Task<GameResult?> CheckGameStatusAsync(GameId gameId, CancellationToken ct)
+    public Task<GameStatus> CheckGameStatusAsync(GameId gameId, CancellationToken ct)
     {
         return mediator.Send(new CheckGameStatusCommand(gameId), ct);
     }

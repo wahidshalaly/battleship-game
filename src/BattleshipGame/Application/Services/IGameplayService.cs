@@ -45,9 +45,8 @@ public interface IGameplayService
     /// <param name="cellCode"></param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    Task<AttackResult> AttackAsync(
+    Task<GameStatus> PlayerAttackAndCounterAttackAsync(
         GameId gameId,
-        BoardSide side,
         string cellCode,
         CancellationToken ct
     );
@@ -66,7 +65,7 @@ public interface IGameplayService
     /// <param name="gameId"></param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    Task<GameResult?> CheckGameStatusAsync(GameId gameId, CancellationToken ct);
+    Task<GameStatus> CheckGameStatusAsync(GameId gameId, CancellationToken ct);
 
     /// <summary>
     /// Ends the specified game.

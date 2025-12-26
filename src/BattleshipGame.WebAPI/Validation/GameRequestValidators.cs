@@ -32,7 +32,6 @@ public sealed class AttackRequestValidator : AbstractValidator<AttackRequest>
 {
     public AttackRequestValidator()
     {
-        RuleFor(x => x.Side).IsInEnum();
         RuleFor(x => x.Cell)
             .NotEmpty()
             .Matches("^[A-Z][1-9][0-9]?$")

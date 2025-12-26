@@ -7,10 +7,11 @@ namespace BattleshipGame.UnitTests.Domain.DomainModel;
 
 public class GameFixture
 {
-    public Game CreateNewGame(PlayerId? playerId = null, int? boardSize = null)
+    public Game StartNewGame(PlayerId? playerId = null, int boardSize = DefaultBoardSize)
     {
         playerId ??= new PlayerId(Guid.NewGuid());
-        var game = new Game(playerId, boardSize ?? DefaultBoardSize);
+
+        var game = new Game(playerId, boardSize);
         return game;
     }
 
@@ -18,7 +19,7 @@ public class GameFixture
     {
         playerId ??= new PlayerId(Guid.NewGuid());
 
-        var game = CreateNewGame(playerId);
+        var game = StartNewGame(playerId);
         PlaceShipsOnBoard(game, BoardSide.Player);
         PlaceShipsOnBoard(game, BoardSide.Opponent);
         return game;
@@ -27,9 +28,9 @@ public class GameFixture
     public Game CreateCompletedGame(PlayerId? playerId, BoardSide winnerSide)
     {
         playerId ??= new PlayerId(Guid.NewGuid());
+
         var attackedSide = winnerSide.OppositeSide();
         var game = CreateReadyGame(playerId);
-
         var ships = game.GetShips(attackedSide);
         foreach (var shipId in ships)
         {

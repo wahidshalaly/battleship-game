@@ -13,7 +13,7 @@ namespace BattleshipGame.Application.Features.Games.Commands;
 /// <param name="GameId">The game identifier.</param>
 /// <param name="BoardSide">The board side to attack.</param>
 /// <param name="CellCode">The cell code to attack (e.g., "A1", "B5").</param>
-public record AttackCommand(GameId GameId, BoardSide BoardSide, string CellCode)
+public record PlayerAttackCommand(GameId GameId, BoardSide BoardSide, string CellCode)
     : IRequest<CellState>;
 
 /// <summary>
@@ -22,11 +22,11 @@ public record AttackCommand(GameId GameId, BoardSide BoardSide, string CellCode)
 /// <param name="logger">The logger instance.</param>
 /// <param name="gameRepository">The game repository.</param>
 /// <param name="eventDispatcher">The domain event dispatcher.</param>
-internal class AttackHandler(
-    ILogger<AttackHandler> logger,
+internal class PlayerAttackHandler(
+    ILogger<PlayerAttackHandler> logger,
     IGameRepository gameRepository,
     IDomainEventDispatcher eventDispatcher
-) : IRequestHandler<AttackCommand, CellState>
+) : IRequestHandler<PlayerAttackCommand, CellState>
 {
     /// <summary>
     /// Handles the attack cell command.
@@ -34,7 +34,7 @@ internal class AttackHandler(
     /// <param name="request">The attack cell command.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>The cell state after attack.</returns>
-    public async Task<CellState> Handle(AttackCommand request, CancellationToken ct)
+    public async Task<CellState> Handle(PlayerAttackCommand request, CancellationToken ct)
     {
         // 1. Load aggregate
         var game =
@@ -47,14 +47,14 @@ internal class AttackHandler(
         // 3. Save the aggregate back to repository
         await gameRepository.SaveAsync(game, ct);
 
-        // 4. Dispatch domain events (THIS IS WHERE SIDE EFFECTS HAPPEN)
+        // 4. Dispatch domain events
         await eventDispatcher.DispatchEventsAsync(game, ct);
 
         // 5. Clear events after dispatching
         game.ClearDomainEvents();
 
         logger.LogInformation(
-            "Attack! {GameId} X {CellCode}, result: {CellState}",
+            "Player Attack! {GameId} X {CellCode}, result: {CellState}",
             request.GameId.Value,
             request.CellCode,
             cellState

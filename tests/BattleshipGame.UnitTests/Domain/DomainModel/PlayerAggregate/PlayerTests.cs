@@ -9,16 +9,17 @@ namespace BattleshipGame.UnitTests.Domain.DomainModel.PlayerAggregate;
 
 public class PlayerTests
 {
+    private const string ValidUsername = "TestPlayer";
+
     private readonly PlayerId _playerId = new(Guid.NewGuid());
-    private readonly string _validUsername = "TestPlayer";
 
     [Fact]
     public void Ctor_WhenValidParameters_ShouldCreatePlayer()
     {
-        var player = new Player(_playerId, _validUsername);
+        var player = new Player(_playerId, ValidUsername);
 
         player.Id.Should().Be(_playerId);
-        player.Username.Should().Be(_validUsername);
+        player.Username.Should().Be(ValidUsername);
         player.ActiveGameId.Should().BeNull();
         player.IsInActiveGame.Should().BeFalse();
         player.GameHistory.Should().BeEmpty();
@@ -44,7 +45,7 @@ public class PlayerTests
     [Fact]
     public void JoinGame_WhenNotInActiveGame_ShouldJoinGame()
     {
-        var player = new Player(_playerId, _validUsername);
+        var player = new Player(_playerId, ValidUsername);
         var gameId = new GameId(Guid.NewGuid());
 
         player.JoinGame(gameId);
@@ -58,13 +59,13 @@ public class PlayerTests
         var domainEvent = player.DomainEvents[0].Should().BeOfType<PlayerJoinedGameEvent>().Subject;
         domainEvent.PlayerId.Should().Be(_playerId);
         domainEvent.GameId.Should().Be(gameId);
-        domainEvent.Username.Should().Be(_validUsername);
+        domainEvent.Username.Should().Be(ValidUsername);
     }
 
     [Fact]
     public void JoinGame_WhenAlreadyInActiveGame_ShouldThrowPlayerIsInActiveException()
     {
-        var player = new Player(_playerId, _validUsername);
+        var player = new Player(_playerId, ValidUsername);
         var gameId1 = new GameId(Guid.NewGuid());
         var gameId2 = new GameId(Guid.NewGuid());
 
@@ -78,7 +79,7 @@ public class PlayerTests
     [Fact]
     public void LeaveGame_WhenInActiveGame_ShouldLeaveGameAndAddToHistory()
     {
-        var player = new Player(_playerId, _validUsername);
+        var player = new Player(_playerId, ValidUsername);
         var gameId = new GameId(Guid.NewGuid());
         player.JoinGame(gameId);
         player.ClearDomainEvents(); // Clear join event to focus on leave event
@@ -95,13 +96,13 @@ public class PlayerTests
         var domainEvent = player.DomainEvents[0].Should().BeOfType<PlayerLeftGameEvent>().Subject;
         domainEvent.PlayerId.Should().Be(_playerId);
         domainEvent.GameId.Should().Be(gameId);
-        domainEvent.Username.Should().Be(_validUsername);
+        domainEvent.Username.Should().Be(ValidUsername);
     }
 
     [Fact]
     public void LeaveGame_WhenNotInActiveGame_ShouldThrowPlayerIsNotInActiveException()
     {
-        var player = new Player(_playerId, _validUsername);
+        var player = new Player(_playerId, ValidUsername);
 
         var act = () => player.LeaveGame();
 
@@ -111,7 +112,7 @@ public class PlayerTests
     [Fact]
     public void TotalGamesPlayed_WhenMultipleGamesCompleted_ShouldReturnCorrectCount()
     {
-        var player = new Player(_playerId, _validUsername);
+        var player = new Player(_playerId, ValidUsername);
 
         // Complete first game
         var gameId1 = new GameId(Guid.NewGuid());
@@ -137,7 +138,7 @@ public class PlayerTests
     [Fact]
     public void GameHistory_ShouldBeReadOnly()
     {
-        var player = new Player(_playerId, _validUsername);
+        var player = new Player(_playerId, ValidUsername);
         var gameId = new GameId(Guid.NewGuid());
         player.JoinGame(gameId);
         player.LeaveGame();

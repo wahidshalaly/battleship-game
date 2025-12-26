@@ -27,7 +27,10 @@ internal class StartNewGameHandler(
         await gameRepository.SaveAsync(game, ct);
         await playerRepository.SaveAsync(player, ct);
 
-        logger.LogInformation("Created {GameId} for {PlayerId}", game.Id, request.PlayerId);
+        logger.LogInformation(
+            "Player joined new game. {@Payload}",
+            new { PlayerId = request.PlayerId.Value, GameId = game.Id.Value }
+        );
 
         return game.Id;
     }

@@ -24,7 +24,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
         CancellationToken ct
     )
     {
-        var requestName = typeof(TRequest).Name;
+        var requestName = typeof(TRequest).FullName ?? typeof(TRequest).Name;
         var correlationId = Activity.Current?.TraceId.ToString() ?? string.Empty;
 
         // Extract entity context from request
