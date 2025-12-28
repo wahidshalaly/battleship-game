@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "csharpier": {
+      "version": "1.2.1",
+      "commands": [
+        "csharpier"
+      ]
+    },
+    "swashbuckle.aspnetcore.cli": {
+      "version": "6.9.0",
+      "commands": [
+        "swagger"
+      ]
+    }
+  }
+}

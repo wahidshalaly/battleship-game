@@ -1,0 +1,16 @@
+@BattleshipGame.WebAPI_HostAddress = http://localhost:5298
+
+POST {{BattleshipGame.WebAPI_HostAddress}}/games
+Accept: application/json
+Content-Type: application/json
+
+{
+  "boardSize": 10
+}
+
+###
+
+GET {{BattleshipGame.WebAPI_HostAddress}}/game/{id}
+Accept: application/json
+
+###

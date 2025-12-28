@@ -1,0 +1,60 @@
+using System;
+using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using static BattleshipGame.Domain.Common.Constants;
+
+namespace BattleshipGame.UnitTests.Domain.DomainModel;
+
+public class GameFixture
+{
+    public Game StartNewGame(PlayerId? playerId = null, int boardSize = DefaultBoardSize)
+    {
+        playerId ??= new PlayerId(Guid.NewGuid());
+
+        var game = new Game(playerId, boardSize);
+        return game;
+    }
+
+    public Game CreateReadyGame(PlayerId? playerId = null)
+    {
+        playerId ??= new PlayerId(Guid.NewGuid());
+
+        var game = StartNewGame(playerId);
+        PlaceShipsOnBoard(game, BoardSide.Player);
+        PlaceShipsOnBoard(game, BoardSide.Opponent);
+        return game;
+    }
+
+    public Game CreateCompletedGame(PlayerId? playerId, BoardSide winnerSide)
+    {
+        playerId ??= new PlayerId(Guid.NewGuid());
+
+        var attackedSide = winnerSide.OppositeSide();
+        var game = CreateReadyGame(playerId);
+        var ships = game.GetShips(attackedSide);
+        foreach (var shipId in ships)
+        {
+            AttackShip(game, attackedSide, shipId);
+        }
+
+        return game;
+    }
+
+    public void AttackShip(Game game, BoardSide attackedSide, ShipId shipId)
+    {
+        var position = game.GetShipPosition(attackedSide, shipId);
+        foreach (var cellCode in position)
+        {
+            game.Attack(attackedSide, cellCode);
+        }
+    }
+
+    private void PlaceShipsOnBoard(Game game, BoardSide boardSide)
+    {
+        game.PlaceShip(boardSide, ShipKind.Battleship, ShipOrientation.Vertical, "A1");
+        game.PlaceShip(boardSide, ShipKind.Cruiser, ShipOrientation.Vertical, "B1");
+        game.PlaceShip(boardSide, ShipKind.Destroyer, ShipOrientation.Vertical, "C1");
+        game.PlaceShip(boardSide, ShipKind.Submarine, ShipOrientation.Vertical, "D1");
+        game.PlaceShip(boardSide, ShipKind.Carrier, ShipOrientation.Vertical, "E1");
+    }
+}
