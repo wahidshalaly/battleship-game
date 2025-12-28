@@ -52,13 +52,13 @@ paths:
           content:
             text/plain:
               schema:
-                $ref: '#/components/schemas/GameModel'
+                $ref: '#/components/schemas/GetGameQueryResult'
             application/json:
               schema:
-                $ref: '#/components/schemas/GameModel'
+                $ref: '#/components/schemas/GetGameQueryResult'
             text/json:
               schema:
-                $ref: '#/components/schemas/GameModel'
+                $ref: '#/components/schemas/GetGameQueryResult'
         '400':
           description: Invalid input data.
           content:
@@ -226,13 +226,13 @@ paths:
           content:
             text/plain:
               schema:
-                $ref: '#/components/schemas/GameStateModel'
+                $ref: '#/components/schemas/GameStateResponse'
             application/json:
               schema:
-                $ref: '#/components/schemas/GameStateModel'
+                $ref: '#/components/schemas/GameStateResponse'
             text/json:
               schema:
-                $ref: '#/components/schemas/GameStateModel'
+                $ref: '#/components/schemas/GameStateResponse'
         '404':
           description: Not Found
           content:
@@ -296,7 +296,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlayerModel'
+                $ref: '#/components/schemas/PlayerResponse'
         '404':
           description: Not Found
           content:
@@ -322,7 +322,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlayerModel'
+                $ref: '#/components/schemas/PlayerResponse'
         '404':
           description: Not Found
           content:
@@ -331,24 +331,9 @@ paths:
                 $ref: '#/components/schemas/ProblemDetails'
 components:
   schemas:
-    PlaceShipRequest:
-      type: object
-      properties:
-        side:
-          $ref: '#/components/schemas/BoardSide'
-        shipKind:
-          $ref: '#/components/schemas/ShipKind'
-        orientation:
-          $ref: '#/components/schemas/ShipOrientation'
-        bowCode:
-          type: string
-          nullable: true
-      additionalProperties: false
     AttackRequest:
       type: object
       properties:
-        side:
-          $ref: '#/components/schemas/BoardSide'
         cell:
           type: string
           nullable: true
@@ -389,7 +374,27 @@ components:
           nullable: true
       additionalProperties: false
       description: Request model for creating a new player.
-    GameModel:
+    GameState:
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+      type: integer
+      format: int32
+    GameStateResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          nullable: true
+        winner:
+          type: string
+          format: uuid
+          nullable: true
+      additionalProperties: false
+    GetGameQueryResult:
       type: object
       properties:
         gameId:
@@ -404,27 +409,20 @@ components:
         state:
           $ref: '#/components/schemas/GameState'
       additionalProperties: false
-    GameState:
-      enum:
-        - 0
-        - 1
-        - 2
-        - 3
-        - 4
-      type: integer
-      format: int32
-    GameStateModel:
+    PlaceShipRequest:
       type: object
       properties:
-        state:
+        side:
+          $ref: '#/components/schemas/BoardSide'
+        shipKind:
+          $ref: '#/components/schemas/ShipKind'
+        orientation:
+          $ref: '#/components/schemas/ShipOrientation'
+        bowCode:
           type: string
-          nullable: true
-        winner:
-          type: string
-          format: uuid
           nullable: true
       additionalProperties: false
-    PlayerModel:
+    PlayerResponse:
       type: object
       properties:
         id:

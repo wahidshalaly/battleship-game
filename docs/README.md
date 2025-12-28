@@ -153,8 +153,11 @@ docs/
 
 **Build the project first**
 
-`dotnet build .\src\BattleshipGame.WebAPI\BattleshipGame.WebAPI.csproj`
+`dotnet build ./src/BattleshipGame.WebAPI/BattleshipGame.WebAPI.csproj`
+
+Before the first run, you may need to execute
+`dotnet tool restore`
 
 **Generate the OpenAPI YAML document**
 
-`dotnet swagger tofile --output .\docs\openapi.yaml --yaml .\src\BattleshipGame.WebAPI\bin\Debug\net8.0\BattleshipGame.WebAPI.dll v1`
+`dotnet swagger tofile --output ./docs/openapi.yaml --yaml ./src/BattleshipGame.WebAPI/bin/Debug/net8.0/BattleshipGame.WebAPI.dll v1`
