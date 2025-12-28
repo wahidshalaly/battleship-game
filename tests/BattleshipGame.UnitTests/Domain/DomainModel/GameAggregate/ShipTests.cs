@@ -86,7 +86,7 @@ public class ShipTests
     }
 
     [Fact]
-    public void Attack_WhenCellDoesNotBelongTofShip_ThrowsException()
+    public void Attack_WhenCellDoesNotBelongToShip_ThrowsException()
     {
         var ship = new Ship(ShipKind.Battleship, ["A1", "A2", "A3", "A4"]);
 

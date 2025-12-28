@@ -10,7 +10,7 @@ internal static class ErrorMessages
     public const string InvalidCellToAssign =
         "Cell is already assigned and cannot be assigned again.";
 
-    public const string InvalidCellToAttack = "Cell is already hit and cannot be attacked againt.";
+    public const string InvalidCellToAttack = "Cell is already hit and cannot be attacked again.";
 
     // Board Error Messages
     public const string InvalidShipOnBoardPosition = "Invalid ship position on board.";
@@ -28,7 +28,7 @@ internal static class ErrorMessages
 
     // Ship Error Messages
     public const string InvalidShipPosition_Count =
-        "Invalid cell count. Number of cells mush match exactly the size of the ship.";
+        "Invalid cell count. Number of cells must match exactly the size of the ship.";
 
     public const string InvalidShipPosition_Alignment =
         "Invalid alignment. All cells must have the same row or same column.";

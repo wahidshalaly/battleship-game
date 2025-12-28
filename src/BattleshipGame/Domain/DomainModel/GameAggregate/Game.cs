@@ -11,7 +11,7 @@ namespace BattleshipGame.Domain.DomainModel.GameAggregate;
 /// Represents the unique identifier for a game.
 /// </summary>
 /// <remarks>This type encapsulates a <see cref="Guid"/> value to uniquely identify a game entity. It inherits
-/// from <see code="EntityId"/> to provide additional context or functionality specific to entity
+/// from <see cref="EntityId"/> to provide additional context or functionality specific to entity
 /// identification.</remarks>
 /// <param name="Value"></param>
 public record GameId(Guid Value) : EntityId(Value);

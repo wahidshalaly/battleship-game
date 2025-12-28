@@ -55,11 +55,6 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
         }
 
         var attacker = targetSide.OppositeSide();
-        if (
-            attacker == BoardSide.Player
-            && targetSide == BoardSide.Opponent
-            && (gameStatus is null || !gameStatus.IsGameOver)
-        ) { }
 
         await mediator.Send(new OpponentAttackCommand(gameId), ct);
         gameStatus = await mediator.Send(new CheckGameStatusCommand(gameId), ct);
