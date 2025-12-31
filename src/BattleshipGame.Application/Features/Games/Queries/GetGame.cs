@@ -33,6 +33,11 @@ internal class GetGameHandler(IGameRepository gameRepository)
 
         return game is null
             ? null
-            : new GetGameQueryResult(game.Id.Value, game.PlayerId.Value, game.BoardSize, game.State.ToString());
+            : new GetGameQueryResult(
+                game.Id.Value,
+                game.PlayerId.Value,
+                game.BoardSize,
+                game.State.ToString()
+            );
     }
 }

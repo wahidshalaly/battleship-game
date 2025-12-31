@@ -1,7 +1,7 @@
-using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Application.Contracts.OpponentStrategy;
-using BattleshipGame.Domain.Exceptions;
+using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Domain.Exceptions;
 
 namespace BattleshipGame.Infrastructure.OpponentStrategy;
 

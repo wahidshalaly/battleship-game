@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
-using BattleshipGame.Domain.Exceptions;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate.Events;
+using BattleshipGame.Domain.Exceptions;
 using FluentAssertions;
 using Xunit;
 

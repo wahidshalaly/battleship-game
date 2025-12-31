@@ -1,7 +1,7 @@
 using BattleshipGame.Application.Contracts.Persistence;
-using BattleshipGame.Domain.Exceptions;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using BattleshipGame.Domain.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

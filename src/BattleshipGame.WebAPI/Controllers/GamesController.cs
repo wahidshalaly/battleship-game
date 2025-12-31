@@ -1,8 +1,8 @@
-using BattleshipGame.Domain.Exceptions;
-using BattleshipGame.Domain.DomainModel.GameAggregate;
-using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Application.Features.Games.Queries;
 using BattleshipGame.Application.Services;
+using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using BattleshipGame.Domain.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -64,8 +64,7 @@ public class GamesController(
     {
         var gameId = new GameId(id);
         var query = new GetGameQuery(gameId);
-        var game =
-            await mediator.Send(query, ct) ?? throw new GameNotFoundException(id);
+        var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(id);
 
         return Ok(game);
     }
@@ -110,7 +109,11 @@ public class GamesController(
     )
     {
         var gameId = new GameId(id);
-        var result = await gameplayService.PlayerAttackAndCounterAttackAsync(gameId, request.Cell, ct);
+        var result = await gameplayService.PlayerAttackAndCounterAttackAsync(
+            gameId,
+            request.Cell,
+            ct
+        );
 
         return Ok(result);
     }
@@ -128,8 +131,7 @@ public class GamesController(
     {
         var gameId = new GameId(id);
         var query = new GetGameQuery(gameId);
-        var game =
-            await mediator.Send(query, ct) ?? throw new GameNotFoundException(id);
+        var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(id);
 
         // For demo, winner is null unless state is GameOver
         var winner = game.State == nameof(GameState.GameOver) ? game.PlayerId : (Guid?)null;

@@ -1,8 +1,8 @@
+using System.Reflection;
 using BattleshipGame.Application.Common.Behaviors;
 using BattleshipGame.Application.Services;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 
 namespace BattleshipGame.Application.Common.Extensions;
 
