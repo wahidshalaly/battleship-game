@@ -20,7 +20,8 @@
     <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BattleshipGame\BattleshipGame.csproj" />
+    <ProjectReference Include="..\BattleshipGame.Application\BattleshipGame.Application.csproj" />
+    <ProjectReference Include="..\BattleshipGame.Infrastructure\BattleshipGame.Infrastructure.csproj" />
     <ProjectReference Include="..\BattleshipGame.ServiceDefaults\BattleshipGame.ServiceDefaults.csproj" />
   </ItemGroup>
 </Project>

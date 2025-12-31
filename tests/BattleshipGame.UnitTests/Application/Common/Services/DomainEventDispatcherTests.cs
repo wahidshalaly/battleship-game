@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using BattleshipGame.Application.Common.Services;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
-using BattleshipGame.SharedKernel;
+using BattleshipGame.Domain.SharedKernel;
 using BattleshipGame.UnitTests.Domain.DomainModel;
 using FakeItEasy;
 using FluentAssertions;

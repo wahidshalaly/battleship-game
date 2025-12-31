@@ -1,8 +1,8 @@
-using BattleshipGame.Application.Exceptions;
-using BattleshipGame.Application.Features.Games.Queries;
-using BattleshipGame.Application.Services;
+using BattleshipGame.Domain.Exceptions;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using BattleshipGame.Application.Features.Games.Queries;
+using BattleshipGame.Application.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -34,11 +34,8 @@ public class GamesController(
         CancellationToken ct
     )
     {
-        var gameId = await gameplayService.StartNewGameAsync(
-            new PlayerId(request.PlayerId),
-            request.BoardSize ?? 10,
-            ct
-        );
+        var playerId = new PlayerId(request.PlayerId);
+        var gameId = await gameplayService.StartNewGameAsync(playerId, request.BoardSize ?? 10, ct);
 
         logger.LogInformation(
             "New Game: {GameId} for Player: {PlayerId}",
@@ -65,9 +62,10 @@ public class GamesController(
         CancellationToken ct
     )
     {
-        var query = new GetGameQuery(new GameId(id));
+        var gameId = new GameId(id);
+        var query = new GetGameQuery(gameId);
         var game =
-            await mediator.Send(query, ct) ?? throw new GameNotFoundException(new GameId(id));
+            await mediator.Send(query, ct) ?? throw new GameNotFoundException(id);
 
         return Ok(game);
     }
@@ -85,8 +83,9 @@ public class GamesController(
         CancellationToken ct
     )
     {
+        var gameId = new GameId(id);
         var shipId = await gameplayService.PlaceShipAsync(
-            new GameId(id),
+            gameId,
             request.Side,
             request.ShipKind,
             request.Orientation,
@@ -110,11 +109,8 @@ public class GamesController(
         CancellationToken ct
     )
     {
-        var result = await gameplayService.PlayerAttackAndCounterAttackAsync(
-            new GameId(id),
-            request.Cell,
-            ct
-        );
+        var gameId = new GameId(id);
+        var result = await gameplayService.PlayerAttackAndCounterAttackAsync(gameId, request.Cell, ct);
 
         return Ok(result);
     }
@@ -130,13 +126,14 @@ public class GamesController(
         CancellationToken ct
     )
     {
-        var query = new GetGameQuery(new GameId(id));
+        var gameId = new GameId(id);
+        var query = new GetGameQuery(gameId);
         var game =
-            await mediator.Send(query, ct) ?? throw new GameNotFoundException(new GameId(id));
+            await mediator.Send(query, ct) ?? throw new GameNotFoundException(id);
 
         // For demo, winner is null unless state is GameOver
-        var winner = game.State == GameState.GameOver ? game.PlayerId : (Guid?)null;
-        return new GameStateResponse(game.State.ToString(), winner);
+        var winner = game.State == nameof(GameState.GameOver) ? game.PlayerId : (Guid?)null;
+        return new GameStateResponse(game.State, winner);
     }
 }
 

@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using BattleshipGame.Application.Exceptions;
+using BattleshipGame.Domain.Exceptions;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate.Events;

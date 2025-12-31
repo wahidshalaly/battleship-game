@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using BattleshipGame.Application.Exceptions;
+using BattleshipGame.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BattleshipGame.WebAPI.Middleware;

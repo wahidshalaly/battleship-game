@@ -39,10 +39,10 @@ public class GetGameQueryHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.GameId.Should().Be(game.Id);
+        result.GameId.Should().Be(game.Id.Value);
         result.PlayerId.Should().Be(game.PlayerId.Value);
         result.BoardSize.Should().Be(10);
-        result.State.Should().Be(GameState.Started);
+        result.State.Should().Be(GameState.Started.ToString());
 
         A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken))
             .MustHaveHappenedOnceExactly();
@@ -145,9 +145,9 @@ public class GetGameQueryHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.GameId.Should().Be(game.Id);
+        result.GameId.Should().Be(game.Id.Value);
         result.PlayerId.Should().Be(playerId.Value);
         result.BoardSize.Should().Be(expectedBoardSize);
-        result.State.Should().Be(expectedState);
+        result.State.Should().Be(expectedState.ToString());
     }
 }

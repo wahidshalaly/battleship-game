@@ -14,19 +14,23 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D207BEB6-3015-41AC-971F-F51479F9BFC1}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{13F2EE96-42B8-4442-BB2C-BBDA639DE236}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.AppHost", "src\BattleshipGame.AppHost\BattleshipGame.AppHost.csproj", "{0F42661D-426B-5245-E841-60379775B256}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame", "src\BattleshipGame\BattleshipGame.csproj", "{EE6A1339-BE0A-4C92-8993-6877BD7F6104}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.Domain", "src\BattleshipGame.Domain\BattleshipGame.Domain.csproj", "{1C4956F3-B5B9-4CFB-A776-2F4476379971}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.Application", "src\BattleshipGame.Application\BattleshipGame.Application.csproj", "{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.Infrastructure", "src\BattleshipGame.Infrastructure\BattleshipGame.Infrastructure.csproj", "{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.ServiceDefaults", "src\BattleshipGame.ServiceDefaults\BattleshipGame.ServiceDefaults.csproj", "{3C8F0BD9-40F3-48D2-81D2-2B7BF6D4DB58}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.WebAPI", "src\BattleshipGame.WebAPI\BattleshipGame.WebAPI.csproj", "{0A223D35-0456-7A42-59AA-6C4238671957}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{13F2EE96-42B8-4442-BB2C-BBDA639DE236}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.UnitTests", "tests\BattleshipGame.UnitTests\BattleshipGame.UnitTests.csproj", "{D5DCF4CE-88F0-4927-8CAF-9DBC8E2EB251}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.IntegrationTests", "tests\BattleshipGame.IntegrationTests\BattleshipGame.IntegrationTests.csproj", "{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.AppHost", "src\BattleshipGame.AppHost\BattleshipGame.AppHost.csproj", "{0F42661D-426B-5245-E841-60379775B256}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleshipGame.ServiceDefaults", "src\BattleshipGame.ServiceDefaults\BattleshipGame.ServiceDefaults.csproj", "{3C8F0BD9-40F3-48D2-81D2-2B7BF6D4DB58}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -110,17 +114,55 @@ Global
 		{3C8F0BD9-40F3-48D2-81D2-2B7BF6D4DB58}.Release|x64.Build.0 = Release|Any CPU
 		{3C8F0BD9-40F3-48D2-81D2-2B7BF6D4DB58}.Release|x86.ActiveCfg = Release|Any CPU
 		{3C8F0BD9-40F3-48D2-81D2-2B7BF6D4DB58}.Release|x86.Build.0 = Release|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Debug|x64.Build.0 = Debug|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Debug|x86.Build.0 = Debug|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Release|x64.ActiveCfg = Release|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Release|x64.Build.0 = Release|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Release|x86.ActiveCfg = Release|Any CPU
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971}.Release|x86.Build.0 = Release|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Debug|x64.Build.0 = Debug|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Debug|x86.Build.0 = Debug|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Release|x64.ActiveCfg = Release|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Release|x64.Build.0 = Release|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Release|x86.ActiveCfg = Release|Any CPU
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11}.Release|x86.Build.0 = Release|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Debug|x64.Build.0 = Debug|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Debug|x86.Build.0 = Debug|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Release|x64.ActiveCfg = Release|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Release|x64.Build.0 = Release|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Release|x86.ActiveCfg = Release|Any CPU
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{EE6A1339-BE0A-4C92-8993-6877BD7F6104} = {D207BEB6-3015-41AC-971F-F51479F9BFC1}
 		{0A223D35-0456-7A42-59AA-6C4238671957} = {D207BEB6-3015-41AC-971F-F51479F9BFC1}
 		{D5DCF4CE-88F0-4927-8CAF-9DBC8E2EB251} = {13F2EE96-42B8-4442-BB2C-BBDA639DE236}
 		{D2FA495E-8A8E-4C3E-A8AB-D24B820972AC} = {13F2EE96-42B8-4442-BB2C-BBDA639DE236}
 		{0F42661D-426B-5245-E841-60379775B256} = {D207BEB6-3015-41AC-971F-F51479F9BFC1}
 		{3C8F0BD9-40F3-48D2-81D2-2B7BF6D4DB58} = {D207BEB6-3015-41AC-971F-F51479F9BFC1}
+		{1C4956F3-B5B9-4CFB-A776-2F4476379971} = {D207BEB6-3015-41AC-971F-F51479F9BFC1}
+		{F1DAF013-B2E6-4B5C-BF6E-9E49C25B5B11} = {D207BEB6-3015-41AC-971F-F51479F9BFC1}
+		{EB4E684B-1B42-4038-8FF9-00EA7D1F55B9} = {D207BEB6-3015-41AC-971F-F51479F9BFC1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {30DE35C4-ECCC-4266-AFD6-691D623E2909}

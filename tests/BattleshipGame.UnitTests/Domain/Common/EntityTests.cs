@@ -1,5 +1,5 @@
 ﻿using System;
-using BattleshipGame.SharedKernel;
+using BattleshipGame.Domain.SharedKernel;
 using FluentAssertions;
 using Xunit;
 

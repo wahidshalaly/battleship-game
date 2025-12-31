@@ -52,7 +52,7 @@ public class GameApiSimulationTests(
             $"/api/games/{gameId}"
         );
         getGameResult.Should().NotBeNull();
-        getGameResult.State.Should().Be(gameState);
+        getGameResult.State.Should().Be(gameState.ToString());
     }
 
     private static (
