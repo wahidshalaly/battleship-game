@@ -1,8 +1,8 @@
 using BattleshipGame.Application.Common.Services;
-using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Application.Contracts.OpponentStrategy;
-using BattleshipGame.Domain.Exceptions;
+using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Domain.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -56,10 +56,10 @@ internal class OpponentAttackHandler(
         game.ClearDomainEvents();
 
         logger.LogInformation(
-            "Opponent Attack! {GameId} X {CellCode}, result: {CellState}",
+            "Opponent Attack! Game `{GameId}` X {CellCode}, result: {CellState}",
             request.GameId.Value,
             targetCell,
-            cellState
+            cellState.ToString()
         );
 
         // 6. Return result

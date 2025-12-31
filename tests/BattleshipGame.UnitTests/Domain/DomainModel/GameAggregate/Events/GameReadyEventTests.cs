@@ -31,7 +31,7 @@ public class GameReadyEventTests
         game.PlaceShip(BoardSide.Opponent, ShipKind.Carrier, ShipOrientation.Vertical, "J1");
 
         // Assert
-        game.IsReady.Should().BeTrue();
+        game.AreBoardsReady.Should().BeTrue();
         game.State.Should().Be(GameState.Ready);
 
         var boardsReadyEvents = game.DomainEvents.OfType<GameReadyEvent>().ToList();

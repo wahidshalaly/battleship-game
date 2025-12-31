@@ -1,11 +1,10 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
-using BattleshipGame.Domain.Exceptions;
 using BattleshipGame.Domain.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using BattleshipGame.Domain.Exceptions;
 using FluentAssertions;
 using Xunit;
 using static BattleshipGame.Domain.Common.Constants;
@@ -241,7 +240,7 @@ public class GameTests
     }
 
     [Fact]
-    public async Task StartGameplay_WhenGameIsNotReady_ThrowsException()
+    public void StartGameplay_WhenGameIsNotReady_ThrowsException()
     {
         var game = _fixture.StartNewGame();
         var act = game.StartGameplay;
@@ -250,7 +249,7 @@ public class GameTests
     }
 
     [Fact]
-    public async Task StartGameplay_WhenGameIsReady_Returns()
+    public void StartGameplay_WhenGameIsReady_Returns()
     {
         var game = _fixture.CreateReadyGame();
         game.StartGameplay();
@@ -258,7 +257,7 @@ public class GameTests
     }
 
     [Fact]
-    public async Task StartGameplay_WhenGameIsReady_RaisesGameStartedEvent()
+    public void StartGameplay_WhenGameIsReady_RaisesGameStartedEvent()
     {
         var game = _fixture.CreateReadyGame();
         game.StartGameplay();

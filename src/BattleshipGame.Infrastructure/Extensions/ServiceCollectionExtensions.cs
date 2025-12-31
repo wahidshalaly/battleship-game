@@ -26,6 +26,7 @@ public static class ServiceCollectionExtensions
         // Register repositories (singleton for in-memory, will be scoped when using EF Core)
         services.AddSingleton<IGameRepository, InMemoryGameRepository>();
         services.AddSingleton<IPlayerRepository, InMemoryPlayerRepository>();
+        services.AddSingleton<IBroadcastRepository, InMemoryBroadcastRepository>();
         services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
 
         return services;

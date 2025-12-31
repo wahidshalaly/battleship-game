@@ -41,7 +41,7 @@ public class DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMedia
             {
                 logger.LogDebug(
                     "Publishing domain event {EventType}:{EventId} for aggregate {AggregateId}",
-                    domainEvent.EventType,
+                    domainEvent.EventType.Name,
                     domainEvent.EventId,
                     aggregateRoot.Id
                 );
@@ -50,7 +50,7 @@ public class DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMedia
 
                 logger.LogInformation(
                     "Published domain event {EventType}:{EventId}",
-                    domainEvent.EventType,
+                    domainEvent.EventType.Name,
                     domainEvent.EventId
                 );
             }
@@ -59,7 +59,7 @@ public class DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMedia
                 logger.LogError(
                     exception,
                     "Failed to publish domain event {EventType}:{EventId} for aggregate {AggregateId}",
-                    domainEvent.EventType,
+                    domainEvent.EventType.Name,
                     domainEvent.EventId,
                     aggregateRoot.Id
                 );

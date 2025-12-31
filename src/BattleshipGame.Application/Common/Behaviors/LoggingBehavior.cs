@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
-using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -12,19 +11,13 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
 ) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    // JSON serialization options for logging
-    private readonly JsonSerializerOptions _jsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
-
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken ct
     )
     {
-        var requestName = typeof(TRequest).FullName ?? typeof(TRequest).Name;
+        var requestName = typeof(TRequest).Name;
         var correlationId = Activity.Current?.TraceId.ToString() ?? string.Empty;
 
         // Extract entity context from request
@@ -48,33 +41,12 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
         using var scope = logger.BeginScope(scopeData);
 
         // Log with entity context
-        var contextString = requestContext.Any()
-            ? $" [{string.Join(", ", requestContext.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]"
-            : string.Empty;
+        string contextString =
+            requestContext.Count > 0
+                ? $" [{string.Join(", ", requestContext.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]"
+                : string.Empty;
 
-        // Log request with full payload at Debug level
-        if (logger.IsEnabled(LogLevel.Debug))
-        {
-            try
-            {
-                var requestJson = JsonSerializer.Serialize(request, _jsonOptions);
-                logger.LogDebug(
-                    "Handling {Request}{Context} with payload: {RequestPayload}",
-                    requestName,
-                    contextString,
-                    requestJson
-                );
-            }
-            catch
-            {
-                // Fallback if serialization fails
-                logger.LogInformation("Handling {Request}{Context}", requestName, contextString);
-            }
-        }
-        else
-        {
-            logger.LogInformation("Handling {Request}{Context}", requestName, contextString);
-        }
+        logger.LogInformation("Handling {Request}{Context}", requestName, contextString);
 
         var stopwatch = Stopwatch.StartNew();
         try
@@ -98,39 +70,12 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
                 );
             }
 
-            // Log response at Debug level with payload
-            if (logger.IsEnabled(LogLevel.Debug))
-            {
-                try
-                {
-                    var responseJson = JsonSerializer.Serialize(response, _jsonOptions);
-                    logger.LogDebug(
-                        "Handled {Request} in {Elapsed}ms{Context} - Response: {ResponsePayload}",
-                        requestName,
-                        stopwatch.ElapsedMilliseconds,
-                        responseContextString,
-                        responseJson
-                    );
-                }
-                catch
-                {
-                    logger.LogInformation(
-                        "Handled {Request} in {Elapsed}ms{Context}",
-                        requestName,
-                        stopwatch.ElapsedMilliseconds,
-                        responseContextString
-                    );
-                }
-            }
-            else
-            {
-                logger.LogInformation(
-                    "Handled {Request} in {Elapsed}ms{Context}",
-                    requestName,
-                    stopwatch.ElapsedMilliseconds,
-                    responseContextString
-                );
-            }
+            logger.LogInformation(
+                "Handled {Request} in {Elapsed}ms{Context}",
+                requestName,
+                stopwatch.ElapsedMilliseconds,
+                responseContextString
+            );
 
             return response;
         }
@@ -138,30 +83,13 @@ public sealed class LoggingBehavior<TRequest, TResponse>(
         {
             stopwatch.Stop();
 
-            // Always log request payload on errors, even if not in Debug mode
-            try
-            {
-                var requestJson = JsonSerializer.Serialize(request, _jsonOptions);
-                logger.LogError(
-                    ex,
-                    "Error handling {Request} after {Elapsed}ms{Context} - Request: {RequestPayload}",
-                    requestName,
-                    stopwatch.ElapsedMilliseconds,
-                    contextString,
-                    requestJson
-                );
-            }
-            catch
-            {
-                // Fallback if serialization fails
-                logger.LogError(
-                    ex,
-                    "Error handling {Request} after {Elapsed}ms{Context}",
-                    requestName,
-                    stopwatch.ElapsedMilliseconds,
-                    contextString
-                );
-            }
+            logger.LogError(
+                ex,
+                "Error handling {Request} after {Elapsed}ms{Context}",
+                requestName,
+                stopwatch.ElapsedMilliseconds,
+                contextString
+            );
 
             throw;
         }

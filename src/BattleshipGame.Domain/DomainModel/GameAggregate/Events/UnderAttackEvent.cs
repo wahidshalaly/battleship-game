@@ -8,16 +8,23 @@ namespace BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 /// <remarks>
 /// Initializes a new instance of the UnderAttackEvent class.
 /// </remarks>
-/// <param name="boardId">The board identifier.</param>
+/// <param name="gameId">The board identifier.</param>
+/// <param name="boardSide">The attacked board side.</param>
 /// <param name="cellCode">The attacked cell code.</param>
 /// <param name="cellState">The cell cellState after attack</param>
-public class UnderAttackEvent(GameId boardId, string cellCode, CellState cellState)
-    : DomainEvent<UnderAttackEvent>
+public class UnderAttackEvent(
+    GameId gameId,
+    BoardSide boardSide,
+    string cellCode,
+    CellState cellState
+) : DomainEvent<UnderAttackEvent>
 {
     /// <summary>
     /// Gets the game identifier.
     /// </summary>
-    public GameId BoardId { get; } = boardId;
+    public GameId GameId { get; } = gameId;
+
+    public BoardSide BoardSide { get; set; } = boardSide;
 
     /// <summary>
     /// Gets the attacked cell code.

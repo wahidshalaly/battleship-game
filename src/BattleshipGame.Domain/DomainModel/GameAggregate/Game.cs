@@ -57,7 +57,7 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
         }
 
         // Check if both boards are now ready and raise event
-        if (IsReady)
+        if (AreBoardsReady)
         {
             State = GameState.Ready;
             AddDomainEvent(new GameReadyEvent(Id));
@@ -78,7 +78,7 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
         var (cellState, shipId, shipSunk) = board.Attack(cellCode);
 
         // Raise domain event for cell attack
-        AddDomainEvent(new UnderAttackEvent(Id, cellCode, cellState));
+        AddDomainEvent(new UnderAttackEvent(Id, boardSide, cellCode, cellState));
 
         if (cellState != CellState.Hit)
         {
@@ -121,7 +121,8 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
     /// Checks if both boards are ready
     /// </summary>
     /// <returns>True if both boards are ready, false otherwise</returns>
-    public bool IsReady => IsBoardReady(BoardSide.Player) && IsBoardReady(BoardSide.Opponent);
+    public bool AreBoardsReady =>
+        IsBoardReady(BoardSide.Player) && IsBoardReady(BoardSide.Opponent);
 
     /// <summary>
     /// Gets the available cell codes for the specified boardSide
@@ -167,7 +168,7 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
     /// <see cref="GameStartedEvent"/> domain event. </remarks>
     public void StartGameplay()
     {
-        if (State != GameState.Ready || !IsReady)
+        if (State != GameState.Ready)
         {
             throw new GameNotReadyException(Id);
         }

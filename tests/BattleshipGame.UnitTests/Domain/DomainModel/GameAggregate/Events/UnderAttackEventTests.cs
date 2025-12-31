@@ -14,11 +14,13 @@ public class UnderAttackEventTests
     public void Ctor_WhenValidParameters_ShouldCreateEvent()
     {
         var gameId = new GameId(Guid.NewGuid());
+        const BoardSide boardSide = BoardSide.Player;
         const string code = "A1";
         const CellState cellState = CellState.Occupied;
 
-        var cellAttackedEvent = new UnderAttackEvent(gameId, code, cellState);
-        cellAttackedEvent.BoardId.Should().Be(gameId);
+        var cellAttackedEvent = new UnderAttackEvent(gameId, boardSide, code, cellState);
+        cellAttackedEvent.GameId.Should().Be(gameId);
+        cellAttackedEvent.BoardSide.Should().Be(boardSide);
         cellAttackedEvent.CellCode.Should().Be(code);
         cellAttackedEvent.CellState.Should().Be(cellState);
 
@@ -42,7 +44,8 @@ public class UnderAttackEventTests
         cellAttackedEvents.Should().HaveCount(1);
 
         var cellAttackedEvent = cellAttackedEvents.First();
-        cellAttackedEvent.BoardId.Should().Be(game.Id);
+        cellAttackedEvent.GameId.Should().Be(game.Id);
+        cellAttackedEvent.BoardSide.Should().Be(BoardSide.Opponent);
         cellAttackedEvent.CellCode.Should().Be("A1");
         cellAttackedEvent.CellState.Should().Be(CellState.Missed);
     }
@@ -65,7 +68,8 @@ public class UnderAttackEventTests
         cellAttackedEvents.Should().HaveCount(1);
 
         var cellAttackedEvent = cellAttackedEvents.First();
-        cellAttackedEvent.BoardId.Should().Be(game.Id);
+        cellAttackedEvent.GameId.Should().Be(game.Id);
+        cellAttackedEvent.BoardSide.Should().Be(BoardSide.Opponent);
         cellAttackedEvent.CellCode.Should().Be("A1");
         cellAttackedEvent.CellState.Should().Be(CellState.Hit);
     }
