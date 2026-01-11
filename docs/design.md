@@ -122,9 +122,9 @@ classDiagram
     class GameState {
         <<Enumeration>>
         None
+        New
+        Ready
         Started
-        BoardsAreReady
-        InProgress
         GameOver
     }
 

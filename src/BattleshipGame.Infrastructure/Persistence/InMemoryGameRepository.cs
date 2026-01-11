@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using BattleshipGame.Domain.Exceptions;
 
 namespace BattleshipGame.Infrastructure.Persistence;
 
@@ -18,6 +19,10 @@ public class InMemoryGameRepository : IGameRepository
         _games.TryGetValue(gameId, out var game);
         return Task.FromResult(game);
     }
+
+    /// <inheritdoc />
+    public async Task<Game> GetByIdOrThrowAsync(GameId gameId, CancellationToken ct) =>
+        await GetByIdAsync(gameId, ct) ?? throw new GameNotFoundException(gameId);
 
     /// <inheritdoc />
     public Task SaveAsync(Game game, CancellationToken ct)
@@ -40,9 +45,9 @@ public class InMemoryGameRepository : IGameRepository
     /// <inheritdoc />
     public Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken ct)
     {
-        var game = _games.Values.LastOrDefault(g =>
-            g.PlayerId == playerId && g.State != GameState.GameOver
-        );
+        var game = _games
+            .Values.OrderBy(g => g.CreatedAt)
+            .LastOrDefault(g => g.PlayerId == playerId && g.State != GameState.GameOver);
 
         return Task.FromResult(game);
     }

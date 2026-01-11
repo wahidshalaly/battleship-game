@@ -44,7 +44,7 @@ export const ShipOrientation = {
 // Game states
 export const GameState = {
   Started: "Started",
-  BoardsAreReady: "BoardsAreReady",
+  Ready: "Ready",
   GameOver: "GameOver"
 };
 

@@ -2,7 +2,6 @@ using BattleshipGame.Application.Common.Services;
 using BattleshipGame.Application.Contracts.OpponentStrategy;
 using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
-using BattleshipGame.Domain.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -38,9 +37,7 @@ internal class OpponentAttackHandler(
     public async Task<CellState> Handle(OpponentAttackCommand request, CancellationToken ct)
     {
         // 1. Load aggregate
-        var game =
-            await gameRepository.GetByIdAsync(request.GameId, ct)
-            ?? throw new GameNotFoundException(request.GameId);
+        var game = await gameRepository.GetByIdOrThrowAsync(request.GameId, ct);
 
         // 2. Select target cell and perform attack
         var targetCell = await opponentStrategy.SelectNextAttack(request.GameId);
@@ -49,20 +46,17 @@ internal class OpponentAttackHandler(
         // 3. Save the aggregate back to repository
         await gameRepository.SaveAsync(game, ct);
 
-        // 4. Dispatch domain events
-        await eventDispatcher.DispatchEventsAsync(game, ct);
-
-        // 5. Clear events after dispatching
-        game.ClearDomainEvents();
-
         logger.LogInformation(
-            "Opponent Attack! Game `{GameId}` X {CellCode}, result: {CellState}",
+            "Opponent Attack! Game `{GameId}` X {CellCode}, Outcome: {CellState}",
             request.GameId.Value,
             targetCell,
             cellState.ToString()
         );
 
-        // 6. Return result
+        // 4. Dispatch domain events
+        await eventDispatcher.DispatchEventsAsync(game, ct);
+
+        // 5. Return result
         return cellState;
     }
 }

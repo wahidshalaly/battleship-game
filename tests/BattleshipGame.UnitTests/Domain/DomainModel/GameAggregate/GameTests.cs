@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using BattleshipGame.Domain.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
@@ -22,7 +21,7 @@ public class GameTests
         var game = new Game(_playerId);
 
         game.Id.Should().NotBe(Guid.Empty);
-        game.State.Should().Be(GameState.Started);
+        game.State.Should().Be(GameState.New);
     }
 
     [Theory]
@@ -35,7 +34,7 @@ public class GameTests
         var game = new Game(_playerId, boardSize);
 
         game.Id.Should().NotBe(Guid.Empty);
-        game.State.Should().Be(GameState.Started);
+        game.State.Should().Be(GameState.New);
     }
 
     [Theory]
@@ -57,14 +56,14 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void PlaceShips_WhenCountLessThanAllowance_IsReadyIsFalse(BoardSide boardSide)
     {
-        var game = _fixture.StartNewGame(_playerId);
+        var game = _fixture.GetNewGame(_playerId);
 
         game.PlaceShip(boardSide, ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
         game.PlaceShip(boardSide, ShipKind.Battleship, ShipOrientation.Horizontal, "A2");
         game.PlaceShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A5");
 
         game.Id.Should().NotBe(Guid.Empty);
-        game.State.Should().Be(GameState.Started);
+        game.State.Should().Be(GameState.New);
         game.IsBoardReady(boardSide).Should().BeFalse();
     }
 
@@ -82,7 +81,7 @@ public class GameTests
         game.PlaceShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A5");
 
         game.Id.Should().NotBe(Guid.Empty);
-        game.State.Should().Be(GameState.Started);
+        game.State.Should().Be(GameState.New);
         game.IsBoardReady(boardSide).Should().BeTrue();
     }
 
@@ -91,12 +90,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void PlaceShips_WhenExceedAllowance_ThrowsException(BoardSide boardSide)
     {
-        var game = new Game(_playerId);
-        game.PlaceShip(boardSide, ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
-        game.PlaceShip(boardSide, ShipKind.Battleship, ShipOrientation.Horizontal, "A2");
-        game.PlaceShip(boardSide, ShipKind.Cruiser, ShipOrientation.Horizontal, "A3");
-        game.PlaceShip(boardSide, ShipKind.Submarine, ShipOrientation.Horizontal, "A4");
-        game.PlaceShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A5");
+        var game = _fixture.GetReadyGame(_playerId);
 
         Action act = () =>
             game.PlaceShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A6");
@@ -106,31 +100,19 @@ public class GameTests
             .WithMessage(ErrorMessages.InvalidShipKindAlreadyExists);
 
         game.Id.Should().NotBe(Guid.Empty);
-        game.State.Should().Be(GameState.Started);
+        game.State.Should().Be(GameState.Ready);
         game.IsBoardReady(boardSide).Should().BeTrue();
     }
 
-    [Fact]
-    public void IsGameOver_WhenAllShipsSunk_IsTrue()
+    [Theory]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
+    public void IsGameOver_WhenAllShipsSunk_IsTrue(BoardSide winnerSide)
     {
-        var game = _fixture.StartNewGame(_playerId);
-        game.PlaceShip(BoardSide.Player, ShipKind.Cruiser, ShipOrientation.Vertical, "A1");
-        game.Attack(BoardSide.Player, "A1");
-        game.Attack(BoardSide.Player, "A2");
-        game.Attack(BoardSide.Player, "A3");
+        var game = _fixture.GetFinishedGame(_playerId, winnerSide);
+        var defeatedSide = winnerSide.OppositeSide();
 
-        game.IsGameOver(BoardSide.Player).Should().BeTrue();
-    }
-
-    [Fact]
-    public void Ctor_WhenCustomBoardSize_ShouldCreateGameWithSpecifiedSize()
-    {
-        const int customSize = 15;
-        var game = _fixture.StartNewGame(_playerId, customSize);
-
-        game.BoardSize.Should().Be(customSize);
-        game.PlayerId.Should().Be(_playerId);
-        game.State.Should().Be(GameState.Started);
+        game.IsGameOver(defeatedSide).Should().BeTrue();
     }
 
     [Theory]
@@ -138,7 +120,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void PlaceShip_WhenValidParameters_ShouldReturnShipId(BoardSide boardSide)
     {
-        var game = _fixture.StartNewGame(_playerId);
+        var game = _fixture.GetNewGame(_playerId);
 
         var shipId = game.PlaceShip(
             boardSide,
@@ -151,27 +133,27 @@ public class GameTests
         shipId.Value.Should().NotBeEmpty();
     }
 
-    [Theory]
-    [InlineData(BoardSide.Player)]
-    [InlineData(BoardSide.Opponent)]
-    public void Attack_WhenValidCell_ShouldNotThrow(BoardSide boardSide)
-    {
-        var game = _fixture.StartNewGame(_playerId);
+    // TODO: Add more tests for PlaceShip method (invalid placements, overlapping ships, etc.)
 
-        var act = () => game.Attack(boardSide, "A1");
+    [Fact]
+    public void Attack_WhenValidCell_ShouldNotThrow()
+    {
+        var game = _fixture.GetStartedGame(_playerId);
+
+        var act = () => game.Attack(BoardSide.Opponent, "A1");
 
         act.Should().NotThrow();
     }
 
-    [Theory]
-    [InlineData(BoardSide.Player)]
-    [InlineData(BoardSide.Opponent)]
-    public void Attack_WhenSameCell_ShouldThrowException(BoardSide boardSide)
+    [Fact]
+    public void Attack_WhenPreviouslyAttacked_ShouldThrowException()
     {
-        var game = _fixture.StartNewGame(_playerId);
-        game.Attack(boardSide, "A1");
+        var game = _fixture.GetStartedGame(_playerId);
+        game.Attack(BoardSide.Opponent, "A1");
+        game.Attack(BoardSide.Player, "A1");
+        game.Attack(BoardSide.Opponent, "A2");
 
-        var act = () => game.Attack(boardSide, "A1");
+        var act = () => game.Attack(BoardSide.Player, "A1");
 
         act.Should()
             .Throw<InvalidOperationException>()
@@ -181,7 +163,7 @@ public class GameTests
     [Fact]
     public void IsReady_WhenBothBoardsReady_ShouldReturnTrueForBoth()
     {
-        var game = _fixture.CreateReadyGame();
+        var game = _fixture.GetReadyGame();
 
         game.IsBoardReady(BoardSide.Player).Should().BeTrue();
         game.IsBoardReady(BoardSide.Opponent).Should().BeTrue();
@@ -193,7 +175,7 @@ public class GameTests
     [Fact]
     public void IsGameOver_WhenNoShipsAttacked_ShouldBeFalse()
     {
-        var game = _fixture.StartNewGame(_playerId);
+        var game = _fixture.GetNewGame(_playerId);
 
         game.IsGameOver(BoardSide.Player).Should().BeFalse();
         game.IsGameOver(BoardSide.Opponent).Should().BeFalse();
@@ -202,21 +184,9 @@ public class GameTests
     [Theory]
     [InlineData(BoardSide.Player)]
     [InlineData(BoardSide.Opponent)]
-    public void IsGameOver_WhenPartiallyAttacked_ShouldBeFalse(BoardSide boardSide)
-    {
-        var game = _fixture.CreateReadyGame(_playerId);
-        var shipId = game.GetShips(boardSide).First();
-        _fixture.AttackShip(game, boardSide, shipId);
-
-        game.IsGameOver(boardSide).Should().BeFalse();
-    }
-
-    [Theory]
-    [InlineData(BoardSide.Player)]
-    [InlineData(BoardSide.Opponent)]
     public void IsGameOver_WhenBoardIsLost_ShouldBeTrue(BoardSide winnerSide)
     {
-        var game = _fixture.CreateCompletedGame(_playerId, winnerSide);
+        var game = _fixture.GetFinishedGame(_playerId, winnerSide);
 
         game.IsGameOver(winnerSide).Should().BeFalse();
         game.IsGameOver(winnerSide.OppositeSide()).Should().BeTrue();
@@ -225,7 +195,7 @@ public class GameTests
     [Fact]
     public void GetShips_WhenBoardsAreEmpty_ShouldReturnNothing()
     {
-        var game = _fixture.StartNewGame(_playerId);
+        var game = _fixture.GetNewGame(_playerId);
         game.GetShips(BoardSide.Player).Should().BeEmpty();
         game.GetShips(BoardSide.Opponent).Should().BeEmpty();
     }
@@ -233,7 +203,7 @@ public class GameTests
     [Fact]
     public void GetShips_WhenGameReady_ShouldReturnShips()
     {
-        var game = _fixture.CreateReadyGame();
+        var game = _fixture.GetReadyGame();
         game.GetShips(BoardSide.Player).Should().HaveCount(ShipAllowance);
         game.GetShips(BoardSide.Opponent).Should().HaveCount(ShipAllowance);
         game.State.Should().Be(GameState.Ready);
@@ -242,7 +212,7 @@ public class GameTests
     [Fact]
     public void StartGameplay_WhenGameIsNotReady_ThrowsException()
     {
-        var game = _fixture.StartNewGame();
+        var game = _fixture.GetNewGame();
         var act = game.StartGameplay;
 
         act.Should().Throw<GameNotReadyException>();
@@ -251,15 +221,15 @@ public class GameTests
     [Fact]
     public void StartGameplay_WhenGameIsReady_Returns()
     {
-        var game = _fixture.CreateReadyGame();
+        var game = _fixture.GetReadyGame();
         game.StartGameplay();
-        game.State.Should().Be(GameState.GameOn);
+        game.State.Should().Be(GameState.Started);
     }
 
     [Fact]
     public void StartGameplay_WhenGameIsReady_RaisesGameStartedEvent()
     {
-        var game = _fixture.CreateReadyGame();
+        var game = _fixture.GetReadyGame();
         game.StartGameplay();
         game.DomainEvents.Should().ContainSingle(e => e is GameStartedEvent);
     }

@@ -35,6 +35,8 @@ public class DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMedia
             aggregateRoot.Id
         );
 
+        // TODO: This is not a production-grade implementation.
+        // Consider using an outbox pattern or message broker.
         foreach (var domainEvent in domainEvents)
         {
             try
@@ -67,6 +69,8 @@ public class DomainEventDispatcher(ILogger<DomainEventDispatcher> logger, IMedia
                 throw;
             }
         }
+
+        aggregateRoot.ClearDomainEvents();
     }
 
     /// <summary>

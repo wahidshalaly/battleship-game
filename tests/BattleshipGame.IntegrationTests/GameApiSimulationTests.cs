@@ -35,7 +35,7 @@ public class GameApiSimulationTests(
 
         // 2. Create game
         var gameId = await CreateGame(playerId);
-        await VerifyGameState(gameId, GameState.Started);
+        await VerifyGameState(gameId, GameState.New);
 
         // 3. Place ships for both sides
         await PlaceShips(gameId);

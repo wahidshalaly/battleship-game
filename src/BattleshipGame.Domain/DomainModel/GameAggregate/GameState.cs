@@ -6,8 +6,8 @@
 public enum GameState
 {
     None = 0,
-    Started = 1,
+    New = 1,
     Ready = 2,
-    GameOn = 3,
+    Started = 3,
     GameOver = 4,
 }

@@ -1,7 +1,6 @@
 using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
-using BattleshipGame.Domain.Exceptions;
 using MediatR;
 
 namespace BattleshipGame.Application.Features.Games.Commands;
@@ -13,9 +12,7 @@ public class CheckGameStatusHandler(IGameRepository gameRepository)
 {
     public async Task<GameStatus> Handle(CheckGameStatusCommand request, CancellationToken ct)
     {
-        var game =
-            await gameRepository.GetByIdAsync(request.GameId, ct)
-            ?? throw new GameNotFoundException(request.GameId);
+        var game = await gameRepository.GetByIdOrThrowAsync(request.GameId, ct);
 
         var isGameOver = game.State == GameState.GameOver;
 

@@ -1,7 +1,6 @@
 ﻿using BattleshipGame.Application.Common.Services;
 using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
-using BattleshipGame.Domain.Exceptions;
 using MediatR;
 
 namespace BattleshipGame.Application.Features.Games.Commands;
@@ -30,9 +29,7 @@ internal class PlaceShipHandler(
     public async Task<Guid> Handle(PlaceShipCommand request, CancellationToken ct)
     {
         // Load the game aggregate
-        var game =
-            await gameRepository.GetByIdAsync(request.GameId, ct)
-            ?? throw new GameNotFoundException(request.GameId);
+        var game = await gameRepository.GetByIdOrThrowAsync(request.GameId, ct);
 
         // Place the ship to the specified board side
         var shipId = game.PlaceShip(

@@ -109,7 +109,7 @@ public class GamesController(
     )
     {
         var gameId = new GameId(id);
-        var result = await gameplayService.PlayerAttackAndCounterAttackAsync(
+        var result = await gameplayService.PlayerAttackThenCounterAttackAsync(
             gameId,
             request.Cell,
             ct

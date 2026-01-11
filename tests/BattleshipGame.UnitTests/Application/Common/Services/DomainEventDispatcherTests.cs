@@ -33,10 +33,9 @@ public class DomainEventDispatcherTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var game = _fixture.CreateReadyGame(playerId);
+        var game = _fixture.GetReadyGame(playerId);
         var ct = CancellationToken.None;
         var publishedEvents = new List<IDomainEvent>();
-
         A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, ct))
             .Invokes(
                 (IDomainEvent domainEvent, CancellationToken _) => publishedEvents.Add(domainEvent)
@@ -44,14 +43,17 @@ public class DomainEventDispatcherTests
             .Returns(Task.CompletedTask);
 
         // Act
+        var totalBeforeDispatch = game.DomainEvents.Count;
         await _dispatcher.DispatchEventsAsync(game, ct);
+        var totalAfterDispatch = game.DomainEvents.Count;
 
         // Assert
-        publishedEvents.Should().HaveCount(game.DomainEvents.Count);
+        publishedEvents.Should().HaveCount(totalBeforeDispatch);
         publishedEvents.Should().ContainItemsAssignableTo<IDomainEvent>();
+        totalAfterDispatch.Should().Be(0);
 
         A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, ct))
-            .MustHaveHappened(game.DomainEvents.Count, Times.Exactly);
+            .MustHaveHappened(totalBeforeDispatch, Times.Exactly);
     }
 
     [Fact]
@@ -74,8 +76,8 @@ public class DomainEventDispatcherTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var game1 = _fixture.CreateReadyGame(playerId);
-        var game2 = _fixture.CreateReadyGame(playerId);
+        var game1 = _fixture.GetReadyGame(playerId);
+        var game2 = _fixture.GetReadyGame(playerId);
         var aggregates = new[] { game1, game2 };
         var ct = CancellationToken.None;
 
@@ -87,13 +89,16 @@ public class DomainEventDispatcherTests
             .Returns(Task.CompletedTask);
 
         // Act
+        var totalBeforeDispatch = game1.DomainEvents.Count + game2.DomainEvents.Count;
         await _dispatcher.DispatchEventsAsync(aggregates, ct);
+        var totalAfterDispatch = game1.DomainEvents.Count + game2.DomainEvents.Count;
 
         // Assert
-        var totalExpectedEvents = game1.DomainEvents.Count + game2.DomainEvents.Count;
-        publishedEvents.Should().HaveCount(totalExpectedEvents);
+        publishedEvents.Should().HaveCount(totalBeforeDispatch);
+        publishedEvents.Should().ContainItemsAssignableTo<IDomainEvent>();
+        totalAfterDispatch.Should().Be(0);
 
         A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, ct))
-            .MustHaveHappened(totalExpectedEvents, Times.Exactly);
+            .MustHaveHappened(totalBeforeDispatch, Times.Exactly);
     }
 }

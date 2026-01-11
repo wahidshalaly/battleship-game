@@ -98,7 +98,7 @@ The system follows these key principles:
 - **Player**: Game participant with history tracking
 
 ### Key Enumerations
-- **GameState**: Started, BoardsAreReady, InProgress, GameOver
+- **GameState**: New, Ready, Started, GameOver
 - **CellState**: Clear, Occupied, Hit
 - **ShipKind**: Destroyer(2), Submarine(3), Cruiser(3), Battleship(4), Carrier(5)
 
@@ -106,7 +106,10 @@ The system follows these key principles:
 - Board sizes: 10x10 (default) to 26x26 (maximum)
 - Exactly 5 ships per board (one of each kind)
 - Ships must be placed in straight lines only
+- Turn-based gameplay: Player attacks first, then alternates
+- `TargetSide` property controls which board can be attacked
 - Cannot attack the same cell twice
+- Cannot attack out of turn (wrong board)
 - Game ends when all ships on one board are sunk
 
 ## Contributing to Documentation

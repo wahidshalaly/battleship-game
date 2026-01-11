@@ -58,8 +58,8 @@ export default function () {
   game = getGame(gameId);
   if (game) {
     check(game, {
-      "game is in BoardsAreReady state": (g) =>
-        g.state === GameState.BoardsAreReady
+      "game is in Ready state": (g) =>
+        g.state === GameState.Ready
     });
   }
 

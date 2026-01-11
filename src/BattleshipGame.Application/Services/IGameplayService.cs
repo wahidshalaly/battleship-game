@@ -45,19 +45,11 @@ public interface IGameplayService
     /// <param name="cellCode"></param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    Task<GameStatus> PlayerAttackAndCounterAttackAsync(
+    Task<GameStatus> PlayerAttackThenCounterAttackAsync(
         GameId gameId,
         string cellCode,
         CancellationToken ct
     );
-
-    /// <summary>
-    /// Starts the gameplay loop for the specified game.
-    /// </summary>
-    /// <param name="gameId"></param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
-    Task StartGameplayAsync(GameId gameId, CancellationToken ct);
 
     /// <summary>
     /// Checks the current status of the game.

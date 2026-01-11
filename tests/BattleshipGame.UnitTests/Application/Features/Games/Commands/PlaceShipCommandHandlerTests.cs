@@ -41,7 +41,7 @@ public class PlaceShipCommandHandlerTests
         var command = new PlaceShipCommand(game.Id, boardSide, shipKind, orientation, bowCode);
         var ct = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, ct)).Returns(game);
+        A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(game.Id, ct)).Returns(game);
 
         // Act
         var result = await _handler.Handle(command, ct);
@@ -65,8 +65,8 @@ public class PlaceShipCommandHandlerTests
         );
         var ct = CancellationToken.None;
 
-        A.CallTo(() => _gameRepository.GetByIdAsync(gameId, ct))
-            .Returns(Task.FromResult<Game?>(null));
+        A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(gameId, ct))
+            .Throws(new GameNotFoundException(gameId));
 
         // Act
         var act = () => _handler.Handle(command, ct);

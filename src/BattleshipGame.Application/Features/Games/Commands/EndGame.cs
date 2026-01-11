@@ -1,6 +1,5 @@
 using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
-using BattleshipGame.Domain.Exceptions;
 using MediatR;
 
 namespace BattleshipGame.Application.Features.Games.Commands;
@@ -11,9 +10,7 @@ internal class EndGameHandler(IGameRepository gameRepository) : IRequestHandler<
 {
     public async Task Handle(EndGameCommand request, CancellationToken ct)
     {
-        var game =
-            await gameRepository.GetByIdAsync(request.GameId, ct)
-            ?? throw new GameNotFoundException(request.GameId);
+        var game = await gameRepository.GetByIdOrThrowAsync(request.GameId, ct);
 
         if (game.State == GameState.GameOver)
             return;

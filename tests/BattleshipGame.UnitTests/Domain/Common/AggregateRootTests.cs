@@ -55,7 +55,7 @@ public class AggregateRootTests
         var domainEvent = new TestDomainEvent();
 
         // Act
-        aggregate.PublicAddDomainEvent(domainEvent);
+        aggregate.Publish(domainEvent);
 
         // Assert
         aggregate.DomainEvents.Should().HaveCount(1);
@@ -72,9 +72,9 @@ public class AggregateRootTests
         var domainEvent3 = new TestDomainEvent();
 
         // Act
-        aggregate.PublicAddDomainEvent(domainEvent1);
-        aggregate.PublicAddDomainEvent(domainEvent2);
-        aggregate.PublicAddDomainEvent(domainEvent3);
+        aggregate.Publish(domainEvent1);
+        aggregate.Publish(domainEvent2);
+        aggregate.Publish(domainEvent3);
 
         // Assert
         aggregate.DomainEvents.Should().HaveCount(3);
@@ -91,8 +91,8 @@ public class AggregateRootTests
         var domainEvent = new TestDomainEvent();
 
         // Act
-        aggregate.PublicAddDomainEvent(domainEvent);
-        aggregate.PublicAddDomainEvent(domainEvent);
+        aggregate.Publish(domainEvent);
+        aggregate.Publish(domainEvent);
 
         // Assert
         aggregate.DomainEvents.Should().HaveCount(2);
@@ -107,8 +107,8 @@ public class AggregateRootTests
         var domainEvent1 = new TestDomainEvent();
         var domainEvent2 = new TestDomainEvent();
 
-        aggregate.PublicAddDomainEvent(domainEvent1);
-        aggregate.PublicAddDomainEvent(domainEvent2);
+        aggregate.Publish(domainEvent1);
+        aggregate.Publish(domainEvent2);
         aggregate.DomainEvents.Should().HaveCount(2); // Verify events were added
 
         // Act
@@ -142,9 +142,9 @@ public class AggregateRootTests
         var domainEvent3 = new TestDomainEvent { TestProperty = "Third" };
 
         // Act
-        aggregate.PublicAddDomainEvent(domainEvent1);
-        aggregate.PublicAddDomainEvent(domainEvent2);
-        aggregate.PublicAddDomainEvent(domainEvent3);
+        aggregate.Publish(domainEvent1);
+        aggregate.Publish(domainEvent2);
+        aggregate.Publish(domainEvent3);
 
         // Assert
         var events = aggregate.DomainEvents.Cast<TestDomainEvent>().ToList();
@@ -159,7 +159,7 @@ public class AggregateRootTests
         // Arrange
         var aggregate = new TestAggregateRoot();
         var domainEvent = new TestDomainEvent();
-        aggregate.PublicAddDomainEvent(domainEvent);
+        aggregate.Publish(domainEvent);
 
         // Act & Assert
         var domainEvents = aggregate.DomainEvents;
@@ -220,7 +220,7 @@ internal class TestAggregateRoot : AggregateRoot<TestAggregateRootId>
         : base(id) { }
 
     // Expose protected method for testing
-    public void PublicAddDomainEvent(IDomainEvent domainEvent)
+    public void Publish(IDomainEvent domainEvent)
     {
         AddDomainEvent(domainEvent);
     }

@@ -11,7 +11,10 @@ public class InvalidGameStateException(Guid gameId, string expected, string actu
         $"Game `{gameId}` is in invalid state. Expected: `{expected}`, Actual: `{actual}`."
     );
 
-public class NotPlayerTurnException(Guid gameId, BoardSide current, BoardSide attacker)
+public class GameOverException(Guid gameId)
+    : Exception($"Game `{gameId}` is over, no longer attacks are allowed.");
+
+public class InvalidTargetSideException(Guid gameId, BoardSide current, BoardSide attacker)
     : Exception(
         $"It's not the player's turn. Game `{gameId}`, Current turn: `{current}`, Attacker turn: `{attacker}`."
     );

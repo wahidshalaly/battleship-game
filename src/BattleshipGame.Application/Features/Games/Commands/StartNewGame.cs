@@ -1,18 +1,27 @@
+using BattleshipGame.Application.Common.Services;
 using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using static BattleshipGame.Domain.Common.Constants;
 
 namespace BattleshipGame.Application.Features.Games.Commands;
 
-public record StartNewGameCommand(PlayerId PlayerId, int BoardSize) : IRequest<Guid>;
+/// <summary>
+/// This command starts a new battleship game.
+/// </summary>
+/// <param name="PlayerId">The player creating the game.</param>
+/// <param name="BoardSize">The size of the game board (optional, defaults to 10).</param>
+public record StartNewGameCommand(PlayerId PlayerId, int BoardSize = DefaultBoardSize)
+    : IRequest<Guid>;
 
 internal class StartNewGameHandler(
     ILogger<StartNewGameHandler> logger,
     IGameRepository gameRepository,
-    IPlayerRepository playerRepository
+    IPlayerRepository playerRepository,
+    IDomainEventDispatcher eventDispatcher
 ) : IRequestHandler<StartNewGameCommand, Guid>
 {
     public async Task<Guid> Handle(StartNewGameCommand request, CancellationToken ct)
@@ -31,6 +40,9 @@ internal class StartNewGameHandler(
             "Player joined new game. {@Payload}",
             new { PlayerId = request.PlayerId.Value, GameId = game.Id.Value }
         );
+
+        await eventDispatcher.DispatchEventsAsync(player, ct);
+        await eventDispatcher.DispatchEventsAsync(game, ct);
 
         return game.Id;
     }

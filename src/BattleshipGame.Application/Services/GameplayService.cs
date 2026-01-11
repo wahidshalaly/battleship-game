@@ -35,17 +35,13 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
         return new ShipId(guid);
     }
 
-    public Task StartGameplayAsync(GameId gameId, CancellationToken ct) =>
-        mediator.Send(new StartGameplayCommand(gameId), ct);
-
-    public async Task<GameStatus> PlayerAttackAndCounterAttackAsync(
+    public async Task<GameStatus> PlayerAttackThenCounterAttackAsync(
         GameId gameId,
         string cellCode,
         CancellationToken ct
     )
     {
-        var targetSide = BoardSide.Opponent;
-        await mediator.Send(new PlayerAttackCommand(gameId, targetSide, cellCode), ct);
+        await mediator.Send(new PlayerAttackCommand(gameId, cellCode), ct);
 
         // Build preliminary result; a follow-up opponent move may alter state but we re-query if needed via status check
         var gameStatus = await mediator.Send(new CheckGameStatusCommand(gameId), ct);
@@ -53,8 +49,6 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
         {
             return gameStatus;
         }
-
-        var attacker = targetSide.OppositeSide();
 
         await mediator.Send(new OpponentAttackCommand(gameId), ct);
         gameStatus = await mediator.Send(new CheckGameStatusCommand(gameId), ct);

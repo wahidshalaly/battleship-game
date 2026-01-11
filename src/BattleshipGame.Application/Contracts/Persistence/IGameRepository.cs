@@ -17,6 +17,14 @@ public interface IGameRepository
     Task<Game?> GetByIdAsync(GameId gameId, CancellationToken ct);
 
     /// <summary>
+    /// Retrieves a game by its identifier or throws if not found.
+    /// </summary>
+    /// <param name="gameId">The game identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The game.</returns>
+    Task<Game> GetByIdOrThrowAsync(GameId gameId, CancellationToken ct);
+
+    /// <summary>
     /// Saves a new or existing game.
     /// </summary>
     /// <param name="game">The game to save.</param>
