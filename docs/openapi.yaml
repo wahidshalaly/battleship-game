@@ -38,7 +38,7 @@ paths:
     get:
       tags:
         - Games
-      summary: Retrieves a game.
+      summary: Retrieves a game by ID.
       parameters:
         - name: id
           in: path
@@ -177,13 +177,13 @@ paths:
           content:
             text/plain:
               schema:
-                $ref: '#/components/schemas/CellState'
+                $ref: '#/components/schemas/LastRoundResult'
             application/json:
               schema:
-                $ref: '#/components/schemas/CellState'
+                $ref: '#/components/schemas/LastRoundResult'
             text/json:
               schema:
-                $ref: '#/components/schemas/CellState'
+                $ref: '#/components/schemas/LastRoundResult'
         '400':
           description: Bad Request
           content:
@@ -209,6 +209,78 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
   '/api/games/{id}/state':
+    put:
+      tags:
+        - Games
+      summary: 'Updates game state (e.g., transitions from Ready to Started).'
+      description: "This endpoint manages game state transitions. Currently supports transitioning from Ready to Started state.\n            \nUsage:\nPUT /api/games/{id}/state\n{ \"state\": \"started\" }\n            \nValid transitions:\n- \"started\": Transitions game from Ready state to Started state (allows attacks to begin)"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGameStateRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGameStateRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UpdateGameStateRequest'
+      responses:
+        '200':
+          description: Game state successfully updated.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/GameStateResponse'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameStateResponse'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/GameStateResponse'
+        '400':
+          description: Invalid state transition or invalid state value.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Game not found.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Invalid current state for requested transition.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
     get:
       tags:
         - Games
@@ -340,20 +412,18 @@ components:
       additionalProperties: false
     BoardSide:
       enum:
-        - 0
-        - 1
-        - 2
-      type: integer
-      format: int32
+        - None
+        - Player
+        - Opponent
+      type: string
     CellState:
       enum:
-        - 0
-        - 1
-        - 2
-        - 3
-        - 4
-      type: integer
-      format: int32
+        - None
+        - Clear
+        - Occupied
+        - Hit
+        - Missed
+      type: string
     CreateGameRequest:
       type: object
       properties:
@@ -374,25 +444,28 @@ components:
           nullable: true
       additionalProperties: false
       description: Request model for creating a new player.
+    GameId:
+      type: object
+      properties:
+        value:
+          type: string
+          format: uuid
+      additionalProperties: false
     GameState:
       enum:
-        - 0
-        - 1
-        - 2
-        - 3
-        - 4
-      type: integer
-      format: int32
+        - None
+        - New
+        - Ready
+        - Started
+        - GameOver
+      type: string
     GameStateResponse:
       type: object
       properties:
         state:
-          type: string
-          nullable: true
+          $ref: '#/components/schemas/GameState'
         winner:
-          type: string
-          format: uuid
-          nullable: true
+          $ref: '#/components/schemas/BoardSide'
       additionalProperties: false
     GetGameQueryResult:
       type: object
@@ -408,6 +481,32 @@ components:
           format: int32
         state:
           $ref: '#/components/schemas/GameState'
+        winnerSide:
+          $ref: '#/components/schemas/BoardSide'
+      additionalProperties: false
+    LastRoundResult:
+      type: object
+      properties:
+        gameId:
+          $ref: '#/components/schemas/GameId'
+        playerTargetCell:
+          type: string
+          nullable: true
+        playerAttackResult:
+          $ref: '#/components/schemas/CellState'
+        playerSunkShip:
+          $ref: '#/components/schemas/ShipKind'
+        opponentTargetCell:
+          type: string
+          nullable: true
+        opponentAttackResult:
+          $ref: '#/components/schemas/CellState'
+        opponentSunkShip:
+          $ref: '#/components/schemas/ShipKind'
+        gameState:
+          $ref: '#/components/schemas/GameState'
+        winnerSide:
+          $ref: '#/components/schemas/BoardSide'
       additionalProperties: false
     PlaceShipRequest:
       type: object
@@ -466,18 +565,22 @@ components:
       additionalProperties: { }
     ShipKind:
       enum:
-        - 0
-        - 1
-        - 2
-        - 3
-        - 4
-        - 5
-      type: integer
-      format: int32
+        - None
+        - Destroyer
+        - Cruiser
+        - Submarine
+        - Battleship
+        - Carrier
+      type: string
     ShipOrientation:
       enum:
-        - 0
-        - 1
-        - 2
-      type: integer
-      format: int32
+        - None
+        - Vertical
+        - Horizontal
+      type: string
+    UpdateGameStateRequest:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/GameState'
+      additionalProperties: false

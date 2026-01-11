@@ -1,8 +1,11 @@
-﻿namespace BattleshipGame.Domain.DomainModel.GameAggregate;
+﻿using System.Text.Json.Serialization;
+
+namespace BattleshipGame.Domain.DomainModel.GameAggregate;
 
 /// <summary>
 /// This is the outcome of a hit on a cell.
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum GameState
 {
     None = 0,

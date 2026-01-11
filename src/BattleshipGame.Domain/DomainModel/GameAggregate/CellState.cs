@@ -1,4 +1,6 @@
-﻿namespace BattleshipGame.Domain.DomainModel.GameAggregate;
+﻿using System.Text.Json.Serialization;
+
+namespace BattleshipGame.Domain.DomainModel.GameAggregate;
 
 /// <summary>
 /// This represents the states of a cell.
@@ -6,6 +8,7 @@
 /// Occupied, when it's assigned to a ship.
 /// Hit, when it's been targeted before.
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum CellState
 {
     None = 0,

@@ -1,4 +1,6 @@
-﻿namespace BattleshipGame.Domain.DomainModel.GameAggregate;
+﻿using System.Text.Json.Serialization;
+
+namespace BattleshipGame.Domain.DomainModel.GameAggregate;
 
 /// <summary>
 /// These are the types of ships that can be placed on the board and their sizes.
@@ -8,6 +10,7 @@
 /// Battleship: 4 cells
 /// Carrier: 5 cells
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ShipKind
 {
     None = 0,
