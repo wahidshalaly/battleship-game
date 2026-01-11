@@ -41,6 +41,8 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
         CancellationToken ct
     )
     {
+        // TODO: I don't like the return type of this method, need to rethink.
+
         await mediator.Send(new PlayerAttackCommand(gameId, cellCode), ct);
 
         // Build preliminary result; a follow-up opponent move may alter state but we re-query if needed via status check

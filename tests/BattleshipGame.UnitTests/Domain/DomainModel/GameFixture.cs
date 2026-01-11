@@ -32,7 +32,7 @@ public class GameFixture
         return game;
     }
 
-    public Game GetFinishedGame(PlayerId? playerId, BoardSide winnerSide)
+    public Game GetCompletedGame(PlayerId? playerId, BoardSide winnerSide)
     {
         playerId ??= new PlayerId(Guid.NewGuid());
         var game = GetStartedGame(playerId);

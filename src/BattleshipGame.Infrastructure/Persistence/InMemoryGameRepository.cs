@@ -46,8 +46,9 @@ public class InMemoryGameRepository : IGameRepository
     public Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken ct)
     {
         var game = _games
-            .Values.OrderBy(g => g.CreatedAt)
-            .LastOrDefault(g => g.PlayerId == playerId && g.State != GameState.GameOver);
+            .Values.Where(g => g.PlayerId == playerId && g.State != GameState.GameOver)
+            .OrderBy(g => g.CreatedAt)
+            .LastOrDefault();
 
         return Task.FromResult(game);
     }

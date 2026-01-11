@@ -24,7 +24,7 @@ public class UnderAttackEvent(
     /// </summary>
     public GameId GameId { get; } = gameId;
 
-    public BoardSide BoardSide { get; set; } = boardSide;
+    public BoardSide BoardSide { get; init; } = boardSide;
 
     /// <summary>
     /// Gets the attacked cell code.

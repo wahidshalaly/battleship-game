@@ -109,7 +109,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void IsGameOver_WhenAllShipsSunk_IsTrue(BoardSide winnerSide)
     {
-        var game = _fixture.GetFinishedGame(_playerId, winnerSide);
+        var game = _fixture.GetCompletedGame(_playerId, winnerSide);
         var defeatedSide = winnerSide.OppositeSide();
 
         game.IsGameOver(defeatedSide).Should().BeTrue();
@@ -186,7 +186,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void IsGameOver_WhenBoardIsLost_ShouldBeTrue(BoardSide winnerSide)
     {
-        var game = _fixture.GetFinishedGame(_playerId, winnerSide);
+        var game = _fixture.GetCompletedGame(_playerId, winnerSide);
 
         game.IsGameOver(winnerSide).Should().BeFalse();
         game.IsGameOver(winnerSide.OppositeSide()).Should().BeTrue();
