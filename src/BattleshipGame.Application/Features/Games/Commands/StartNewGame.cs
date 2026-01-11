@@ -41,6 +41,9 @@ internal class StartNewGameHandler(
             new { PlayerId = request.PlayerId.Value, GameId = game.Id.Value }
         );
 
+        // TODO: This is not fail-safe. Should Consider transaction or outbox pattern and Unit of Work.
+        // This an issue for later, not part of the current experiment.
+        // Also, I need to think if dispatch should follow the Save or precede it.
         await eventDispatcher.DispatchEventsAsync(player, ct);
         await eventDispatcher.DispatchEventsAsync(game, ct);
 

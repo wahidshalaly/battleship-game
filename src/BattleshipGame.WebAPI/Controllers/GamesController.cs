@@ -65,7 +65,7 @@ public class GamesController(
     {
         var gameId = new GameId(id);
         var query = new GetGameQuery(gameId);
-        var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(id);
+        var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(gameId);
 
         return Ok(game);
     }
@@ -203,7 +203,7 @@ public class GamesController(
     {
         var gameId = new GameId(id);
         var query = new GetGameQuery(gameId);
-        var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(id);
+        var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(gameId);
 
         // For demo, winner is null unless state is GameOver
         var winner = game.State == nameof(GameState.GameOver) ? game.PlayerId : (Guid?)null;

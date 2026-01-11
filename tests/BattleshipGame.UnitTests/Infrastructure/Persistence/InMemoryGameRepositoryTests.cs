@@ -24,7 +24,7 @@ public class InMemoryGameRepositoryTests
     public async Task GetByIdAsync_WhenGameExists_ShouldReturnGame()
     {
         // Arrange
-        var game = _fixture.GetReadyGame();
+        var game = _fixture.CreateGameInStateReady();
         await _repository.SaveAsync(game, _cancellationToken);
 
         // Act
@@ -53,7 +53,7 @@ public class InMemoryGameRepositoryTests
     public async Task GetByIdAsync_WithCancellationToken_ShouldRespectCancellation()
     {
         // Arrange
-        var game = _fixture.GetReadyGame();
+        var game = _fixture.CreateGameInStateReady();
         await _repository.SaveAsync(game, _cancellationToken);
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
@@ -73,7 +73,7 @@ public class InMemoryGameRepositoryTests
     public async Task SaveAsync_WhenNewGame_ShouldSaveAndReturnGameId()
     {
         // Arrange
-        var game = _fixture.GetReadyGame();
+        var game = _fixture.CreateGameInStateReady();
 
         // Act
         await _repository.SaveAsync(game, _cancellationToken);
@@ -88,7 +88,7 @@ public class InMemoryGameRepositoryTests
     public async Task SaveAsync_WhenUpdatingExistingGame_ShouldUpdateAndReturnGameId()
     {
         // Arrange
-        var game = _fixture.GetStartedGame();
+        var game = _fixture.CreateGameInStateStarted();
         await _repository.SaveAsync(game, _cancellationToken);
 
         // Modify the game
@@ -114,7 +114,7 @@ public class InMemoryGameRepositoryTests
         var playerId = new PlayerId(Guid.NewGuid());
         var game1 = new Game(playerId);
         var game2 = new Game(playerId);
-        var otherPlayerGame = _fixture.GetReadyGame(); // Different player
+        var otherPlayerGame = _fixture.CreateGameInStateReady(); // Different player
 
         await _repository.SaveAsync(game1, _cancellationToken);
         await _repository.SaveAsync(game2, _cancellationToken);
@@ -197,7 +197,7 @@ public class InMemoryGameRepositoryTests
     public async Task GetActiveGameByPlayerIdAsync_WhenPlayerHasActiveGame_ShouldReturnActiveGame()
     {
         // Arrange
-        var game = _fixture.GetReadyGame();
+        var game = _fixture.CreateGameInStateReady();
         await _repository.SaveAsync(game, _cancellationToken);
 
         // Act - Use the correct playerId from the game
@@ -227,7 +227,7 @@ public class InMemoryGameRepositoryTests
     }
 
     [Fact]
-    public async Task GetActiveGameByPlayerIdAsync_WithMultipleActiveGames_ShouldReturnLastActiveGame()
+    public async Task GetActiveGameByPlayerIdAsync_WithMultipleActiveGames_ShouldReturnLastCreatedActiveGame()
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
@@ -243,7 +243,7 @@ public class InMemoryGameRepositoryTests
         // Assert
         result.Should().NotBeNull();
         result.PlayerId.Should().Be(playerId);
-        result.Id.Should().Be(game2.Id); // Last saved active game
+        result.Id.Should().Be(game2.Id); // Last created active game
         result.State.Should().Be(GameState.New);
     }
 
@@ -270,7 +270,7 @@ public class InMemoryGameRepositoryTests
     public async Task Repository_WhenSavingAndRetrieving_ShouldMaintainGameState()
     {
         // Arrange
-        var game = _fixture.GetReadyGame();
+        var game = _fixture.CreateGameInStateReady();
         var originalState = game.State;
         var originalBoardSize = game.BoardSize;
 
@@ -318,7 +318,7 @@ public class InMemoryGameRepositoryTests
     public async Task Repository_WhenGameUpdated_ShouldReflectChangesInSubsequentReads()
     {
         // Arrange
-        var game = _fixture.GetStartedGame();
+        var game = _fixture.CreateGameInStateStarted();
         await _repository.SaveAsync(game, _cancellationToken);
 
         // Act - Attack a cell to change game state

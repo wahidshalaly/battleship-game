@@ -35,7 +35,7 @@ public class PlayerAttackHandlerTests
     public async Task Handle_WhenAttackHitsOccupiedCell_ShouldReturnHitResultAndDispatchEvents()
     {
         // Arrange
-        var game = _gameFixture.GetStartedGame(); // Must be started, not just ready
+        var game = _gameFixture.CreateGameInStateStarted(); // Must be started, not just ready
         var command = new PlayerAttackCommand(game.Id, Ship1Location);
 
         A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(game.Id, _cancellationToken))
@@ -62,7 +62,7 @@ public class PlayerAttackHandlerTests
     {
         // Arrange
         const string cellCode = "F1"; // Empty cell
-        var game = _gameFixture.GetStartedGame(); // Must be started, not just ready
+        var game = _gameFixture.CreateGameInStateStarted(); // Must be started, not just ready
         var command = new PlayerAttackCommand(game.Id, cellCode);
 
         A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(game.Id, _cancellationToken))
@@ -86,7 +86,7 @@ public class PlayerAttackHandlerTests
     public async Task Handle_WhenGameNotStarted_ShouldThrowException()
     {
         // Arrange - Game is Ready but not Started
-        var game = _gameFixture.GetReadyGame();
+        var game = _gameFixture.CreateGameInStateReady();
         const string cellCode = "A1";
         var command = new PlayerAttackCommand(game.Id, cellCode);
 
@@ -111,7 +111,7 @@ public class PlayerAttackHandlerTests
     {
         // Arrange
         const string cellCode = "A1";
-        var game = _gameFixture.GetStartedGame(); // Must be started, not just ready
+        var game = _gameFixture.CreateGameInStateStarted(); // Must be started, not just ready
         var command = new PlayerAttackCommand(game.Id, cellCode);
 
         A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(game.Id, _cancellationToken))

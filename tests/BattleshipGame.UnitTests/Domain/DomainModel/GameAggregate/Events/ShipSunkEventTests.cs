@@ -40,7 +40,7 @@ public class ShipSunkEventTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var game = _fixture.GetStartedGame(playerId);
+        var game = _fixture.CreateGameInStateStarted(playerId);
         var shipId = game.GetShips(targetSide).First();
 
         // Act - Attack all cells of ship to sink it
@@ -63,7 +63,7 @@ public class ShipSunkEventTests
     public void Attack_WhenShipPartiallyHit_ShouldNotRaiseShipSunkEvent()
     {
         // Arrange
-        var game = _fixture.GetStartedGame();
+        var game = _fixture.CreateGameInStateStarted();
 
         // Act - Attack only one cell of the destroyer (not sinking it)
         game.Attack(BoardSide.Opponent, "A1"); // Hit first cell only
@@ -77,7 +77,7 @@ public class ShipSunkEventTests
     public void Attack_WhenMultipleShipsSunk_ShouldRaiseMultipleShipSunkEvents()
     {
         // Arrange
-        var game = _fixture.GetStartedGame();
+        var game = _fixture.CreateGameInStateStarted();
         var shipIds = game.GetShips(BoardSide.Opponent).Take(2).ToList();
 
         // Act - Sink both ships
@@ -99,7 +99,7 @@ public class ShipSunkEventTests
     public void Attack_WhenMissedAttack_ShouldNotRaiseShipSunkEvent()
     {
         // Arrange
-        var game = _fixture.GetStartedGame();
+        var game = _fixture.CreateGameInStateStarted();
 
         // Act - Attack empty cell
         game.Attack(BoardSide.Opponent, "B1");

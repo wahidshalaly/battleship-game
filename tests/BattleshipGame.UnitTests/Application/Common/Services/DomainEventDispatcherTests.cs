@@ -33,7 +33,7 @@ public class DomainEventDispatcherTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var game = _fixture.GetReadyGame(playerId);
+        var game = _fixture.CreateGameInStateReady(playerId);
         var ct = CancellationToken.None;
         var publishedEvents = new List<IDomainEvent>();
         A.CallTo(() => _mediator.Publish(A<IDomainEvent>._, ct))
@@ -76,8 +76,8 @@ public class DomainEventDispatcherTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var game1 = _fixture.GetReadyGame(playerId);
-        var game2 = _fixture.GetReadyGame(playerId);
+        var game1 = _fixture.CreateGameInStateReady(playerId);
+        var game2 = _fixture.CreateGameInStateReady(playerId);
         var aggregates = new[] { game1, game2 };
         var ct = CancellationToken.None;
 

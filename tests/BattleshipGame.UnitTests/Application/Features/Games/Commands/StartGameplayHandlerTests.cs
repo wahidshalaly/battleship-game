@@ -33,7 +33,7 @@ public class StartGameplayHandlerTests
     public async Task Handle_WhenGameIsReady_ShouldStartGameplay()
     {
         // Arrange
-        var game = _gameFixture.GetReadyGame();
+        var game = _gameFixture.CreateGameInStateReady();
         var gameId = new GameId(game.Id.Value);
 
         A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(gameId, A<CancellationToken>._))
@@ -56,7 +56,7 @@ public class StartGameplayHandlerTests
     public async Task Handle_WhenGameNotReady_ShouldThrowGameNotReadyException()
     {
         // Arrange
-        var game = _gameFixture.GetNewGame();
+        var game = _gameFixture.CreateGameInStateNew();
         var gameId = new GameId(game.Id.Value);
 
         A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(gameId, A<CancellationToken>._))
@@ -75,7 +75,7 @@ public class StartGameplayHandlerTests
     public async Task Handle_WhenGameAlreadyStarted_ShouldThrowGameNotReadyException()
     {
         // Arrange
-        var game = _gameFixture.GetStartedGame();
+        var game = _gameFixture.CreateGameInStateStarted();
         var gameId = new GameId(game.Id.Value);
 
         A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(gameId, A<CancellationToken>._))

@@ -33,7 +33,7 @@ public class GameOverEventTests
     public void Attack_WhenGameOver_ShouldRaiseGameOverEvent(BoardSide winnerSide)
     {
         // Arrange & Act
-        var game = _fixture.GetCompletedGame(null, winnerSide);
+        var game = _fixture.CreateGameInStateGameOver(null, winnerSide);
         var defeatedSide = winnerSide.OppositeSide();
 
         // Assert

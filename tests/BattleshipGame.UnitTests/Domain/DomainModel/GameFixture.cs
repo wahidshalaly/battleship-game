@@ -8,34 +8,37 @@ namespace BattleshipGame.UnitTests.Domain.DomainModel;
 
 public class GameFixture
 {
-    public Game GetNewGame(PlayerId? playerId = null, int boardSize = DefaultBoardSize)
+    public Game CreateGameInStateNew(PlayerId? playerId = null, int boardSize = DefaultBoardSize)
     {
         playerId ??= new PlayerId(Guid.NewGuid());
         var game = new Game(playerId, boardSize);
         return game;
     }
 
-    public Game GetReadyGame(PlayerId? playerId = null, int boardSize = DefaultBoardSize)
+    public Game CreateGameInStateReady(PlayerId? playerId = null, int boardSize = DefaultBoardSize)
     {
         playerId ??= new PlayerId(Guid.NewGuid());
-        var game = GetNewGame(playerId, boardSize);
+        var game = CreateGameInStateNew(playerId, boardSize);
         PlaceShipsOnBoard(game, BoardSide.Player);
         PlaceShipsOnBoard(game, BoardSide.Opponent);
         return game;
     }
 
-    public Game GetStartedGame(PlayerId? playerId = null, int boardSize = DefaultBoardSize)
+    public Game CreateGameInStateStarted(
+        PlayerId? playerId = null,
+        int boardSize = DefaultBoardSize
+    )
     {
         playerId ??= new PlayerId(Guid.NewGuid());
-        var game = GetReadyGame(playerId, boardSize);
+        var game = CreateGameInStateReady(playerId, boardSize);
         game.StartGameplay();
         return game;
     }
 
-    public Game GetCompletedGame(PlayerId? playerId, BoardSide winnerSide)
+    public Game CreateGameInStateGameOver(PlayerId? playerId, BoardSide winnerSide)
     {
         playerId ??= new PlayerId(Guid.NewGuid());
-        var game = GetStartedGame(playerId);
+        var game = CreateGameInStateStarted(playerId);
         var defeatedSide = winnerSide.OppositeSide();
         var rng = new Random();
 

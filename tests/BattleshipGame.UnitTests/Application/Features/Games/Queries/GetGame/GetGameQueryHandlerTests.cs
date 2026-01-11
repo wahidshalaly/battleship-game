@@ -29,7 +29,7 @@ public class GetGameQueryHandlerTests
     public async Task Handle_WhenGameExists_ShouldReturnGameResult()
     {
         // Arrange
-        var game = _gameFixture.GetNewGame();
+        var game = _gameFixture.CreateGameInStateNew();
         var query = new GetGameQuery(game.Id);
 
         A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
@@ -76,7 +76,7 @@ public class GetGameQueryHandlerTests
     public async Task Handle_WithDifferentBoardSizes_ShouldReturnCorrectBoardSize(int boardSize)
     {
         // Arrange
-        var game = _gameFixture.GetNewGame(boardSize: boardSize);
+        var game = _gameFixture.CreateGameInStateNew(boardSize: boardSize);
         var query = new GetGameQuery(game.Id);
 
         A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
@@ -113,7 +113,7 @@ public class GetGameQueryHandlerTests
         // Arrange
         var playerId1 = new PlayerId(Guid.NewGuid());
         var playerId2 = new PlayerId(Guid.NewGuid());
-        var game = _gameFixture.GetNewGame(playerId1);
+        var game = _gameFixture.CreateGameInStateNew(playerId1);
         var query = new GetGameQuery(game.Id);
 
         A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);
@@ -135,7 +135,7 @@ public class GetGameQueryHandlerTests
         const GameState expectedState = GameState.Ready;
 
         var playerId = new PlayerId(Guid.NewGuid());
-        var game = _gameFixture.GetReadyGame(playerId);
+        var game = _gameFixture.CreateGameInStateReady(playerId);
         var query = new GetGameQuery(game.Id);
 
         A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken)).Returns(game);

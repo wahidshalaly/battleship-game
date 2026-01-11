@@ -57,7 +57,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void PlaceShips_WhenCountLessThanAllowance_IsReadyIsFalse(BoardSide boardSide)
     {
-        var game = _fixture.GetNewGame(_playerId);
+        var game = _fixture.CreateGameInStateNew(_playerId);
 
         game.PlaceShip(boardSide, ShipKind.Carrier, ShipOrientation.Horizontal, "A1");
         game.PlaceShip(boardSide, ShipKind.Battleship, ShipOrientation.Horizontal, "A2");
@@ -91,7 +91,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void PlaceShips_WhenExceedAllowance_ThrowsException(BoardSide boardSide)
     {
-        var game = _fixture.GetReadyGame(_playerId);
+        var game = _fixture.CreateGameInStateReady(_playerId);
 
         Action act = () =>
             game.PlaceShip(boardSide, ShipKind.Destroyer, ShipOrientation.Horizontal, "A6");
@@ -110,7 +110,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void IsGameOver_WhenAllShipsSunk_IsTrue(BoardSide winnerSide)
     {
-        var game = _fixture.GetCompletedGame(_playerId, winnerSide);
+        var game = _fixture.CreateGameInStateGameOver(_playerId, winnerSide);
         var defeatedSide = winnerSide.OppositeSide();
 
         game.IsGameOver(defeatedSide).Should().BeTrue();
@@ -121,7 +121,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void PlaceShip_WhenValidParameters_ShouldReturnShipId(BoardSide boardSide)
     {
-        var game = _fixture.GetNewGame(_playerId);
+        var game = _fixture.CreateGameInStateNew(_playerId);
 
         var shipId = game.PlaceShip(
             boardSide,
@@ -139,7 +139,7 @@ public class GameTests
     [Fact]
     public void Attack_WhenValidCell_ShouldNotThrow()
     {
-        var game = _fixture.GetStartedGame(_playerId);
+        var game = _fixture.CreateGameInStateStarted(_playerId);
 
         var act = () => game.Attack(BoardSide.Opponent, "A1");
 
@@ -149,7 +149,7 @@ public class GameTests
     [Fact]
     public void Attack_WhenPreviouslyAttacked_ShouldThrowException()
     {
-        var game = _fixture.GetStartedGame(_playerId);
+        var game = _fixture.CreateGameInStateStarted(_playerId);
         game.Attack(BoardSide.Opponent, "A1");
         game.Attack(BoardSide.Player, "A1");
         game.Attack(BoardSide.Opponent, "A2");
@@ -164,7 +164,7 @@ public class GameTests
     [Fact]
     public void IsReady_WhenBothBoardsReady_ShouldReturnTrueForBoth()
     {
-        var game = _fixture.GetReadyGame();
+        var game = _fixture.CreateGameInStateReady();
 
         game.IsBoardReady(BoardSide.Player).Should().BeTrue();
         game.IsBoardReady(BoardSide.Opponent).Should().BeTrue();
@@ -176,7 +176,7 @@ public class GameTests
     [Fact]
     public void IsGameOver_WhenNoShipsAttacked_ShouldBeFalse()
     {
-        var game = _fixture.GetNewGame(_playerId);
+        var game = _fixture.CreateGameInStateNew(_playerId);
 
         game.IsGameOver(BoardSide.Player).Should().BeFalse();
         game.IsGameOver(BoardSide.Opponent).Should().BeFalse();
@@ -187,7 +187,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void IsGameOver_WhenBoardIsLost_ShouldBeTrue(BoardSide winnerSide)
     {
-        var game = _fixture.GetCompletedGame(_playerId, winnerSide);
+        var game = _fixture.CreateGameInStateGameOver(_playerId, winnerSide);
 
         game.IsGameOver(winnerSide).Should().BeFalse();
         game.IsGameOver(winnerSide.OppositeSide()).Should().BeTrue();
@@ -196,7 +196,7 @@ public class GameTests
     [Fact]
     public void GetShips_WhenBoardsAreEmpty_ShouldReturnNothing()
     {
-        var game = _fixture.GetNewGame(_playerId);
+        var game = _fixture.CreateGameInStateNew(_playerId);
         game.GetShips(BoardSide.Player).Should().BeEmpty();
         game.GetShips(BoardSide.Opponent).Should().BeEmpty();
     }
@@ -204,7 +204,7 @@ public class GameTests
     [Fact]
     public void GetShips_WhenGameReady_ShouldReturnShips()
     {
-        var game = _fixture.GetReadyGame();
+        var game = _fixture.CreateGameInStateReady();
         game.GetShips(BoardSide.Player).Should().HaveCount(ShipAllowance);
         game.GetShips(BoardSide.Opponent).Should().HaveCount(ShipAllowance);
         game.State.Should().Be(GameState.Ready);
@@ -213,7 +213,7 @@ public class GameTests
     [Fact]
     public void StartGameplay_WhenGameIsNotReady_ThrowsException()
     {
-        var game = _fixture.GetNewGame();
+        var game = _fixture.CreateGameInStateNew();
         var act = game.StartGameplay;
 
         act.Should().Throw<GameNotReadyException>();
@@ -222,7 +222,7 @@ public class GameTests
     [Fact]
     public void StartGameplay_WhenGameIsReady_Returns()
     {
-        var game = _fixture.GetReadyGame();
+        var game = _fixture.CreateGameInStateReady();
         game.StartGameplay();
         game.State.Should().Be(GameState.Started);
     }
@@ -230,7 +230,7 @@ public class GameTests
     [Fact]
     public void StartGameplay_WhenGameIsReady_RaisesGameStartedEvent()
     {
-        var game = _fixture.GetReadyGame();
+        var game = _fixture.CreateGameInStateReady();
         game.StartGameplay();
         game.DomainEvents.Should().ContainSingle(e => e is GameStartedEvent);
     }
@@ -242,8 +242,8 @@ public class GameTests
     {
         var game =
             state == GameState.New
-                ? _fixture.GetNewGame(_playerId)
-                : _fixture.GetReadyGame(_playerId);
+                ? _fixture.CreateGameInStateNew(_playerId)
+                : _fixture.CreateGameInStateReady(_playerId);
 
         var act = () => game.Attack(BoardSide.Opponent, "A1");
 
@@ -253,7 +253,7 @@ public class GameTests
     [Fact]
     public void Attack_WhenGameIsOver_ThrowsGameOverException()
     {
-        var game = _fixture.GetCompletedGame(_playerId, BoardSide.Player);
+        var game = _fixture.CreateGameInStateGameOver(_playerId, BoardSide.Player);
 
         var act = () => game.Attack(BoardSide.Opponent, "B1");
 
@@ -263,7 +263,7 @@ public class GameTests
     [Fact]
     public void Attack_WhenTargetSideDoesNotMatchExpected_ThrowsInvalidTargetSideException()
     {
-        var game = _fixture.GetStartedGame(_playerId);
+        var game = _fixture.CreateGameInStateStarted(_playerId);
 
         // Game starts with TargetSide = BoardSide.Opponent
         var act = () => game.Attack(BoardSide.Player, "A1");
@@ -276,7 +276,7 @@ public class GameTests
     [Fact]
     public void Attack_WhenValidTarget_SwitchesTargetSideAfterAttack()
     {
-        var game = _fixture.GetStartedGame(_playerId);
+        var game = _fixture.CreateGameInStateStarted(_playerId);
 
         game.TargetSide.Should().Be(BoardSide.Opponent);
 
@@ -288,7 +288,7 @@ public class GameTests
     [Fact]
     public void Attack_AlternatingAttacks_ValidatesCorrectTargetSide()
     {
-        var game = _fixture.GetStartedGame(_playerId);
+        var game = _fixture.CreateGameInStateStarted(_playerId);
 
         // First attack on Opponent - should succeed
         var act1 = () => game.Attack(BoardSide.Opponent, "A1");
@@ -308,7 +308,7 @@ public class GameTests
     [Fact]
     public void WinnerSide_WhenGameIsNew_ShouldBeNone()
     {
-        var game = _fixture.GetNewGame(_playerId);
+        var game = _fixture.CreateGameInStateNew(_playerId);
 
         game.WinnerSide.Should().Be(BoardSide.None);
     }
@@ -316,7 +316,7 @@ public class GameTests
     [Fact]
     public void WinnerSide_WhenGameIsReady_ShouldBeNone()
     {
-        var game = _fixture.GetReadyGame(_playerId);
+        var game = _fixture.CreateGameInStateReady(_playerId);
 
         game.WinnerSide.Should().Be(BoardSide.None);
     }
@@ -324,7 +324,7 @@ public class GameTests
     [Fact]
     public void WinnerSide_WhenGameIsStarted_ShouldBeNone()
     {
-        var game = _fixture.GetStartedGame(_playerId);
+        var game = _fixture.CreateGameInStateStarted(_playerId);
 
         game.WinnerSide.Should().Be(BoardSide.None);
     }
@@ -334,7 +334,7 @@ public class GameTests
     [InlineData(BoardSide.Opponent)]
     public void WinnerSide_WhenGameIsCompleted_ShouldBeSetCorrectly(BoardSide winnerSide)
     {
-        var game = _fixture.GetCompletedGame(_playerId, winnerSide);
+        var game = _fixture.CreateGameInStateGameOver(_playerId, winnerSide);
 
         game.WinnerSide.Should().Be(winnerSide);
         game.State.Should().Be(GameState.GameOver);
@@ -344,7 +344,7 @@ public class GameTests
     public void CreatedAt_WhenGameIsCreated_ShouldBeSetToUtcNow()
     {
         var beforeCreation = DateTime.UtcNow;
-        var game = _fixture.GetNewGame(_playerId);
+        var game = _fixture.CreateGameInStateNew(_playerId);
 
         game.LastUpdatedAt.Should().BeCloseTo(beforeCreation, TimeSpan.FromMilliseconds(100));
         game.CreatedAt.Kind.Should().Be(DateTimeKind.Utc);
@@ -354,7 +354,7 @@ public class GameTests
     public void LastUpdatedAt_WhenGameIsCreated_ShouldBeSetToUtcNow()
     {
         var beforeCreation = DateTime.UtcNow;
-        var game = _fixture.GetNewGame(_playerId);
+        var game = _fixture.CreateGameInStateNew(_playerId);
 
         game.LastUpdatedAt.Should().BeCloseTo(beforeCreation, TimeSpan.FromMilliseconds(100));
         game.LastUpdatedAt.Kind.Should().Be(DateTimeKind.Utc);
@@ -363,7 +363,7 @@ public class GameTests
     [Fact]
     public async Task LastUpdatedAt_WhenShipIsPlaced_ShouldBeUpdated()
     {
-        var game = _fixture.GetNewGame(_playerId);
+        var game = _fixture.CreateGameInStateNew(_playerId);
         var initialLastUpdated = game.LastUpdatedAt;
 
         // Wait briefly to ensure timestamp can differ
@@ -376,7 +376,7 @@ public class GameTests
     [Fact]
     public async Task LastUpdatedAt_WhenGameplayStarts_ShouldBeUpdated()
     {
-        var game = _fixture.GetReadyGame(_playerId);
+        var game = _fixture.CreateGameInStateReady(_playerId);
         var initialLastUpdated = game.LastUpdatedAt;
 
         // Wait briefly to ensure timestamp can differ
@@ -389,7 +389,7 @@ public class GameTests
     [Fact]
     public async Task LastUpdatedAt_WhenAttackIsMade_ShouldBeUpdated()
     {
-        var game = _fixture.GetStartedGame(_playerId);
+        var game = _fixture.CreateGameInStateStarted(_playerId);
         var initialLastUpdated = game.LastUpdatedAt;
 
         // Wait briefly to ensure timestamp can differ
