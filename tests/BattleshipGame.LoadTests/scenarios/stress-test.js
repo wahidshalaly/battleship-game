@@ -14,6 +14,7 @@ import {
   placeAllShips,
   generateShipPositions,
   attack,
+  updateGameState,
   generateUsername
 } from "../lib/game-helpers.js";
 
@@ -52,10 +53,16 @@ export default function () {
     return;
   }
 
+  // Update game state to Started
+  if (!updateGameState(gameId)) {
+    sleep(1);
+    return;
+  }
+
   // Quick attacks
   const positions = generateShipPositions();
   for (let i = 0; i < Math.min(3, positions.length); i++) {
-    attack(gameId, 2, positions[i]);
+    attack(gameId, positions[i]);
   }
 
   sleep(0.5);

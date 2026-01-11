@@ -22,31 +22,15 @@ BattleshipGame.LoadTests/
 
 ## 🚀 Prerequisites
 
-1. **Install K6**: [Installation Guide](https://k6.io/docs/getting-started/installation/)
+**Docker** - K6 runs in a container using the official Grafana Labs image (no installation needed).
 
-   **Windows:**
+```bash
+docker pull grafana/k6:latest
+```
 
-   ```powershell
-   winget install k6
-   ```
-
-   **macOS:**
-
-   ```bash
-   brew install k6
-   ```
-
-   **Linux:**
-
-   ```bash
-   sudo gpg -k
-   sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-   echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-   sudo apt-get update
-   sudo apt-get install k6
-   ```
-
-2. **Ensure API is running** at `http://localhost:5000` (or set custom URL via environment variable)
+**Requirements:**
+- Docker installed and running
+- API running at `http://host.docker.internal:5000` (or set custom URL via environment variable)
 
 ## 🎯 Test Scenarios
 

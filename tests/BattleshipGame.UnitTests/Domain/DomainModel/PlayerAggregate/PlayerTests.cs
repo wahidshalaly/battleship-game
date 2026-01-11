@@ -73,7 +73,7 @@ public class PlayerTests
 
         var act = () => player.JoinGame(gameId2);
 
-        act.Should().Throw<BattleshipGame.Application.Exceptions.PlayerIsInActiveException>();
+        act.Should().Throw<BattleshipGame.Domain.Exceptions.PlayerIsInActiveException>();
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class PlayerTests
 
         var act = () => player.LeaveGame();
 
-        act.Should().Throw<BattleshipGame.Application.Exceptions.PlayerIsNotInActiveException>();
+        act.Should().Throw<BattleshipGame.Domain.Exceptions.PlayerIsNotInActiveException>();
     }
 
     [Fact]

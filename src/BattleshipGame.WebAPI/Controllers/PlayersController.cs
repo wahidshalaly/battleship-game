@@ -1,6 +1,6 @@
-using BattleshipGame.Application.Exceptions;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using BattleshipGame.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BattleshipGame.WebAPI.Controllers;

@@ -15,6 +15,7 @@ import {
   generateShipPositions,
   attack,
   getGame,
+  updateGameState,
   generateUsername
 } from "../lib/game-helpers.js";
 
@@ -42,7 +43,7 @@ export default function () {
   let game = getGame(gameId);
   if (game) {
     check(game, {
-      "game is in Started state": (g) => g.state === GameState.Started
+      "game is in New state": (g) => g.state === "New"
     });
   }
 
@@ -58,19 +59,35 @@ export default function () {
   game = getGame(gameId);
   if (game) {
     check(game, {
-      "game is in BoardsAreReady state": (g) =>
-        g.state === GameState.BoardsAreReady
+      "game is in Ready state": (g) =>
+        g.state === GameState.Ready
     });
   }
 
-  // 4. Attack all opponent ship positions to win the game
+  // 4. Transition game to Started state
+  if (!updateGameState(gameId)) {
+    console.error("Failed to update game state");
+    return;
+  }
+
+  sleep(0.5);
+
+  // Verify game is started
+  game = getGame(gameId);
+  if (game) {
+    check(game, {
+      "game is in Started state": (g) => g.state === GameState.Started
+    });
+  }
+
+  // 5. Attack all opponent ship positions to win the game
   const positions = generateShipPositions();
   let hitCount = 0;
 
   for (const cellCode of positions) {
-    const cellState = attack(gameId, 2, cellCode); // Attack opponent side
+    const result = attack(gameId, cellCode);
 
-    if (cellState === CellState.Hit) {
+    if (result && result.playerAttackResult && result.playerAttackResult.hit) {
       hitCount++;
     }
 
@@ -79,7 +96,7 @@ export default function () {
 
   console.log(`Game ${gameId}: Hit ${hitCount}/${positions.length} cells`);
 
-  // 5. Verify game is over
+  // 6. Verify game is over
   game = getGame(gameId);
   if (game) {
     check(game, {

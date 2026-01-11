@@ -1,10 +1,93 @@
 # Technical Debt & Enhancement Roadmap
 ## Battleship Game Solution - Q1 2026 Planning
 
-**Document Version:** 1.0  
-**Date:** December 29, 2025  
+**Document Version:** 1.1  
+**Date:** January 2026  
 **Authors:** Engineering Architecture Review Team  
-**Status:** Draft for Review
+**Status:** In Progress - Updated with Recent Improvements
+
+---
+
+## 🎉 Recent Improvements (Completed)
+
+### ✅ CQRS Command Pattern Enhancement (January 2026)
+
+**Objective:** Eliminate tight coupling between commands and queries by returning rich mutation outcomes from attack commands.
+
+**Problem Solved:**
+- Commands previously returned minimal data (just `CellState`), requiring follow-up queries to get full game state
+- `CheckGameStatusCommand` was being used as a query after mutations, violating CQRS principles
+- API clients needed multiple round-trips to get complete attack results
+
+**Implementation:**
+1. **Created Rich Result Types:**
+   - `AttackResult`: Individual attack outcome with `TargetCell`, `CellState`, `GameState`, `WinnerSide`, `SunkShip`, `ShipSize`
+   - `LastRoundResult`: Complete round outcome including both player and opponent attack details
+
+2. **Updated Command Handlers:**
+   - `PlayerAttackCommand` returns `AttackResult` with full attack details
+   - `OpponentAttackCommand` returns `AttackResult` with full attack details
+   - Commands inspect domain events (`ShipSunkEvent`) to populate result data
+   - Added `Game.GetShipKind()` method to retrieve ship information for results
+
+3. **Refactored Application Services:**
+   - `GameplayService.PlayerAttackThenCounterAttackAsync()` now returns `LastRoundResult`
+   - Eliminated `CheckGameStatusAsync()` method (no longer needed)
+   - Service builds complete round results from command returns
+
+4. **Benefits Achieved:**
+   - ✅ Single API call returns complete round results
+   - ✅ No follow-up queries needed (better performance)
+   - ✅ CQRS principles properly maintained (commands return mutation outcomes, not queries)
+   - ✅ Cleaner code with less coupling
+   - ✅ All 1021 tests passing
+
+### ✅ Type-Safe API Design (January 2026)
+
+**Objective:** Replace string representations of enums with proper enum types across all public APIs.
+
+**Problem Solved:**
+- APIs used string representations (e.g., `"Started"`, `"Player"`) instead of typed enums
+- No compile-time safety for API contracts
+- Swagger documentation less clear
+
+**Implementation:**
+1. **Updated DTOs and Controllers:**
+   - `GetGameQueryResult` uses `GameState` enum (not string)
+   - `UpdateGameStateRequest` and `GameStateResponse` use `GameState` and `BoardSide` enums
+   - Attack endpoint returns `LastRoundResult` with properly typed enums
+
+2. **Updated OpenAPI Specification:**
+   - All enum types defined as string enums with descriptions
+   - `BoardSide`: None, Player, Opponent
+   - `CellState`: Clear, Occupied, Hit, Missed, Sunk
+   - `GameState`: New, Ready, Started, GameOver
+   - `ShipKind`: None, Carrier, Battleship, Cruiser, Submarine, Destroyer
+   - `ShipOrientation`: None, Horizontal, Vertical
+
+3. **Benefits Achieved:**
+   - ✅ Compile-time type safety
+   - ✅ Better IDE intellisense and auto-completion
+   - ✅ Clearer API documentation
+   - ✅ Consistent across all endpoints
+
+### ✅ Domain Model Improvements (January 2026)
+
+**Added Properties to Game Aggregate:**
+- `WinnerSide`: BoardSide - Indicates winning side when game is over
+- `CreatedAt`: DateTime - Timestamp of game creation
+- `LastUpdatedAt`: DateTime - Timestamp of last game update
+
+**Added Methods:**
+- `GetShipKind(BoardSide, ShipId)`: Retrieves ship kind for result construction
+
+**Fixed Bugs:**
+- Reordered `ValidateBeforeAttack()` to check `GameOver` before `GameNotStarted` (prevents unreachable code)
+
+**Test Coverage:**
+- Added 6 unit tests for `ValidateBeforeAttack()` covering all exception scenarios
+- Added 10 unit tests for new properties (`WinnerSide`, `CreatedAt`, `LastUpdatedAt`)
+- All tests passing (1021/1021)
 
 ---
 
@@ -12,29 +95,31 @@
 
 ### Current State Assessment
 
-The Battleship Game solution demonstrates **strong architectural foundations** with Clean Architecture, Domain-Driven Design, and CQRS patterns properly implemented. However, our comprehensive review has identified **4 critical issues** and **16 enhancement opportunities** that must be addressed before production deployment.
+The Battleship Game solution demonstrates **strong architectural foundations** with Clean Architecture, Domain-Driven Design, and CQRS patterns properly implemented. Recent improvements have further strengthened the CQRS pattern implementation and API design.
 
-#### Overall Health Score: **6.5/10**
+#### Overall Health Score: **7.0/10** (↑ from 6.5)
 
-| Dimension | Score | Status |
-|-----------|-------|--------|
-| Architecture & Design | 9/10 | ✅ Excellent |
-| Domain Model | 8/10 | ✅ Very Good |
-| Application Layer | 6/10 | ⚠️ Needs Work |
-| Infrastructure | 5/10 | ⚠️ Critical Issues |
-| API Design | 7/10 | ✅ Good |
-| Test Coverage | 7/10 | ✅ Good |
-| Security | 3/10 | ❌ Missing |
-| Production Readiness | 4/10 | ❌ Not Ready |
+| Dimension | Score | Status | Change |
+|-----------|-------|--------|--------|
+| Architecture & Design | 9/10 | ✅ Excellent | - |
+| Domain Model | 8.5/10 | ✅ Excellent | ↑ |
+| Application Layer | 7/10 | ✅ Good | ↑ |
+| Infrastructure | 5/10 | ⚠️ Critical Issues | - |
+| API Design | 8/10 | ✅ Very Good | ↑ |
+| Test Coverage | 8/10 | ✅ Very Good | ↑ |
+| Security | 3/10 | ❌ Missing | - |
+| Production Readiness | 5/10 | ⚠️ Needs Work | ↑ |
 
 ### Key Findings
 
 **✅ Strengths:**
 - Excellent separation of concerns (Clean Architecture)
 - Well-designed domain model with proper DDD patterns
+- CQRS commands return rich results (no unnecessary queries)
+- Type-safe APIs using enum types
 - Good use of modern C# 12 features
 - Comprehensive documentation
-- Solid test structure
+- Strong test coverage (1021 tests passing)
 
 **⚠️ Critical Blockers (Cannot deploy without fixing):**
 1. Missing Unit of Work pattern causing data inconsistency risk

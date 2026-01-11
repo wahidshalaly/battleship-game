@@ -1,15 +1,9 @@
 using System.Reflection;
-using BattleshipGame.Application.Common.Behaviors;
-using BattleshipGame.Application.Common.Services;
-using BattleshipGame.Application.Contracts.Persistence;
-using BattleshipGame.Application.Services;
-using BattleshipGame.Infrastructure.OpponentStrategy;
-using BattleshipGame.Infrastructure.Persistence;
+using BattleshipGame.Application.Common.Extensions;
+using BattleshipGame.Infrastructure.Extensions;
 using BattleshipGame.WebAPI.Filters;
 using BattleshipGame.WebAPI.Middleware;
-using FluentValidation;
 using FluentValidation.AspNetCore;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 
@@ -23,7 +17,6 @@ builder.Services.AddControllers(options =>
     options.Filters.Add<ValidationLoggingFilter>();
 });
 builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
 // Configure API behavior for validation errors
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -73,28 +66,9 @@ builder.Services.AddSwaggerGen(c =>
     c.IncludeXmlComments(xmlPath);
 });
 
-// MediatR is required for domain event handlers
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(typeof(DomainEventDispatcher).Assembly);
-});
-
-// Register MediatR pipeline behaviors
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
-
-// Register application services
-builder.Services.AddScoped<IGameplayService, GameplayService>();
-builder.Services.AddScoped<IPlayerService, PlayerService>();
-
-// Register infrastructure services
-builder.Services.AddScoped<IComputerOpponentStrategy, RandomAttackStrategy>();
-builder.Services.AddKeyedScoped<IComputerOpponentStrategy, SmartAttackStrategy>("AI-Based"); // For future use
-
-// Register repositories (singleton for in-memory, will be scoped when using EF Core)
-builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();
-builder.Services.AddSingleton<IPlayerRepository, InMemoryPlayerRepository>();
-builder.Services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
+// Register application and infrastructure services
+builder.Services.AddApplicationServices();
+builder.Services.AddInfrastructureServices();
 
 var app = builder.Build();
 

@@ -4,6 +4,9 @@
 
 This document provides a comprehensive analysis of the Battleship game domain model, detailing the core entities, value objects, and business rules that govern the game logic.
 
+![Battleship Game](./Battleship_Game.png)
+
+
 ## Architecture
 
 The system follows **Clean Architecture** principles with **Domain-Driven Design (DDD)** patterns:
@@ -22,13 +25,16 @@ The `Game` entity serves as the aggregate root and orchestrates the entire game 
 - **PlayerId**: Associated player identifier
 - **BoardSize**: Configurable board dimensions (10-26)
 - **GameState**: Current game state enumeration
+- **TargetSide**: Which board side is the target for the next attack
 - **Boards**: Two internal boards (Own and Opponent)
 
 **Business Rules:**
-- Game starts in `Started` state
+- Game starts in `New` state
 - Supports configurable board sizes from 10x10 to 26x26
 - Manages two separate boards for own and opponent sides
-- Enforces turn-based gameplay through state management
+- Enforces turn-based gameplay through `TargetSide` property
+- Player always attacks first (Opponent board is initial target)
+- Turn alternates after each attack
 
 #### Board Entity
 Internal entity that manages the game field and ship placement:
@@ -111,9 +117,9 @@ All entities use strongly-typed identifiers inheriting from `EntityId`:
 
 #### GameState
 - **None**: Initial state
-- **Started**: Game created, setup required
-- **BoardsAreReady**: All ships placed
-- **InProgress**: Active gameplay
+- **New**: Game created, setup required
+- **Ready**: All ships placed
+- **Started**: Active gameplay
 - **GameOver**: Game completed
 
 ## Domain Events
@@ -132,24 +138,41 @@ The system uses the **Domain Events** pattern for decoupled communication:
 4. Ships must fit within board boundaries
 5. Each ship kind can only be placed once
 
+### Turn Control Rules
+1. **TargetSide**: Tracks which board side is allowed to be attacked next
+2. **Initial Turn**: When gameplay starts, `TargetSide` is set to `Opponent` (Player always attacks first)
+3. **Turn Alternation**: After each attack, `TargetSide` switches to the opposite side
+4. **Turn Validation**: `Attack()` method validates that the provided `boardSide` matches `TargetSide`
+5. **Invalid Turn**: Throws `InvalidTargetSideException` if attacking the wrong board
+6. **Turn Progression**: 
+   - Player attacks Opponent board → `TargetSide` becomes `Player`
+   - Opponent attacks Player board → `TargetSide` becomes `Opponent`
+7. **Game Over**: Turn control ends when `GameState` becomes `GameOver`
+
 ### Attack Rules
-1. Cannot attack the same cell twice
-2. Attacks must target valid board coordinates
-3. Hits on occupied cells damage the ship
-4. Ships sink when all cells are hit
+1. Must attack the board specified by `TargetSide` property
+2. Cannot attack the same cell twice
+3. Attacks must target valid board coordinates
+4. Hits on occupied cells damage the ship
+5. Ships sink when all cells are hit
+6. Turn automatically switches to opponent after each attack
 
 ### Game Flow Rules
-1. Game starts in `Started` state
+1. Game starts in `New` state
 2. Players place ships during setup phase
-3. Game becomes `InProgress` when both boards are ready
-4. Game ends when all ships on one board are sunk
-5. Turn-based gameplay enforced through state management
+3. Game becomes `Started` when both boards are ready via `StartGameplay()`
+4. `TargetSide` is initialized to `Opponent` (Player's first turn)
+5. Players alternate turns by attacking the board specified by `TargetSide`
+6. Game ends when all ships on one board are sunk
+7. Turn-based gameplay enforced through `TargetSide` validation
 
 ## Error Handling
 
 The domain uses structured error handling:
 - **ArgumentException**: Invalid input parameters
 - **ApplicationException**: Business rule violations
+- **InvalidTargetSideException**: Thrown when attacking wrong board (not matching `TargetSide`)
+- **GameNotReadyException**: Thrown when attempting to start gameplay before boards are ready
 - **Custom error messages**: Centralized in `ErrorMessages` class
 
 ## Testing Strategy

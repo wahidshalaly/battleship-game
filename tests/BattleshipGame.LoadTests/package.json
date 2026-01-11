@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "description": "K6 load tests for Battleship Game API",
   "scripts": {
-    "test:smoke": "k6 run scenarios/smoke-test.js",
-    "test:load": "k6 run scenarios/load-test.js",
-    "test:stress": "k6 run scenarios/stress-test.js",
-    "test:spike": "k6 run scenarios/spike-test.js",
-    "test:soak": "k6 run scenarios/soak-test.js",
-    "test:full-game": "k6 run scenarios/full-game-simulation.js",
+    "test:smoke": "docker run --rm --network=host -e K6_INSECURE_SKIP_TLS_VERIFY=true -v $(pwd):/scripts grafana/k6:latest run /scripts/scenarios/smoke-test.js",
+    "test:load": "docker run --rm --network=host -e K6_INSECURE_SKIP_TLS_VERIFY=true -v $(pwd):/scripts grafana/k6:latest run /scripts/scenarios/load-test.js",
+    "test:stress": "docker run --rm --network=host -e K6_INSECURE_SKIP_TLS_VERIFY=true -v $(pwd):/scripts grafana/k6:latest run /scripts/scenarios/stress-test.js",
+    "test:spike": "docker run --rm --network=host -e K6_INSECURE_SKIP_TLS_VERIFY=true -v $(pwd):/scripts grafana/k6:latest run /scripts/scenarios/spike-test.js",
+    "test:soak": "docker run --rm --network=host -e K6_INSECURE_SKIP_TLS_VERIFY=true -v $(pwd):/scripts grafana/k6:latest run /scripts/scenarios/soak-test.js",
+    "test:full-game": "docker run --rm --network=host -e K6_INSECURE_SKIP_TLS_VERIFY=true -v $(pwd):/scripts grafana/k6:latest run /scripts/scenarios/full-game-simulation.js",
     "test:all": "npm run test:smoke && npm run test:load && npm run test:stress"
   },
   "keywords": [
@@ -19,7 +19,5 @@
   ],
   "author": "",
   "license": "MIT",
-  "devDependencies": {
-    "k6": "^0.0.0"
-  }
+  "devDependencies": {}
 }

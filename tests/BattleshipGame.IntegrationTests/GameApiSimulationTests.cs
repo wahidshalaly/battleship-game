@@ -35,13 +35,17 @@ public class GameApiSimulationTests(
 
         // 2. Create game
         var gameId = await CreateGame(playerId);
-        await VerifyGameState(gameId, GameState.Started);
+        await VerifyGameState(gameId, GameState.New);
 
         // 3. Place ships for both sides
         await PlaceShips(gameId);
         await VerifyGameState(gameId, GameState.Ready);
 
-        // 4. Attack all Opponent ship positions
+        // 4. Start gameplay
+        await StartGameplay(gameId);
+        await VerifyGameState(gameId, GameState.Started);
+
+        // 5. Attack all Opponent ship positions
         await AttackShips(gameId);
         await VerifyGameState(gameId, GameState.GameOver);
     }
@@ -89,6 +93,15 @@ public class GameApiSimulationTests(
         }
     }
 
+    private async Task StartGameplay(Guid gameId)
+    {
+        var response = await _client.PutAsJsonAsync(
+            $"/api/games/{gameId}/state",
+            new { state = GameState.Started }
+        );
+        response.EnsureSuccessStatusCode();
+    }
+
     private async Task AttackShips(Guid gameId)
     {
         var shipDefs = DefineShips(gameId);
@@ -102,9 +115,8 @@ public class GameApiSimulationTests(
                     new AttackRequest(cellCode)
                 );
                 response.EnsureSuccessStatusCode();
-                var gameStatus = await response.Content.ReadFromJsonAsync<GameStatus>();
-                output.WriteLine("Attacked {0}. Outcome: {1}", cellCode, gameStatus);
-                //Assert.Equal( gameStatus);
+                var roundResult = await response.Content.ReadFromJsonAsync<LastRoundResult>();
+                output.WriteLine("Attacked {0}. Outcome: {1}", cellCode, roundResult);
             }
         }
     }

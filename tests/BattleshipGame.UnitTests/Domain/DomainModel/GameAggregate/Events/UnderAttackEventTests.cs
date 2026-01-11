@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
-using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using FluentAssertions;
 using Xunit;
 
@@ -10,15 +9,19 @@ namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate.Events;
 
 public class UnderAttackEventTests
 {
+    private readonly GameFixture _gameFixture = new();
+
     [Fact]
     public void Ctor_WhenValidParameters_ShouldCreateEvent()
     {
         var gameId = new GameId(Guid.NewGuid());
+        const BoardSide boardSide = BoardSide.Player;
         const string code = "A1";
         const CellState cellState = CellState.Occupied;
 
-        var cellAttackedEvent = new UnderAttackEvent(gameId, code, cellState);
-        cellAttackedEvent.BoardId.Should().Be(gameId);
+        var cellAttackedEvent = new UnderAttackEvent(gameId, boardSide, code, cellState);
+        cellAttackedEvent.GameId.Should().Be(gameId);
+        cellAttackedEvent.BoardSide.Should().Be(boardSide);
         cellAttackedEvent.CellCode.Should().Be(code);
         cellAttackedEvent.CellState.Should().Be(cellState);
 
@@ -31,19 +34,20 @@ public class UnderAttackEventTests
     public void Attack_WhenCellIsClear_ShouldRaiseCellAttackedEventWithMissedState()
     {
         // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var game = new Game(playerId);
+        var game = _gameFixture.CreateGameInStateStarted();
+        var clearCell = game.GetAvailableCellCodes(BoardSide.Opponent).Last();
 
         // Act
-        game.Attack(BoardSide.Opponent, "A1");
+        game.Attack(BoardSide.Opponent, clearCell);
 
         // Assert
         var cellAttackedEvents = game.DomainEvents.OfType<UnderAttackEvent>().ToList();
         cellAttackedEvents.Should().HaveCount(1);
 
         var cellAttackedEvent = cellAttackedEvents.First();
-        cellAttackedEvent.BoardId.Should().Be(game.Id);
-        cellAttackedEvent.CellCode.Should().Be("A1");
+        cellAttackedEvent.GameId.Should().Be(game.Id);
+        cellAttackedEvent.BoardSide.Should().Be(BoardSide.Opponent);
+        cellAttackedEvent.CellCode.Should().Be(clearCell);
         cellAttackedEvent.CellState.Should().Be(CellState.Missed);
     }
 
@@ -51,22 +55,20 @@ public class UnderAttackEventTests
     public void Attack_WhenCellIsOccupied_ShouldRaiseCellAttackedEventWithHitState()
     {
         // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var game = new Game(playerId);
-
-        // Set up a ship on opponent board
-        game.PlaceShip(BoardSide.Opponent, ShipKind.Destroyer, ShipOrientation.Vertical, "A1");
+        var game = _gameFixture.CreateGameInStateStarted();
+        var occupiedCell = game.GetAvailableCellCodes(BoardSide.Opponent).First();
 
         // Act
-        game.Attack(BoardSide.Opponent, "A1");
+        game.Attack(BoardSide.Opponent, occupiedCell);
 
         // Assert
         var cellAttackedEvents = game.DomainEvents.OfType<UnderAttackEvent>().ToList();
         cellAttackedEvents.Should().HaveCount(1);
 
         var cellAttackedEvent = cellAttackedEvents.First();
-        cellAttackedEvent.BoardId.Should().Be(game.Id);
-        cellAttackedEvent.CellCode.Should().Be("A1");
+        cellAttackedEvent.GameId.Should().Be(game.Id);
+        cellAttackedEvent.BoardSide.Should().Be(BoardSide.Opponent);
+        cellAttackedEvent.CellCode.Should().Be(occupiedCell);
         cellAttackedEvent.CellState.Should().Be(CellState.Hit);
     }
 }
