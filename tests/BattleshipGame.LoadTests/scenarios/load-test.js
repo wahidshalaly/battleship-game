@@ -15,6 +15,7 @@ import {
   generateShipPositions,
   attack,
   getGameState,
+  updateGameState,
   generateUsername
 } from "../lib/game-helpers.js";
 
@@ -46,6 +47,12 @@ export default function () {
     return;
   }
 
+  // Update game state to Started
+  if (!updateGameState(gameId)) {
+    console.error("Failed to update game state");
+    return;
+  }
+
   // Check game state
   getGameState(gameId);
 
@@ -54,7 +61,7 @@ export default function () {
   const attackCount = Math.floor(Math.random() * 10) + 5; // 5-15 attacks
 
   for (let i = 0; i < Math.min(attackCount, positions.length); i++) {
-    attack(gameId, 2, positions[i]);
+    attack(gameId, positions[i]);
     sleep(0.5);
   }
 

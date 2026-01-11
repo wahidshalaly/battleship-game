@@ -92,12 +92,11 @@ export function placeShip(gameId, side, shipKind, orientation, bowCode) {
 /**
  * Attacks a cell on the board
  * @param {string} gameId - The game ID
- * @param {number} side - Board side (1 = Player, 2 = Opponent)
  * @param {string} cellCode - The cell code (e.g., "A1")
- * @returns {number|null} Cell state or null if failed
+ * @returns {object|null} LastRoundResult or null if failed
  */
-export function attack(gameId, side, cellCode) {
-  const payload = JSON.stringify({ side, cell: cellCode });
+export function attack(gameId, cellCode) {
+  const payload = JSON.stringify({ cell: cellCode });
   const params = {
     headers: { "Content-Type": "application/json" },
     tags: { api: "attack" }
@@ -114,6 +113,7 @@ export function attack(gameId, side, cellCode) {
   });
 
   if (!success) {
+    console.error(`Failed to attack: ${res.status} ${res.body}`);
     return null;
   }
 
@@ -156,6 +156,35 @@ export function getGameState(gameId) {
   });
 
   return success ? res.json() : null;
+}
+
+/**
+ * Updates game state (transitions from Ready to Started)
+ * @param {string} gameId - The game ID
+ * @returns {boolean} Success status
+ */
+export function updateGameState(gameId) {
+  const payload = JSON.stringify({ state: "Started" });
+  const params = {
+    headers: { "Content-Type": "application/json" },
+    tags: { api: "update_game_state" }
+  };
+
+  const res = http.put(
+    `${config.baseUrl}/api/games/${gameId}/state`,
+    payload,
+    params
+  );
+
+  const success = check(res, {
+    "game state updated": (r) => r.status === 200
+  });
+
+  if (!success) {
+    console.error(`Failed to update game state: ${res.status} ${res.body}`);
+  }
+
+  return success;
 }
 
 /**

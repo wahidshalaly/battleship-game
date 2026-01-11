@@ -43,6 +43,8 @@ export const ShipOrientation = {
 
 // Game states
 export const GameState = {
+  None: "None",
+  New: "New",
   Started: "Started",
   Ready: "Ready",
   GameOver: "GameOver"
@@ -50,7 +52,7 @@ export const GameState = {
 
 // Cell states
 export const CellState = {
-  Unknown: 0,
+  None: 0,
   Empty: 1,
   Occupied: 2,
   Hit: 3,

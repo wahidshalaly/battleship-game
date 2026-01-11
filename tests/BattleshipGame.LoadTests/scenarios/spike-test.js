@@ -13,6 +13,7 @@ import {
   createGame,
   placeAllShips,
   attack,
+  updateGameState,
   generateUsername
 } from "../lib/game-helpers.js";
 
@@ -48,8 +49,11 @@ export default function () {
   // Quick ship placement
   placeAllShips(gameId);
 
+  // Update game state to Started
+  updateGameState(gameId);
+
   // Single attack
-  attack(gameId, 2, "A1");
+  attack(gameId, "A1");
 
   sleep(0.5);
 }

@@ -17,6 +17,7 @@ import {
   generateShipPositions,
   attack,
   getGame,
+  updateGameState,
   generateUsername
 } from "../lib/game-helpers.js";
 
@@ -59,12 +60,18 @@ export default function () {
     return;
   }
 
+  // Update game state to Started
+  if (!updateGameState(gameId)) {
+    sleep(2);
+    return;
+  }
+
   // Play partial game
   const positions = generateShipPositions();
   const attackCount = Math.floor(Math.random() * positions.length);
 
   for (let i = 0; i < attackCount; i++) {
-    attack(gameId, 2, positions[i]);
+    attack(gameId, positions[i]);
     sleep(1); // Simulate realistic user behavior
   }
 
