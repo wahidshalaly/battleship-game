@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BattleshipGame.WebAPI.Controllers;
 
 /// <summary>
-/// Provides endpoints for managing games.
+/// Provides endpoints for managing games from Player perspective.
 /// </summary>
 /// <param name="logger">The logger.</param>
 /// <param name="gameplayService">The gameplay application service.</param>
@@ -48,7 +48,7 @@ public class GamesController(
     }
 
     /// <summary>
-    /// Retrieves a game.
+    /// Retrieves a game by ID.
     /// </summary>
     /// <response code="200">Returns a game.</response>
     /// <response code="400">Invalid input data.</response>
@@ -100,10 +100,10 @@ public class GamesController(
     /// Attacks a cell on a certain board side.
     /// </summary>
     [HttpPost("{id:guid}/attacks")]
-    [ProducesResponseType(typeof(CellState), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LastRoundResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CellState>> Attack(
+    public async Task<ActionResult<LastRoundResult>> Attack(
         [FromRoute] Guid id,
         [FromBody] AttackRequest request,
         CancellationToken ct
@@ -152,14 +152,14 @@ public class GamesController(
         try
         {
             // Validate state value
-            if (!request.State.Equals("started", StringComparison.OrdinalIgnoreCase))
+            if (request.State != GameState.Started)
             {
                 return BadRequest(
                     new ProblemDetails
                     {
                         Title = "Invalid State Value",
                         Detail =
-                            $"Invalid state value '{request.State}'. Allowed values: 'started'.",
+                            $"Invalid state value '{request.State}'. Only 'Started' state transition is allowed.",
                         Status = StatusCodes.Status400BadRequest,
                     }
                 );
@@ -175,7 +175,7 @@ public class GamesController(
             var query = new GetGameQuery(gameId);
             var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(id);
 
-            return Ok(new GameStateResponse(game.State, null));
+            return Ok(new GameStateResponse(game.State, game.WinnerSide));
         }
         catch (GameNotReadyException ex)
         {
@@ -205,9 +205,7 @@ public class GamesController(
         var query = new GetGameQuery(gameId);
         var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(gameId);
 
-        // For demo, winner is null unless state is GameOver
-        var winner = game.State == nameof(GameState.GameOver) ? game.PlayerId : (Guid?)null;
-        return new GameStateResponse(game.State, winner);
+        return new GameStateResponse(game.State, game.WinnerSide);
     }
 }
 
@@ -222,6 +220,6 @@ public record PlaceShipRequest(
 
 public record AttackRequest(string Cell);
 
-public record UpdateGameStateRequest(string State);
+public record UpdateGameStateRequest(GameState State);
 
-public record GameStateResponse(string State, Guid? Winner);
+public record GameStateResponse(GameState State, BoardSide Winner);

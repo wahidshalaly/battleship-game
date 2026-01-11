@@ -56,7 +56,7 @@ public class GameApiSimulationTests(
             $"/api/games/{gameId}"
         );
         getGameResult.Should().NotBeNull();
-        getGameResult.State.Should().Be(gameState.ToString());
+        getGameResult.State.Should().Be(gameState);
     }
 
     private static (
@@ -97,7 +97,7 @@ public class GameApiSimulationTests(
     {
         var response = await _client.PutAsJsonAsync(
             $"/api/games/{gameId}/state",
-            new { state = "started" }
+            new { state = GameState.Started }
         );
         response.EnsureSuccessStatusCode();
     }
@@ -115,9 +115,8 @@ public class GameApiSimulationTests(
                     new AttackRequest(cellCode)
                 );
                 response.EnsureSuccessStatusCode();
-                var gameStatus = await response.Content.ReadFromJsonAsync<GameStatus>();
-                output.WriteLine("Attacked {0}. Outcome: {1}", cellCode, gameStatus);
-                //Assert.Equal( gameStatus);
+                var roundResult = await response.Content.ReadFromJsonAsync<LastRoundResult>();
+                output.WriteLine("Attacked {0}. Outcome: {1}", cellCode, roundResult);
             }
         }
     }

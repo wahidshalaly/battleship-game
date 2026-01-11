@@ -23,9 +23,13 @@ classDiagram
         +PlayerId PlayerId
         +int BoardSize
         +GameState State
+        +BoardSide WinnerSide
+        +DateTime CreatedAt
+        +DateTime LastUpdatedAt
         +Game(PlayerId, int)
         +ShipId PlaceShip(BoardSide, ShipKind, ShipOrientation, string)
         +void Attack(BoardSide, string)
+        +ShipKind GetShipKind(BoardSide, ShipId)
         +bool IsGameOver(BoardSide)
         +bool IsReady(BoardSide)
     }
@@ -96,13 +100,16 @@ classDiagram
         Clear
         Occupied
         Hit
+        Missed
+        Sunk
     }
 
     class ShipKind {
         <<Enumeration>>
+        None
         Destroyer
-        Cruiser
         Submarine
+        Cruiser
         Battleship
         Carrier
     }
@@ -115,13 +122,13 @@ classDiagram
 
     class BoardSide {
         <<Enumeration>>
-        Own
-        Opp
+        None
+        Player
+        Opponent
     }
 
     class GameState {
         <<Enumeration>>
-        None
         New
         Ready
         Started
@@ -147,9 +154,7 @@ classDiagram
         +Task~GameId~ StartNewGameAsync(PlayerId, int)
         +Task~ShipId~ PlaceShipAsync(GameId, BoardSide, ShipKind, ShipOrientation, string)
         +Task StartGameplayAsync(GameId)
-        +Task~AttackResult~ AttackAsync(GameId, BoardSide, string)
-        +Task~AttackResult~ OpponentAttackAsync(GameId)
-        +Task~GameResult?~ CheckGameStatusAsync(GameId)
+        +Task~LastRoundResult~ PlayerAttackThenCounterAttackAsync(GameId, string)
         +Task EndGameAsync(GameId)
     }
 
@@ -157,10 +162,31 @@ classDiagram
         +Task~GameId~ StartNewGameAsync(PlayerId, int)
         +Task~ShipId~ PlaceShipAsync(GameId, BoardSide, ShipKind, ShipOrientation, string)
         +Task StartGameplayAsync(GameId)
-        +Task~AttackResult~ AttackAsync(GameId, BoardSide, string)
-        +Task~AttackResult~ OpponentAttackAsync(GameId)
-        +Task~GameResult?~ CheckGameStatusAsync(GameId)
+        +Task~LastRoundResult~ PlayerAttackThenCounterAttackAsync(GameId, string)
         +Task EndGameAsync(GameId)
+    }
+
+    class AttackResult {
+        <<Record>>
+        +string TargetCell
+        +CellState CellState
+        +GameState GameState
+        +BoardSide WinnerSide
+        +ShipKind? SunkShip
+        +int? ShipSize
+    }
+
+    class LastRoundResult {
+        <<Record>>
+        +GameId GameId
+        +string PlayerTargetCell
+        +CellState PlayerAttackResult
+        +ShipKind? PlayerSunkShip
+        +string? OpponentTargetCell
+        +CellState? OpponentAttackResult
+        +ShipKind? OpponentSunkShip
+        +GameState GameState
+        +BoardSide WinnerSide
     }
 
     class IPlayerService {
@@ -198,7 +224,10 @@ classDiagram
         <<CQRS>>
         CreateGameCommand
         PlaceShipCommand
-        AttackCommand
+        PlayerAttackCommand
+        OpponentAttackCommand
+        StartGameCommand
+        EndGameCommand
     }
 
     class Queries {
@@ -211,9 +240,11 @@ classDiagram
     PlayerService ..|> IPlayerService
     GameplayService ..> IGameRepository : depends on
     GameplayService ..> IMediator : sends Commands/Queries
+    GameplayService ..> LastRoundResult : returns
     PlayerService ..> IPlayerRepository : depends on
     PlayerService ..> IMediator : sends Commands/Queries
     Commands ..> Game : operates on
+    Commands ..> AttackResult : returns
     Queries ..> Game : retrieves
 ```
 

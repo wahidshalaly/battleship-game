@@ -17,7 +17,14 @@ public record GetGameQuery(GameId GameId) : IRequest<GetGameQueryResult?>;
 /// <param name="PlayerId">The player's identifier.</param>
 /// <param name="BoardSize">The board size.</param>
 /// <param name="State">The game state.</param>
-public record GetGameQueryResult(Guid GameId, Guid PlayerId, int BoardSize, string State);
+/// <param name="WinnerSide">The winning side if game is over.</param>
+public record GetGameQueryResult(
+    Guid GameId,
+    Guid PlayerId,
+    int BoardSize,
+    GameState State,
+    BoardSide WinnerSide
+);
 
 /// <summary>
 /// Handler for getting a game by ID.
@@ -37,7 +44,8 @@ internal class GetGameHandler(IGameRepository gameRepository)
                 game.Id.Value,
                 game.PlayerId.Value,
                 game.BoardSize,
-                game.State.ToString()
+                game.State,
+                game.WinnerSide
             );
     }
 }

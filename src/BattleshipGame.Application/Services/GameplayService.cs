@@ -35,31 +35,46 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
         return new ShipId(guid);
     }
 
-    public async Task<GameStatus> PlayerAttackThenCounterAttackAsync(
+    public async Task<LastRoundResult> PlayerAttackThenCounterAttackAsync(
         GameId gameId,
         string cellCode,
         CancellationToken ct
     )
     {
-        // TODO: I don't like the return type of this method, need to rethink.
+        // Execute player's attack
+        var playerAttack = await mediator.Send(new PlayerAttackCommand(gameId, cellCode), ct);
 
-        await mediator.Send(new PlayerAttackCommand(gameId, cellCode), ct);
-
-        // Build preliminary result; a follow-up opponent move may alter state but we re-query if needed via status check
-        var gameStatus = await mediator.Send(new CheckGameStatusCommand(gameId), ct);
-        if (gameStatus.IsGameOver)
+        // Check if game ended after player's attack
+        if (playerAttack.GameState == GameState.GameOver)
         {
-            return gameStatus;
+            return new LastRoundResult(
+                GameId: gameId,
+                PlayerTargetCell: playerAttack.TargetCell,
+                PlayerAttackResult: playerAttack.CellState,
+                PlayerSunkShip: playerAttack.SunkShip,
+                OpponentTargetCell: null,
+                OpponentAttackResult: null,
+                OpponentSunkShip: null,
+                GameState: playerAttack.GameState,
+                WinnerSide: playerAttack.WinnerSide
+            );
         }
 
-        await mediator.Send(new OpponentAttackCommand(gameId), ct);
-        gameStatus = await mediator.Send(new CheckGameStatusCommand(gameId), ct);
-        return gameStatus;
-    }
+        // Execute opponent's counter-attack
+        var opponentAttack = await mediator.Send(new OpponentAttackCommand(gameId), ct);
 
-    public Task<GameStatus> CheckGameStatusAsync(GameId gameId, CancellationToken ct)
-    {
-        return mediator.Send(new CheckGameStatusCommand(gameId), ct);
+        // Return complete round result
+        return new LastRoundResult(
+            GameId: gameId,
+            PlayerTargetCell: playerAttack.TargetCell,
+            PlayerAttackResult: playerAttack.CellState,
+            PlayerSunkShip: playerAttack.SunkShip,
+            OpponentTargetCell: opponentAttack.TargetCell,
+            OpponentAttackResult: opponentAttack.CellState,
+            OpponentSunkShip: opponentAttack.SunkShip,
+            GameState: opponentAttack.GameState,
+            WinnerSide: opponentAttack.WinnerSide
+        );
     }
 
     public Task EndGameAsync(GameId gameId, CancellationToken ct)

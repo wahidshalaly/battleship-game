@@ -186,6 +186,15 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
         BoardSelector(boardSide).Ships.First(s => s.Id == shipId).Position;
 
     /// <summary>
+    /// Gets the kind of the specified ship on the specified boardSide
+    /// </summary>
+    /// <param name="boardSide">The boardSide whose ship kind to get</param>
+    /// <param name="shipId">The identifier of the ship whose kind to get</param>
+    /// <returns>The kind of the specified ship on the specified boardSide</returns>
+    public ShipKind GetShipKind(BoardSide boardSide, ShipId shipId) =>
+        BoardSelector(boardSide).Ships.First(s => s.Id == shipId).Kind;
+
+    /// <summary>
     /// Starts the gameplay for a game that is ready.
     /// </summary>
     /// <returns>A completed task.</returns>

@@ -42,7 +42,8 @@ public class GetGameQueryHandlerTests
         result.GameId.Should().Be(game.Id.Value);
         result.PlayerId.Should().Be(game.PlayerId.Value);
         result.BoardSize.Should().Be(10);
-        result.State.Should().Be(GameState.New.ToString());
+        result.State.Should().Be(GameState.New);
+        result.WinnerSide.Should().Be(BoardSide.None);
 
         A.CallTo(() => _gameRepository.GetByIdAsync(game.Id, _cancellationToken))
             .MustHaveHappenedOnceExactly();
@@ -148,6 +149,6 @@ public class GetGameQueryHandlerTests
         result.GameId.Should().Be(game.Id.Value);
         result.PlayerId.Should().Be(playerId.Value);
         result.BoardSize.Should().Be(expectedBoardSize);
-        result.State.Should().Be(expectedState.ToString());
+        result.State.Should().Be(expectedState);
     }
 }

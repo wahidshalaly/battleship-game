@@ -83,11 +83,19 @@ graph TB
 - **Application Services**:
   - `IGameplayService`, `GameplayService` - Orchestrates game lifecycle
   - `IPlayerService`, `PlayerService` - Manages player operations
-- **Commands**: `CreateGameCommand`, `PlaceShipCommand`, `AttackCommand` (handlers via MediatR)
+- **Commands**: `CreateGameCommand`, `PlaceShipCommand`, `PlayerAttackCommand`, `OpponentAttackCommand` (handlers via MediatR)
 - **Queries**: `GetGameQuery`, `GetPlayerQuery`, `GetPlayerByUsernameQuery` (handlers via MediatR)
 - **DTOs**: Data transfer objects for inter-layer communication (`GetGameQueryResult`, `GetPlayerQueryResult`)
+- **Result Types**: Rich result objects from commands (`AttackResult`, `LastRoundResult`)
 - **Repository Contracts**: `IGameRepository`, `IPlayerRepository` (abstraction for persistence)
 - **Domain Event Dispatcher**: `IDomainEventDispatcher` - Publishes domain events through MediatR
+
+**CQRS Command Pattern**:
+- Commands return rich result objects containing mutation outcomes (CQRS-compliant)
+- `AttackResult` contains attack details: `TargetCell`, `CellState`, `GameState`, `WinnerSide`, `SunkShip`, `ShipSize`
+- `LastRoundResult` contains complete round outcome: both player and opponent attack details
+- Commands eliminate need for follow-up queries (e.g., removed `CheckGameStatusCommand`)
+- Results are constructed from domain events and aggregate state in command handlers
 
 **Event Dispatch Pattern**:
 - Domain events are raised within aggregate roots using `AddDomainEvent()`
@@ -181,7 +189,7 @@ public abstract class DomainEvent<T> : IDomainEvent
 ```
 
 **Event Flow**:
-1. Aggregate raises domain event: `AddDomainEvent(new CellAttackedEvent(...))`
+1. Aggregate raises domain event: `AddDomainEvent(new ShipSunkEvent(...))`
 2. Event is stored in aggregate's `DomainEvents` collection
 3. Application layer dispatches events: `await eventDispatcher.DispatchEventsAsync(aggregate)`
 4. `DomainEventDispatcher` publishes each event through MediatR
@@ -194,6 +202,13 @@ public abstract class DomainEvent<T> : IDomainEvent
 - Enables audit trail and event replay capabilities
 - Supports event sourcing (future enhancement)
 - Clean separation of core logic from side effects
+
+**Command Return Values**:
+- Commands can return mutation outcomes without violating CQRS principles
+- Return values represent **what changed**, not queries of current state
+- Example: `AttackResult` returns attack outcome (hit/miss), sunk ship info, and game state changes
+- Eliminates need for follow-up queries (better performance, simpler code)
+- Pattern: Command executes → Domain events raised → Result built from events and aggregate state
 
 ## Data Flow
 

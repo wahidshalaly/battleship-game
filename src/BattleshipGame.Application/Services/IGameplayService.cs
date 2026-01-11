@@ -38,26 +38,18 @@ public interface IGameplayService
     );
 
     /// <summary>
-    /// Executes an attack on the specified side of the board at the given cell.
+    /// Executes a player attack followed by an opponent counter-attack.
+    /// Returns the complete outcome of the round including both attacks.
     /// </summary>
-    /// <param name="gameId"></param>
-    /// <param name="side"></param>
-    /// <param name="cellCode"></param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
-    Task<GameStatus> PlayerAttackThenCounterAttackAsync(
+    /// <param name="gameId">The game identifier.</param>
+    /// <param name="cellCode">The cell code for the player to attack.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The complete round result with both player and opponent attack outcomes.</returns>
+    Task<LastRoundResult> PlayerAttackThenCounterAttackAsync(
         GameId gameId,
         string cellCode,
         CancellationToken ct
     );
-
-    /// <summary>
-    /// Checks the current status of the game.
-    /// </summary>
-    /// <param name="gameId"></param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
-    Task<GameStatus> CheckGameStatusAsync(GameId gameId, CancellationToken ct);
 
     /// <summary>
     /// Ends the specified game.

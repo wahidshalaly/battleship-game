@@ -47,7 +47,11 @@ public class PlayerAttackHandlerTests
         var result = await _subject.Handle(command, _cancellationToken);
 
         // Assert
-        result.Should().Be(CellState.Hit);
+        result.Should().NotBeNull();
+        result.CellState.Should().Be(CellState.Hit);
+        result.TargetCell.Should().Be(Ship1Location);
+        result.GameState.Should().Be(GameState.Started);
+        result.WinnerSide.Should().Be(BoardSide.None);
 
         A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(game.Id, _cancellationToken))
             .MustHaveHappenedOnceExactly();
@@ -74,7 +78,11 @@ public class PlayerAttackHandlerTests
         var result = await _subject.Handle(command, _cancellationToken);
 
         // Assert
-        result.Should().Be(CellState.Missed);
+        result.Should().NotBeNull();
+        result.CellState.Should().Be(CellState.Missed);
+        result.TargetCell.Should().Be(cellCode);
+        result.GameState.Should().Be(GameState.Started);
+        result.WinnerSide.Should().Be(BoardSide.None);
 
         A.CallTo(() => _gameRepository.SaveAsync(game, _cancellationToken))
             .MustHaveHappenedOnceExactly();
