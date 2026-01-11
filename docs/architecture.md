@@ -212,6 +212,36 @@ public abstract class DomainEvent<T> : IDomainEvent
 
 ## Data Flow
 
+### Game Attack Flow (Player Attack + Counter-Attack)
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as GamesController
+    participant Service as GameplayService
+    participant PlayerCmd as PlayerAttack
+    participant OpponentCmd as OpponentAttack
+    participant Domain as Game
+
+    Client->>API: POST /api/games/{id}/attacks
+    API->>Service: PlayerAttackThenCounterAttackAsync(gameId, cell)
+    Service->>PlayerCmd: Handle command
+    PlayerCmd->>Domain: Attack(BoardSide.Opponent, cell)
+    Domain->>Domain: Validate & attack
+    Domain-->>PlayerCmd: Result
+    PlayerCmd-->>Service: AttackResult
+    
+    alt Game Not Over
+        Service->>OpponentCmd: Handle command
+        OpponentCmd->>Domain: Attack(BoardSide.Player, cell)
+        Domain->>Domain: Validate & attack
+        Domain-->>OpponentCmd: Result
+        OpponentCmd-->>Service: AttackResult
+    end
+    
+    Service-->>API: LastRoundResult
+    API-->>Client: 200 OK
+```
+
 ### Game Creation Flow
 ```mermaid
 sequenceDiagram

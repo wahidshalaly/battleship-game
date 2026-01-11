@@ -244,7 +244,8 @@ classDiagram
     PlayerService ..> IPlayerRepository : depends on
     PlayerService ..> IMediator : sends Commands/Queries
     Commands ..> Game : operates on
-    Commands ..> AttackResult : returns
+    PlayerAttackCommand ..> AttackResult : returns
+    OpponentAttackCommand ..> AttackResult : returns
     Queries ..> Game : retrieves
 ```
 
@@ -255,17 +256,17 @@ classDiagram
     %% Controllers
     class GamesController {
         <<ApiController>>
-        -Dictionary~Guid,Game~ _games$
-        +ActionResult~GameModel~ CreateGame(CreateGameRequest)
-        +ActionResult~GameModel~ GetGame(Guid)
+        +IActionResult StartNewGame(CreateGameRequest)
+        +ActionResult~GetGameQueryResult~ GetGame(Guid)
         +ActionResult~Guid~ PlaceShip(Guid, PlaceShipRequest)
-        +IActionResult Attack(Guid, AttackRequest)
-        +ActionResult~GameStateModel~ GetGameState(Guid)
+        +ActionResult~LastRoundResult~ Attack(Guid, AttackRequest)
+        +ActionResult~GameStateResponse~ UpdateGameState(Guid, UpdateGameStateRequest)
+        +ActionResult~GameStateResponse~ GetGameState(Guid)
     }
 
     %% DTOs and Models
     class CreateGameRequest {
-        +PlayerId PlayerId
+        +Guid PlayerId
         +int? BoardSize
     }
 
@@ -273,32 +274,49 @@ classDiagram
         +BoardSide Side
         +ShipKind ShipKind
         +ShipOrientation Orientation
-        +string Bow
+        +string BowCode
     }
 
     class AttackRequest {
-        +BoardSide Side
         +string Cell
     }
 
-    class GameModel {
-        +Guid Id
-        +string State
-        +int BoardSize
-        +GameModel From(Game)$
+    class UpdateGameStateRequest {
+        +GameState State
     }
 
-    class GameStateModel {
-        +string State
-        +Guid? Winner
+    class GetGameQueryResult {
+        +Guid GameId
+        +Guid PlayerId
+        +int BoardSize
+        +GameState State
+        +BoardSide WinnerSide
+    }
+
+    class GameStateResponse {
+        +GameState State
+        +BoardSide WinnerSide
+    }
+
+    class LastRoundResult {
+        +GameId GameId
+        +string PlayerTargetCell
+        +CellState PlayerAttackResult
+        +ShipKind? PlayerSunkShip
+        +string? OpponentTargetCell
+        +CellState? OpponentAttackResult
+        +ShipKind? OpponentSunkShip
+        +GameState GameState
+        +BoardSide WinnerSide
     }
 
     GamesController ..> CreateGameRequest
     GamesController ..> PlaceShipRequest
     GamesController ..> AttackRequest
-    GamesController ..> GameModel
-    GamesController ..> GameStateModel
-    GamesController ..> Game : creates/manages
+    GamesController ..> UpdateGameStateRequest
+    GamesController ..> GetGameQueryResult
+    GamesController ..> GameStateResponse
+    GamesController ..> LastRoundResult
 ```
 
 ## Key Design Patterns
