@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using BattleshipGame.Domain.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
@@ -232,5 +233,169 @@ public class GameTests
         var game = _fixture.GetReadyGame();
         game.StartGameplay();
         game.DomainEvents.Should().ContainSingle(e => e is GameStartedEvent);
+    }
+
+    [Theory]
+    [InlineData(GameState.New)]
+    [InlineData(GameState.Ready)]
+    public void Attack_WhenGameNotStarted_ThrowsGameNotStartedException(GameState state)
+    {
+        var game =
+            state == GameState.New
+                ? _fixture.GetNewGame(_playerId)
+                : _fixture.GetReadyGame(_playerId);
+
+        var act = () => game.Attack(BoardSide.Opponent, "A1");
+
+        act.Should().Throw<GameNotStartedException>().WithMessage($"*{game.Id.Value}*{state}*");
+    }
+
+    [Fact]
+    public void Attack_WhenGameIsOver_ThrowsGameOverException()
+    {
+        var game = _fixture.GetCompletedGame(_playerId, BoardSide.Player);
+
+        var act = () => game.Attack(BoardSide.Opponent, "B1");
+
+        act.Should().Throw<GameOverException>().WithMessage($"*{game.Id.Value}*");
+    }
+
+    [Fact]
+    public void Attack_WhenTargetSideDoesNotMatchExpected_ThrowsInvalidTargetSideException()
+    {
+        var game = _fixture.GetStartedGame(_playerId);
+
+        // Game starts with TargetSide = BoardSide.Opponent
+        var act = () => game.Attack(BoardSide.Player, "A1");
+
+        act.Should()
+            .Throw<InvalidTargetSideException>()
+            .WithMessage($"*{game.Id.Value}*{BoardSide.Opponent}*{BoardSide.Player}*");
+    }
+
+    [Fact]
+    public void Attack_WhenValidTarget_SwitchesTargetSideAfterAttack()
+    {
+        var game = _fixture.GetStartedGame(_playerId);
+
+        game.TargetSide.Should().Be(BoardSide.Opponent);
+
+        game.Attack(BoardSide.Opponent, "A1");
+
+        game.TargetSide.Should().Be(BoardSide.Player);
+    }
+
+    [Fact]
+    public void Attack_AlternatingAttacks_ValidatesCorrectTargetSide()
+    {
+        var game = _fixture.GetStartedGame(_playerId);
+
+        // First attack on Opponent - should succeed
+        var act1 = () => game.Attack(BoardSide.Opponent, "A1");
+        act1.Should().NotThrow();
+        game.TargetSide.Should().Be(BoardSide.Player);
+
+        // Second attack on Player - should succeed
+        var act2 = () => game.Attack(BoardSide.Player, "A1");
+        act2.Should().NotThrow();
+        game.TargetSide.Should().Be(BoardSide.Opponent);
+
+        // Third attack on Player again - should fail (wrong target)
+        var act3 = () => game.Attack(BoardSide.Player, "A2");
+        act3.Should().Throw<InvalidTargetSideException>();
+    }
+
+    [Fact]
+    public void WinnerSide_WhenGameIsNew_ShouldBeNone()
+    {
+        var game = _fixture.GetNewGame(_playerId);
+
+        game.WinnerSide.Should().Be(BoardSide.None);
+    }
+
+    [Fact]
+    public void WinnerSide_WhenGameIsReady_ShouldBeNone()
+    {
+        var game = _fixture.GetReadyGame(_playerId);
+
+        game.WinnerSide.Should().Be(BoardSide.None);
+    }
+
+    [Fact]
+    public void WinnerSide_WhenGameIsStarted_ShouldBeNone()
+    {
+        var game = _fixture.GetStartedGame(_playerId);
+
+        game.WinnerSide.Should().Be(BoardSide.None);
+    }
+
+    [Theory]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
+    public void WinnerSide_WhenGameIsCompleted_ShouldBeSetCorrectly(BoardSide winnerSide)
+    {
+        var game = _fixture.GetCompletedGame(_playerId, winnerSide);
+
+        game.WinnerSide.Should().Be(winnerSide);
+        game.State.Should().Be(GameState.GameOver);
+    }
+
+    [Fact]
+    public void CreatedAt_WhenGameIsCreated_ShouldBeSetToUtcNow()
+    {
+        var beforeCreation = DateTime.UtcNow;
+        var game = _fixture.GetNewGame(_playerId);
+
+        game.LastUpdatedAt.Should().BeCloseTo(beforeCreation, TimeSpan.FromMilliseconds(100));
+        game.CreatedAt.Kind.Should().Be(DateTimeKind.Utc);
+    }
+
+    [Fact]
+    public void LastUpdatedAt_WhenGameIsCreated_ShouldBeSetToUtcNow()
+    {
+        var beforeCreation = DateTime.UtcNow;
+        var game = _fixture.GetNewGame(_playerId);
+
+        game.LastUpdatedAt.Should().BeCloseTo(beforeCreation, TimeSpan.FromMilliseconds(100));
+        game.LastUpdatedAt.Kind.Should().Be(DateTimeKind.Utc);
+    }
+
+    [Fact]
+    public async Task LastUpdatedAt_WhenShipIsPlaced_ShouldBeUpdated()
+    {
+        var game = _fixture.GetNewGame(_playerId);
+        var initialLastUpdated = game.LastUpdatedAt;
+
+        // Wait briefly to ensure timestamp can differ
+        await Task.Delay(10);
+        game.PlaceShip(BoardSide.Player, ShipKind.Destroyer, ShipOrientation.Horizontal, "A1");
+
+        game.LastUpdatedAt.Should().BeCloseTo(initialLastUpdated, TimeSpan.FromMilliseconds(100));
+    }
+
+    [Fact]
+    public async Task LastUpdatedAt_WhenGameplayStarts_ShouldBeUpdated()
+    {
+        var game = _fixture.GetReadyGame(_playerId);
+        var initialLastUpdated = game.LastUpdatedAt;
+
+        // Wait briefly to ensure timestamp can differ
+        await Task.Delay(10);
+        game.StartGameplay();
+
+        game.LastUpdatedAt.Should().BeCloseTo(initialLastUpdated, TimeSpan.FromMilliseconds(100));
+    }
+
+    [Fact]
+    public async Task LastUpdatedAt_WhenAttackIsMade_ShouldBeUpdated()
+    {
+        var game = _fixture.GetStartedGame(_playerId);
+        var initialLastUpdated = game.LastUpdatedAt;
+
+        // Wait briefly to ensure timestamp can differ
+        await Task.Delay(10);
+        game.Attack(BoardSide.Opponent, "A1");
+
+        game.LastUpdatedAt.Should().BeCloseTo(initialLastUpdated, TimeSpan.FromMilliseconds(100));
     }
 }

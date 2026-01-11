@@ -33,13 +33,26 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
 
     public BoardSide TargetSide { get; private set; } = BoardSide.None;
 
-    // TODO: Added recently. No test coverage or documentation
+    /// <summary>
+    /// Gets the side that won the game. Returns <see cref="BoardSide.None"/> if the game is not over.
+    /// </summary>
+    /// <remarks>
+    /// This property is set when the game transitions to <see cref="GameState.GameOver"/> state.
+    /// The winner is determined by which side has ships remaining.
+    /// </remarks>
     public BoardSide WinnerSide { get; private set; } = BoardSide.None;
 
-    // TODO: Added recently. No test coverage or documentation
+    /// <summary>
+    /// Gets the UTC timestamp when the game was created.
+    /// </summary>
     public DateTime CreatedAt { get; } = DateTime.UtcNow;
 
-    // TODO: Added recently. No test coverage or documentation
+    /// <summary>
+    /// Gets the UTC timestamp when the game was last updated.
+    /// </summary>
+    /// <remarks>
+    /// This property is updated whenever a ship is placed, an attack is made, or gameplay is started.
+    /// </remarks>
     public DateTime LastUpdatedAt { get; private set; } = DateTime.UtcNow;
 
     /// <summary>
