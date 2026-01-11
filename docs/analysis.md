@@ -4,6 +4,9 @@
 
 This document provides a comprehensive analysis of the Battleship game domain model, detailing the core entities, value objects, and business rules that govern the game logic.
 
+![Battleship Game](./Battleship_Game.png)
+
+
 ## Architecture
 
 The system follows **Clean Architecture** principles with **Domain-Driven Design (DDD)** patterns:

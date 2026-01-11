@@ -1,6 +1,7 @@
 # Battleship Game Documentation
 
-This folder contains comprehensive documentation for the Battleship Game project, providing detailed insights into the system architecture, domain analysis, and design decisions.
+This a comprehensive documentation for the Battleship Game project, providing detailed insights into the system architecture, domain analysis, and design decisions.
+
 
 ## Documentation Structure
 
@@ -54,23 +55,6 @@ Contains detailed class diagrams, component relationships, and technical design 
 - Configuration and constraints
 - Error handling patterns## How to Use This Documentation
 
-### For New Team Members
-1. Start with [architecture.md](./architecture.md) for the big picture
-2. Read [analysis.md](./analysis.md) to understand the domain
-3. Review [bounded-context-analysis.md](./bounded-context-analysis.md) for current implementation gaps
-4. Study [design.md](./design.md) for implementation details
-
-### For Stakeholders
-- [architecture.md](./architecture.md) provides the executive overview
-- [analysis.md](./analysis.md) explains the business logic
-- [bounded-context-analysis.md](./bounded-context-analysis.md) shows implementation progress
-
-### For Developers
-1. [analysis.md](./analysis.md) for domain understanding
-2. [bounded-context-analysis.md](./bounded-context-analysis.md) for implementation roadmap
-3. [design.md](./design.md) for implementation guidance
-4. [architecture.md](./architecture.md) for architectural context
-
 ## Architecture Principles
 
 The system follows these key principles:
@@ -78,7 +62,6 @@ The system follows these key principles:
 - **Clean Architecture**: Clear separation of concerns with dependency inversion
 - **Domain-Driven Design**: Business logic at the center with ubiquitous language
 - **SOLID Principles**: Maintainable and extensible code structure
-- **Test-Driven Development**: Comprehensive test coverage with quality assurance
 
 ## Technology Stack
 
@@ -86,7 +69,6 @@ The system follows these key principles:
 - **ASP.NET Core**: Web API framework
 - **xUnit + FluentAssertions**: Testing framework
 - **Swagger/OpenAPI**: API documentation
-- **Docker**: Containerization support
 
 ## Quick Reference
 
@@ -95,18 +77,20 @@ The system follows these key principles:
 - **Board**: Contains cells and ships for each player
 - **Ship**: Represents individual ships with hit tracking
 - **Cell**: Board positions with coordinate system
-- **Player**: Game participant with history tracking
+- **Player**: Aggregate root for managing players and history tracking
 
 ### Key Enumerations
-- **GameState**: New, Ready, Started, GameOver
-- **CellState**: Clear, Occupied, Hit
-- **ShipKind**: Destroyer(2), Submarine(3), Cruiser(3), Battleship(4), Carrier(5)
+- **GameState**: None, New, Ready, Started, GameOver
+- **BoardSide**: None, Player, Opponent
+- **CellState**: None, Clear, Occupied, Hit, Missed
+- **ShipKind**: None, Destroyer(2), Submarine(3), Cruiser(3), Battleship(4), Carrier(5) - ship sizes in parentheses
+- **ShipOrientation**: None, Vertical, Horizontal
 
 ### Business Rules
 - Board sizes: 10x10 (default) to 26x26 (maximum)
 - Exactly 5 ships per board (one of each kind)
 - Ships must be placed in straight lines only
-- Turn-based gameplay: Player attacks first, then alternates
+- Turn-based gameplay: Player attacks first, then opponent, until Game Over.
 - `TargetSide` property controls which board can be attacked
 - Cannot attack the same cell twice
 - Cannot attack out of turn (wrong board)
@@ -140,12 +124,14 @@ For questions about the architecture or design decisions, please:
 ### 📁 Documentation Structure
 
 ```
+README.md                           # Documentation guide and navigation
 docs/
-├── README.md                    # Documentation guide and navigation
-├── architecture.md             # High-level system architecture
-├── analysis.md                 # Domain analysis and business rules
-├── bounded-context-analysis.md # Bounded context alignment assessment
-└── design.md                   # Detailed technical design with diagrams
+├── architecture.md                 # High-level system architecture
+├── analysis.md                     # Domain analysis and business rules
+├── bounded-context-analysis.md     # Bounded context alignment assessment
+├── design.md                       # Detailed technical design with diagrams
+├── openapi.yaml                    # OpenAPI specification for the Web API
+└── technical-debt-and-roadmap.md   # Technical debt analysis and future roadmap
 ```
 
 ### How to Generate OpenAPI Documentation
