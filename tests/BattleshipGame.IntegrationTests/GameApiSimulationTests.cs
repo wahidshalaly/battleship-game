@@ -41,7 +41,11 @@ public class GameApiSimulationTests(
         await PlaceShips(gameId);
         await VerifyGameState(gameId, GameState.Ready);
 
-        // 4. Attack all Opponent ship positions
+        // 4. Start gameplay
+        await StartGameplay(gameId);
+        await VerifyGameState(gameId, GameState.Started);
+
+        // 5. Attack all Opponent ship positions
         await AttackShips(gameId);
         await VerifyGameState(gameId, GameState.GameOver);
     }
@@ -87,6 +91,15 @@ public class GameApiSimulationTests(
                 new PlaceShipRequest(BoardSide.Opponent, kind, orientation, bowCode)
             );
         }
+    }
+
+    private async Task StartGameplay(Guid gameId)
+    {
+        var response = await _client.PutAsJsonAsync(
+            $"/api/games/{gameId}/state",
+            new { state = "started" }
+        );
+        response.EnsureSuccessStatusCode();
     }
 
     private async Task AttackShips(Guid gameId)

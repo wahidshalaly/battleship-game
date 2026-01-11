@@ -11,6 +11,11 @@ public class InvalidGameStateException(Guid gameId, string expected, string actu
         $"Game `{gameId}` is in invalid state. Expected: `{expected}`, Actual: `{actual}`."
     );
 
+public class GameNotStartedException(Guid gameId, GameState state)
+    : Exception(
+        $"Game `{gameId}` is not started. Cannot perform attacks. Current state: `{state}`"
+    );
+
 public class GameOverException(Guid gameId)
     : Exception($"Game `{gameId}` is over, no longer attacks are allowed.");
 

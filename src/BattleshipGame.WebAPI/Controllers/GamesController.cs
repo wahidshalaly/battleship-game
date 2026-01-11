@@ -1,3 +1,4 @@
+using BattleshipGame.Application.Features.Games.Commands;
 using BattleshipGame.Application.Features.Games.Queries;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
@@ -119,6 +120,77 @@ public class GamesController(
     }
 
     /// <summary>
+    /// Updates game state (e.g., transitions from Ready to Started).
+    /// </summary>
+    /// <remarks>
+    /// This endpoint manages game state transitions. Currently supports transitioning from Ready to Started state.
+    ///
+    /// Usage:
+    /// PUT /api/games/{id}/state
+    /// { "state": "started" }
+    ///
+    /// Valid transitions:
+    /// - "started": Transitions game from Ready state to Started state (allows attacks to begin)
+    /// </remarks>
+    /// <response code="200">Game state successfully updated.</response>
+    /// <response code="400">Invalid state transition or invalid state value.</response>
+    /// <response code="404">Game not found.</response>
+    /// <response code="409">Invalid current state for requested transition.</response>
+    [HttpPut("{id:guid}/state")]
+    [ProducesResponseType(typeof(GameStateResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<GameStateResponse>> UpdateGameState(
+        [FromRoute] Guid id,
+        [FromBody] UpdateGameStateRequest request,
+        CancellationToken ct
+    )
+    {
+        var gameId = new GameId(id);
+
+        try
+        {
+            // Validate state value
+            if (!request.State.Equals("started", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(
+                    new ProblemDetails
+                    {
+                        Title = "Invalid State Value",
+                        Detail =
+                            $"Invalid state value '{request.State}'. Allowed values: 'started'.",
+                        Status = StatusCodes.Status400BadRequest,
+                    }
+                );
+            }
+
+            // Execute StartGameplay command
+            var command = new StartGameplayCommand(gameId);
+            await mediator.Send(command, ct);
+
+            logger.LogInformation("Game {GameId} transitioned to Started state", gameId.Value);
+
+            // Retrieve updated game state
+            var query = new GetGameQuery(gameId);
+            var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(id);
+
+            return Ok(new GameStateResponse(game.State, null));
+        }
+        catch (GameNotReadyException ex)
+        {
+            return Conflict(
+                new ProblemDetails
+                {
+                    Title = "Invalid State Transition",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status409Conflict,
+                }
+            );
+        }
+    }
+
+    /// <summary>
     /// Retrieves a game state.
     /// </summary>
     [HttpGet("{id:guid}/state")]
@@ -149,5 +221,7 @@ public record PlaceShipRequest(
 );
 
 public record AttackRequest(string Cell);
+
+public record UpdateGameStateRequest(string State);
 
 public record GameStateResponse(string State, Guid? Winner);

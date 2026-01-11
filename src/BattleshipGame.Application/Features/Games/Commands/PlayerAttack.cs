@@ -1,6 +1,7 @@
 ﻿using BattleshipGame.Application.Common.Services;
 using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Domain.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +16,7 @@ namespace BattleshipGame.Application.Features.Games.Commands;
 public record PlayerAttackCommand(GameId GameId, string CellCode) : IRequest<CellState>;
 
 /// <summary>
-/// Handles the AttackCommand and demonstrates proper event dispatching.
+/// Handles the PlayerAttackCommand by performing an attack on the opponent's board.
 /// </summary>
 /// <param name="logger">The logger instance.</param>
 /// <param name="gameRepository">The game repository.</param>
@@ -27,21 +28,21 @@ internal class PlayerAttackHandler(
 ) : IRequestHandler<PlayerAttackCommand, CellState>
 {
     /// <summary>
-    /// Handles the attack cell command.
+    /// Handles the player attack command.
     /// </summary>
-    /// <param name="request">The attack cell command.</param>
+    /// <param name="request">The player attack command.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>The cell state after attack.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when game is not in Started state.</exception>
     public async Task<CellState> Handle(PlayerAttackCommand request, CancellationToken ct)
     {
         // 1. Load aggregate
         var game = await gameRepository.GetByIdOrThrowAsync(request.GameId, ct);
 
-        // 2. Start gameplay if not already started
-        if (game.TargetSide == BoardSide.None && game.State == GameState.Ready)
+        // 2. Validate game is in Started state
+        if (game.State != GameState.Started)
         {
-            game.StartGameplay();
-            logger.LogInformation("Gameplay started. {@Payload}", new { GameId = game.Id.Value });
+            throw new GameNotStartedException(game.Id, game.State);
         }
 
         // 3. Perform attack

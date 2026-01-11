@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using BattleshipGame.Application.Common.Services;
@@ -18,9 +17,9 @@ public class PlayerAttackHandlerTests
 {
     private const string Ship1Location = "A1";
 
+    private readonly PlayerAttackHandler _subject;
     private readonly IGameRepository _gameRepository;
     private readonly IDomainEventDispatcher _eventDispatcher;
-    private readonly PlayerAttackHandler _subject;
     private readonly GameFixture _gameFixture = new();
     private readonly CancellationToken _cancellationToken = CancellationToken.None;
 
@@ -36,7 +35,7 @@ public class PlayerAttackHandlerTests
     public async Task Handle_WhenAttackHitsOccupiedCell_ShouldReturnHitResultAndDispatchEvents()
     {
         // Arrange
-        var game = _gameFixture.GetReadyGame();
+        var game = _gameFixture.GetStartedGame(); // Must be started, not just ready
         var command = new PlayerAttackCommand(game.Id, Ship1Location);
 
         A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(game.Id, _cancellationToken))
@@ -63,7 +62,7 @@ public class PlayerAttackHandlerTests
     {
         // Arrange
         const string cellCode = "F1"; // Empty cell
-        var game = _gameFixture.GetReadyGame(); // Ship at A1, attacking B1
+        var game = _gameFixture.GetStartedGame(); // Must be started, not just ready
         var command = new PlayerAttackCommand(game.Id, cellCode);
 
         A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(game.Id, _cancellationToken))
@@ -84,22 +83,22 @@ public class PlayerAttackHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenGameNotFound_ShouldThrowInvalidOperationException()
+    public async Task Handle_WhenGameNotStarted_ShouldThrowException()
     {
-        // Arrange
+        // Arrange - Game is Ready but not Started
+        var game = _gameFixture.GetReadyGame();
         const string cellCode = "A1";
-        var gameId = new GameId(Guid.NewGuid());
-        var command = new PlayerAttackCommand(gameId, cellCode);
+        var command = new PlayerAttackCommand(game.Id, cellCode);
 
-        A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(gameId, _cancellationToken))
-            .Throws(new GameNotFoundException(gameId));
+        A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(game.Id, _cancellationToken))
+            .Returns(game);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<GameNotFoundException>(() =>
+        var exception = await Assert.ThrowsAsync<GameNotStartedException>(() =>
             _subject.Handle(command, _cancellationToken)
         );
-
-        exception.Message.Should().Be($"Game `{gameId.Value}` is not found.");
+        exception.Message.Should().Contain("`" + game.Id.Value + "`");
+        exception.Message.Should().Contain("`" + game.State + "`");
 
         A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, _cancellationToken))
             .MustNotHaveHappened();
@@ -112,7 +111,7 @@ public class PlayerAttackHandlerTests
     {
         // Arrange
         const string cellCode = "A1";
-        var game = _gameFixture.GetReadyGame();
+        var game = _gameFixture.GetStartedGame(); // Must be started, not just ready
         var command = new PlayerAttackCommand(game.Id, cellCode);
 
         A.CallTo(() => _gameRepository.GetByIdOrThrowAsync(game.Id, _cancellationToken))

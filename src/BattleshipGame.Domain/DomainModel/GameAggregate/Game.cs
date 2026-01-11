@@ -84,15 +84,7 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
     /// <returns>True if the attack hit a ship, false otherwise</returns>
     public CellState Attack(BoardSide targetSide, string cellCode)
     {
-        if (State == GameState.GameOver)
-        {
-            throw new GameOverException(Id);
-        }
-
-        if (TargetSide != targetSide)
-        {
-            throw new InvalidTargetSideException(Id.Value, TargetSide, targetSide);
-        }
+        ValidateBeforeAttack(targetSide);
 
         var board = BoardSelector(targetSide);
         var (cellState, shipId, shipSunk) = board.Attack(cellCode);
@@ -219,5 +211,31 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
                 ErrorMessages.InvalidBoardSide
             ),
         };
+    }
+
+    /// <summary>
+    /// Validates that the game is in a valid state to perform an attack on the specified target side.
+    /// </summary>
+    /// <param name="targetSide">The side to be attacked</param>
+    /// <exception cref="GameOverException">Thrown when the game is already over.</exception>
+    /// <exception cref="GameNotStartedException">Thrown when the game is not in Started state.</exception>
+    /// <exception cref="InvalidTargetSideException">Thrown when the target side does not match the expected side.</exception>
+    /// </summary>
+    private void ValidateBeforeAttack(BoardSide targetSide)
+    {
+        if (State == GameState.GameOver)
+        {
+            throw new GameOverException(Id);
+        }
+
+        if (State != GameState.Started)
+        {
+            throw new GameNotStartedException(Id, State);
+        }
+
+        if (TargetSide != targetSide)
+        {
+            throw new InvalidTargetSideException(Id.Value, TargetSide, targetSide);
+        }
     }
 }
