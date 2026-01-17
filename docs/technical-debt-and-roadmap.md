@@ -617,14 +617,14 @@ public class SmartAttackStrategy : IComputerOpponentStrategy
     public async Task<string> SelectAttackCellAsync(GameId gameId, CancellationToken ct)
     {
         var game = await _gameRepository.GetByIdAsync(gameId, ct);
-        var availableCells = game.GetAvailableCellCodes(BoardSide.Player);
+        var nextTargets = game.GetNextTargetCodes(BoardSide.Player);
         
         // If we have hits but unsunk ships -> Target mode
         if (HasActiveTarget())
             return TargetAdjacentCells();
             
         // Otherwise -> Hunt mode (use probability)
-        return SelectHighestProbabilityCell(availableCells);
+        return SelectHighestProbabilityCell(nextTargets);
     }
 }
 ```

@@ -159,7 +159,7 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
     /// </summary>
     /// <param name="boardSide">The boardSide whose available cell codes to get</param>
     /// <returns>The available cell codes for the specified boardSide</returns>
-    public IReadOnlyCollection<string> GetAvailableCellCodes(BoardSide boardSide)
+    public IReadOnlyCollection<string> GetNextTargets(BoardSide boardSide)
     {
         return BoardSelector(boardSide)
             .Cells.Where(s => s.State is CellState.Clear or CellState.Occupied)
@@ -193,6 +193,36 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
     /// <returns>The kind of the specified ship on the specified boardSide</returns>
     public ShipKind GetShipKind(BoardSide boardSide, ShipId shipId) =>
         BoardSelector(boardSide).Ships.First(s => s.Id == shipId).Kind;
+
+    /// <summary>
+    /// Gets all cells that were hit on the specified boardSide.
+    /// Used by AI for strategic decision-making.
+    /// </summary>
+    /// <param name="boardSide">The boardSide to get hit cells from</param>
+    /// <returns>List of cell codes that were hit</returns>
+    public IReadOnlyCollection<string> GetHits(BoardSide boardSide)
+    {
+        return BoardSelector(boardSide)
+            .Cells.Where(c => c.State == CellState.Hit)
+            .Select(c => c.Code)
+            .ToList()
+            .AsReadOnly();
+    }
+
+    /// <summary>
+    /// Gets all cells that were missed on the specified boardSide.
+    /// Used by AI for strategic decision-making.
+    /// </summary>
+    /// <param name="boardSide">The boardSide to get missed cells from</param>
+    /// <returns>List of cell codes that were missed</returns>
+    public IReadOnlyCollection<string> GetMisseds(BoardSide boardSide)
+    {
+        return BoardSelector(boardSide)
+            .Cells.Where(c => c.State == CellState.Missed)
+            .Select(c => c.Code)
+            .ToList()
+            .AsReadOnly();
+    }
 
     /// <summary>
     /// Starts the gameplay for a game that is ready.
