@@ -16,7 +16,12 @@ public interface IGameplayService
     /// <param name="boardSize"></param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    Task<GameId> StartNewGameAsync(PlayerId playerId, int boardSize, CancellationToken ct);
+    Task<GameId> StartNewGameAsync(
+        PlayerId playerId,
+        int boardSize,
+        OpponentStrategyType opponentStrategy,
+        CancellationToken ct
+    );
 
     /// <summary>
     /// Places a ship on the specified side of the board.

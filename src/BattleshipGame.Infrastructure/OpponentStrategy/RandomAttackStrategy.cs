@@ -1,24 +1,31 @@
 using BattleshipGame.Application.Contracts.OpponentStrategy;
-using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 
 namespace BattleshipGame.Infrastructure.OpponentStrategy;
 
-public class RandomAttackStrategy(IGameRepository gameRepository) : IComputerOpponentStrategy
+/// <summary>
+/// Random attack strategy that selects cells randomly from available targets on the Player's board.
+/// </summary>
+public sealed class RandomAttackStrategy : IComputerOpponentStrategy
 {
     private readonly Random _random = new();
 
-    public async Task<string> SelectNextAttack(GameId gameId)
+    /// <inheritdoc />
+    public OpponentStrategyType StrategyType => OpponentStrategyType.Random;
+
+    /// <inheritdoc />
+    public Task<string> SelectNextAttackAsync(Game game, CancellationToken cancellationToken)
     {
-        var game = await gameRepository.GetByIdOrThrowAsync(gameId, CancellationToken.None);
-        var nextTargets = game.GetNextTargets(BoardSide.Player);
-        if (nextTargets.Count == 0)
+        var availableTargets = game.GetNextTargets(BoardSide.Player);
+
+        if (availableTargets.Count == 0)
         {
             throw new InvalidOperationException("No available targets remaining.");
         }
 
-        // Pick random unattacked cell
-        var idx = _random.Next(nextTargets.Count);
-        return nextTargets.ElementAt(idx);
+        var index = _random.Next(availableTargets.Count);
+        var selectedCell = availableTargets.ElementAt(index);
+
+        return Task.FromResult(selectedCell);
     }
 }

@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using BattleshipGame.Application.Common;
 using BattleshipGame.Application.Contracts.OpponentStrategy;
-using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
@@ -13,47 +12,46 @@ namespace BattleshipGame.Infrastructure.OpponentStrategy;
 /// <summary>
 /// AI opponent strategy using Semantic Kernel and LLM (Ollama or Azure OpenAI).
 /// Provides explainable move selection with reasoning visible to players.
+/// Always attacks the Player's board.
 /// </summary>
-public class SemanticKernelStrategy(
-    IGameRepository gameRepository,
-    GameStateAnalyzer gameStateAnalyzer,
+public sealed class SemanticKernelStrategy(
+    IPromptBuilder promptBuilder,
     Kernel kernel,
     ILogger<SemanticKernelStrategy> logger
 ) : IComputerOpponentStrategy
 {
     private const int MaxRetries = 3;
 
-    /// <summary>
-    /// Selects the next attack cell using LLM-based strategic reasoning.
-    /// Falls back to random cell if LLM fails or generates invalid move.
-    /// </summary>
-    public async Task<string> SelectNextAttack(GameId gameId)
+    /// <inheritdoc />
+    public OpponentStrategyType StrategyType => OpponentStrategyType.SemanticKernel;
+
+    /// <inheritdoc />
+    public async Task<string> SelectNextAttackAsync(Game game, CancellationToken cancellationToken)
     {
         try
         {
             logger.LogInformation("AI: Analyzing game state for strategic move");
 
-            var gameState = await gameStateAnalyzer.AnalyzeGameStateAsync(
-                gameId,
-                CancellationToken.None
-            );
+            var gameState = BuildGameStateContext(game);
+            var availableTargets = gameState.AvailableTargets;
 
-            var nextTargets = gameState.NextTargets;
-            if (!nextTargets.Any())
+            if (availableTargets.Count == 0)
             {
                 logger.LogWarning("AI: No available cells remaining");
-                return nextTargets.First();
+                throw new InvalidOperationException("No available targets remaining.");
             }
 
-            // Build prompt with accumulated game context
-            var prompt = BuildStrategicPrompt(gameState);
+            var prompt = promptBuilder.BuildStrategicPrompt(gameState);
             logger.LogDebug("AI: Prompt built, querying LLM");
 
-            // Query LLM with retry logic
-            string selectedCell = await SelectCellWithRetry(prompt, nextTargets, 0);
+            var selectedCell = await SelectCellWithRetryAsync(
+                prompt,
+                availableTargets,
+                attemptNumber: 0,
+                cancellationToken
+            );
 
-            // Validate the selected cell
-            if (nextTargets.Contains(selectedCell))
+            if (availableTargets.Contains(selectedCell))
             {
                 logger.LogInformation(
                     "AI: Selected cell {Cell} via strategic analysis",
@@ -63,34 +61,45 @@ public class SemanticKernelStrategy(
             }
 
             logger.LogWarning(
-                "AI: LLM selected invalid cell {Cell}, falling back to first random target",
+                "AI: LLM selected invalid cell {Cell}, falling back to first available target",
                 selectedCell
             );
-            return nextTargets.First();
+            return availableTargets.First();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not InvalidOperationException)
         {
             logger.LogError(ex, "AI: Error during strategic selection, using fallback");
-            // Fallback: return first available cell
-            var game = await gameRepository.GetByIdAsync(gameId, CancellationToken.None);
-            var cells = game?.GetNextTargets(BoardSide.Player).ToList() ?? new List<string>();
-            return cells.FirstOrDefault() ?? "A1";
+            var availableTargets = game.GetNextTargets(BoardSide.Player);
+            return availableTargets.FirstOrDefault() ?? "A1";
         }
     }
 
     /// <summary>
-    /// Attempts to get a valid cell selection from LLM with retry logic.
+    /// Builds a read-only game state context for prompt construction.
     /// </summary>
-    private async Task<string> SelectCellWithRetry(
+    private static GameStateContext BuildGameStateContext(Game game)
+    {
+        return new GameStateContext
+        {
+            BoardSize = game.BoardSize,
+            GameState = game.State,
+            AvailableTargets = game.GetNextTargets(BoardSide.Player).ToList(),
+            Hits = game.GetHits(BoardSide.Player).ToList(),
+            Misses = game.GetMisseds(BoardSide.Player).ToList(),
+        };
+    }
+
+    private async Task<string> SelectCellWithRetryAsync(
         string prompt,
-        List<string> nextTargets,
-        int attemptNumber
+        IReadOnlyList<string> availableTargets,
+        int attemptNumber,
+        CancellationToken cancellationToken
     )
     {
         if (attemptNumber >= MaxRetries)
         {
             logger.LogWarning("AI: Max retries reached, using first available cell");
-            return nextTargets.First();
+            return availableTargets.First();
         }
 
         try
@@ -98,14 +107,21 @@ public class SemanticKernelStrategy(
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
 
             var messages = new ChatHistory();
-            messages.AddSystemMessage(GetSystemPrompt());
+            messages.AddSystemMessage(promptBuilder.BuildSystemPrompt());
             messages.AddUserMessage(prompt);
 
-            var response = await chatService.GetChatMessageContentAsync(messages, kernel: kernel);
+            var response = await chatService.GetChatMessageContentAsync(
+                messages,
+                kernel: kernel,
+                cancellationToken: cancellationToken
+            );
 
-            var selectedCell = ParseCellFromResponse(response.Content ?? string.Empty, nextTargets);
+            var selectedCell = ParseCellFromResponse(
+                response.Content ?? string.Empty,
+                availableTargets
+            );
 
-            if (selectedCell != null)
+            if (selectedCell is not null)
             {
                 return selectedCell;
             }
@@ -115,11 +131,15 @@ public class SemanticKernelStrategy(
                 attemptNumber + 1
             );
 
-            // Retry with slightly different prompt
-            var retryPrompt = BuildRetryPrompt(prompt, nextTargets);
-            return await SelectCellWithRetry(retryPrompt, nextTargets, attemptNumber + 1);
+            var retryPrompt = promptBuilder.BuildRetryPrompt(prompt, availableTargets);
+            return await SelectCellWithRetryAsync(
+                retryPrompt,
+                availableTargets,
+                attemptNumber + 1,
+                cancellationToken
+            );
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning(
                 ex,
@@ -127,16 +147,16 @@ public class SemanticKernelStrategy(
                 attemptNumber + 1
             );
 
-            // Retry
-            return await SelectCellWithRetry(prompt, nextTargets, attemptNumber + 1);
+            return await SelectCellWithRetryAsync(
+                prompt,
+                availableTargets,
+                attemptNumber + 1,
+                cancellationToken
+            );
         }
     }
 
-    /// <summary>
-    /// Extracts a valid cell code from LLM response.
-    /// Tries JSON parsing first, then regex pattern matching.
-    /// </summary>
-    private string? ParseCellFromResponse(string response, List<string> nextTargets)
+    private string? ParseCellFromResponse(string response, IReadOnlyList<string> availableTargets)
     {
         // Try JSON parsing first
         try
@@ -148,7 +168,7 @@ public class SemanticKernelStrategy(
                 if (json?.TryGetValue("cell", out var cellObj) == true)
                 {
                     var cell = cellObj?.ToString()?.Trim().ToUpper();
-                    if (!string.IsNullOrEmpty(cell) && nextTargets.Contains(cell))
+                    if (!string.IsNullOrEmpty(cell) && availableTargets.Contains(cell))
                     {
                         logger.LogInformation("AI: Parsed cell from JSON: {Cell}", cell);
                         return cell;
@@ -166,7 +186,7 @@ public class SemanticKernelStrategy(
         foreach (Match match in matches)
         {
             var cell = match.Groups[1].Value.ToUpper();
-            if (nextTargets.Contains(cell))
+            if (availableTargets.Contains(cell))
             {
                 logger.LogInformation("AI: Parsed cell from regex: {Cell}", cell);
                 return cell;
@@ -178,116 +198,5 @@ public class SemanticKernelStrategy(
             response
         );
         return null;
-    }
-
-    /// <summary>
-    /// Builds the strategic prompt with accumulated game history and context.
-    /// Shows the AI's perspective on hits, misses, and patterns discovered so far.
-    /// </summary>
-    private static string BuildStrategicPrompt(GameStateContext gameState)
-    {
-        // Format hit cells for display
-        var hitDisplay = gameState.Hits.Any()
-            ? string.Join(", ", gameState.Hits.OrderBy(c => c))
-            : "None yet";
-
-        // Format missed cells for display
-        var missedDisplay = gameState.Misseds.Any()
-            ? string.Join(", ", gameState.Misseds.OrderBy(c => c))
-            : "None yet";
-
-        // Show recent hits for pattern detection
-        var recentHitsDisplay = gameState.RecentHits.Any()
-            ? string.Join(", ", gameState.RecentHits.OrderBy(c => c))
-            : "No pattern detected";
-
-        // Calculate hit/miss ratio for confidence
-        var totalAttacks = gameState.Hits.Count + gameState.Misseds.Count;
-        var hitRatio = totalAttacks > 0 ? $"{(gameState.Hits.Count * 100 / totalAttacks)}%" : "0%";
-
-        // Sample available cells
-        var availableSample = string.Join(", ", gameState.NextTargets.Take(15));
-        var moreAvailable =
-            gameState.NextTargets.Count > 15
-                ? $" ...and {gameState.NextTargets.Count - 15} more cells"
-                : "";
-
-        return $$"""
-BATTLESHIP GAME - YOUR ATTACK ANALYSIS
-======================================
-
-GAME PROGRESS:
-- Board Size: {{gameState.BoardSize}}×{{gameState.BoardSize}}
-- Total Attacks Made: {{totalAttacks}} (Hit Ratio: {{hitRatio}})
-- Ships Destroyed: {{gameState.ShipsSunk}}/5
-- Game Phase: {{gameState.GamePhase}}
-
-ACCUMULATED ATTACK HISTORY (from your perspective):
-- HITS ({{gameState.Hits.Count}}): {{hitDisplay}}
-- MISSES ({{gameState.Misseds.Count}}): {{missedDisplay}}
-- RECENT HITS PATTERN: {{recentHitsDisplay}}
-
-REMAINING OPPONENT SHIPS:
-- Carrier (5 spaces)
-- Battleship (4 spaces)
-- Cruiser (3 spaces)
-- Submarine (3 spaces)
-- Destroyer (2 spaces)
-
-AVAILABLE TARGETS:
-{{availableSample}}{{moreAvailable}}
-
-STRATEGIC ANALYSIS GUIDELINES:
-1. ADJACENCY STRATEGY: After hitting a ship, attack adjacent cells (up/down/left/right)
-2. PATTERN RECOGNITION: Look for rows/columns with multiple hits
-3. PROBABILITY MAPPING: Focus on untested areas near previous hits
-4. ELIMINATE IMPOSSIBLE: Ships cannot overlap, use this to narrow search
-5. SHIP SIZING: Remaining ship sizes help predict placement probability
-
-RESPOND WITH VALID JSON (no markdown formatting):
-{"cell": "A5", "reasoning": "Attacking adjacent to previous hit at A4"}
-
-Choose your next attack cell wisely:
-""";
-    }
-
-    /// <summary>
-    /// Builds a retry prompt with additional guidance.
-    /// </summary>
-    private static string BuildRetryPrompt(string originalPrompt, List<string> nextTargets)
-    {
-        var cellList = string.Join(", ", nextTargets.Take(20));
-        return $$"""
-{{originalPrompt}}
-
-IMPORTANT: You MUST respond with valid JSON containing "cell" and "reasoning" keys.
-Available cells include: {{cellList}}
-
-Example correct response:
-{"cell": "B5", "reasoning": "Targeting high-probability area"}
-
-Now respond with your cell choice:
-""";
-    }
-
-    /// <summary>
-    /// System prompt that defines the AI's role and constraints.
-    /// </summary>
-    private static string GetSystemPrompt()
-    {
-        return """
-You are an expert Battleship strategist. Your role is to analyze the game board and recommend 
-the optimal cell to attack next.
-
-You understand:
-- Ship placement patterns and probabilities
-- How to follow up on hits to sink ships efficiently
-- Probability density mapping for ship locations
-- Adapting strategy based on remaining ship sizes
-
-Always respond with valid JSON containing "cell" and "reasoning" fields.
-The cell must be a valid board position (A1 through J10, or equivalent for larger boards).
-Keep reasoning brief but strategic.
-""";
     }
 }

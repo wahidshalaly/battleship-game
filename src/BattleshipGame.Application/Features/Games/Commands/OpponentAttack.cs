@@ -21,12 +21,12 @@ public record OpponentAttackCommand(GameId GameId) : IRequest<AttackResult>;
 /// </summary>
 /// <param name="logger">The logger instance.</param>
 /// <param name="gameRepository">The game repository.</param>
-/// <param name="opponentStrategy">The computer opponent strategy service.</param>
+/// <param name="strategyFactory">The opponent strategy factory.</param>
 /// <param name="eventDispatcher">The domain event dispatcher.</param>
 internal class OpponentAttackHandler(
     ILogger<OpponentAttackHandler> logger,
     IGameRepository gameRepository,
-    IComputerOpponentStrategy opponentStrategy,
+    IOpponentStrategyFactory strategyFactory,
     IDomainEventDispatcher eventDispatcher
 ) : IRequestHandler<OpponentAttackCommand, AttackResult>
 {
@@ -41,8 +41,9 @@ internal class OpponentAttackHandler(
         // 1. Load aggregate
         var game = await gameRepository.GetByIdOrThrowAsync(request.GameId, ct);
 
-        // 2. Select target cell and perform attack
-        var targetCell = await opponentStrategy.SelectNextAttack(request.GameId);
+        // 2. Get strategy based on game configuration and select target cell
+        var strategy = strategyFactory.GetStrategy(game);
+        var targetCell = await strategy.SelectNextAttackAsync(game, ct);
         var cellState = game.Attack(BoardSide.Player, targetCell);
 
         // 3. Check if a ship was sunk by inspecting domain events

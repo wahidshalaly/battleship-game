@@ -11,10 +11,14 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
     public async Task<GameId> StartNewGameAsync(
         PlayerId playerId,
         int boardSize,
+        OpponentStrategyType opponentStrategy,
         CancellationToken ct
     )
     {
-        var guid = await mediator.Send(new StartNewGameCommand(playerId, boardSize), ct);
+        var guid = await mediator.Send(
+            new StartNewGameCommand(playerId, boardSize, opponentStrategy),
+            ct
+        );
         return new GameId(guid);
     }
 

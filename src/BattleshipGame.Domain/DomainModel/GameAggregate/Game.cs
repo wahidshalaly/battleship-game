@@ -19,8 +19,11 @@ public record GameId(Guid Value) : EntityId(Value);
 /// <summary>
 /// This represents an instance of the Battleship game, and it tracks the state of the game.
 /// </summary>
-public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
-    : AggregateRoot<GameId>
+public sealed class Game(
+    PlayerId playerId,
+    int boardSize = DefaultBoardSize,
+    OpponentStrategyType opponentStrategyType = OpponentStrategyType.Random
+) : AggregateRoot<GameId>
 {
     private readonly Board _ownBoard = new(boardSize);
     private readonly Board _oppBoard = new(boardSize);
@@ -28,6 +31,11 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
     public PlayerId PlayerId { get; } = playerId;
 
     public int BoardSize { get; } = boardSize;
+
+    /// <summary>
+    /// Gets the AI opponent strategy type configured for this game.
+    /// </summary>
+    public OpponentStrategyType OpponentStrategyType { get; } = opponentStrategyType;
 
     public GameState State { get; private set; } = GameState.New;
 

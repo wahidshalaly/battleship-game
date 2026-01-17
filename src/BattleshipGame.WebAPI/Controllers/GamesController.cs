@@ -36,7 +36,12 @@ public class GamesController(
     )
     {
         var playerId = new PlayerId(request.PlayerId);
-        var gameId = await gameplayService.StartNewGameAsync(playerId, request.BoardSize ?? 10, ct);
+        var gameId = await gameplayService.StartNewGameAsync(
+            playerId,
+            request.BoardSize ?? 10,
+            request.OpponentStrategy ?? OpponentStrategyType.Random,
+            ct
+        );
 
         logger.LogInformation(
             "New Game: {GameId} for Player: {PlayerId}",
@@ -209,7 +214,11 @@ public class GamesController(
     }
 }
 
-public record CreateGameRequest(Guid PlayerId, int? BoardSize = 10);
+public record CreateGameRequest(
+    Guid PlayerId,
+    int? BoardSize = 10,
+    OpponentStrategyType? OpponentStrategy = null
+);
 
 public record PlaceShipRequest(
     BoardSide Side,

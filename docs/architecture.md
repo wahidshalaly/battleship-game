@@ -103,6 +103,12 @@ graph TB
 - Event handlers can implement cross-cutting concerns (notifications, logging, etc.)
 - Aggregates maintain `IReadOnlyList<IDomainEvent>` of pending events
 
+**AI Opponent Contracts**:
+- `IComputerOpponentStrategy`: Strategy interface for AI attack selection (always targets Player's board)
+- `IOpponentStrategyFactory`: Factory for per-game strategy resolution
+- `IPromptBuilder`: LLM prompt construction for SemanticKernel strategy
+- `GameStateContext`: Read-only projection for AI decision-making (built by strategy internally)
+
 **Dependencies**: Domain Layer only
 
 ### 3. Infrastructure Layer (`BattleshipGame/Infrastructure`)
@@ -113,8 +119,13 @@ graph TB
   - `InMemoryGameRepository`: Implements `IGameRepository` for game persistence
   - `InMemoryPlayerRepository`: Implements `IPlayerRepository` for player persistence
   - Methods: `GetByIdAsync()`, `SaveAsync()`, `DeleteAsync()`, `GetAllAsync()`, `UsernameExistsAsync()`
+- **AI Opponent Strategies**:
+  - `RandomAttackStrategy`: Random cell selection from available targets on Player's board
+  - `SemanticKernelStrategy`: LLM-based strategic attack selection using Semantic Kernel
+  - `OpponentStrategyFactory`: Factory resolving strategies via keyed DI services
+  - `BattleshipPromptBuilder`: Constructs prompts for LLM-based strategies
 - **Data Access** (planned): Entity Framework Core DbContext for database integration
-- **External Services** (planned): Authentication, logging, notifications
+- **External Services**: Semantic Kernel integration for AI/LLM features
 - **Adapters**: Third-party integrations
 
 **Repository Pattern Benefits**:
@@ -355,7 +366,7 @@ sequenceDiagram
 ## Future Enhancements
 
 ### Technical Improvements
-- **MediatR**: CQRS pattern implementation
+- **MediatR**: CQRS pattern implementation ✅ Implemented
 - **FluentValidation**: Enhanced input validation
 - **Entity Framework Core**: Data persistence
 - **Serilog**: Structured logging
@@ -363,9 +374,30 @@ sequenceDiagram
 
 ### Feature Enhancements
 - **Multiplayer Support**: Real-time gameplay
-- **AI Opponents**: Computer player implementation
+- **AI Opponents**: Computer player implementation ✅ Implemented (Random + Semantic Kernel strategies)
 - **Game Statistics**: Player performance tracking
 - **Tournament Mode**: Multi-game competitions
+
+### AI Opponent Architecture (Implemented)
+
+The AI opponent system follows Clean Architecture principles:
+
+**Application Layer Contracts**:
+- `IComputerOpponentStrategy`: Defines strategy interface with `SelectNextAttackAsync(Game, CancellationToken)` - always attacks Player's board
+- `IOpponentStrategyFactory`: Factory pattern for per-game strategy resolution
+- `IPromptBuilder`: Abstracts LLM prompt construction
+- `GameStateContext`: Simplified read-only record with essential game state (built internally by strategy)
+
+**Infrastructure Implementations**:
+- `RandomAttackStrategy`: Simple random cell selection from Player's board
+- `SemanticKernelStrategy`: LLM-powered strategic reasoning using Microsoft Semantic Kernel
+- `OpponentStrategyFactory`: Uses .NET 8 keyed DI services for strategy resolution
+- `BattleshipPromptBuilder`: Constructs strategic prompts for LLM
+
+**Per-Game Strategy Selection**:
+- `OpponentStrategyType` enum stored on `Game` aggregate
+- Strategy selected at game creation time via API
+- Factory resolves correct strategy based on game configuration
 
 ## Conclusion
 

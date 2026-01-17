@@ -14,8 +14,12 @@ namespace BattleshipGame.Application.Features.Games.Commands;
 /// </summary>
 /// <param name="PlayerId">The player creating the game.</param>
 /// <param name="BoardSize">The size of the game board (optional, defaults to 10).</param>
-public record StartNewGameCommand(PlayerId PlayerId, int BoardSize = DefaultBoardSize)
-    : IRequest<Guid>;
+/// <param name="OpponentStrategy">The AI opponent strategy type (optional, defaults to Random).</param>
+public record StartNewGameCommand(
+    PlayerId PlayerId,
+    int BoardSize = DefaultBoardSize,
+    OpponentStrategyType OpponentStrategy = OpponentStrategyType.Random
+) : IRequest<Guid>;
 
 internal class StartNewGameHandler(
     ILogger<StartNewGameHandler> logger,
@@ -30,7 +34,7 @@ internal class StartNewGameHandler(
             await playerRepository.GetByIdAsync(request.PlayerId, ct)
             ?? throw new PlayerNotFoundException(request.PlayerId);
 
-        var game = new Game(request.PlayerId, request.BoardSize);
+        var game = new Game(request.PlayerId, request.BoardSize, request.OpponentStrategy);
         player.JoinGame(game.Id);
 
         await gameRepository.SaveAsync(game, ct);

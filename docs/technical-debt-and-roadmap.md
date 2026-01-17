@@ -89,6 +89,56 @@
 - Added 10 unit tests for new properties (`WinnerSide`, `CreatedAt`, `LastUpdatedAt`)
 - All tests passing (1021/1021)
 
+### ✅ AI Opponent Architecture Refactoring (January 2026)
+
+**Objective:** Redesign the AI opponent implementation to follow Clean Architecture principles with per-game strategy selection.
+
+**Problems Solved:**
+- Redundant properties in `GameStateContext` (`RemainingShipSizes`, `GamePhase`, `ShipsSunk`, `RecentHits` were unused)
+- `GameStateAnalyzer` was misnamed—it only mapped data, didn't analyze anything
+- No mechanism to select different AI strategies per game
+- Strategies fetched game state independently, causing redundant repository calls
+- Prompt building logic was embedded in strategy implementation
+
+**Implementation:**
+
+1. **Domain Layer Changes:**
+   - Added `OpponentStrategyType` enum (`Random`, `SemanticKernel`)
+   - Added `OpponentStrategyType` property to `Game` aggregate (set at creation time)
+
+2. **Application Layer Contracts:**
+   - `IComputerOpponentStrategy`: Simplified interface `SelectNextAttackAsync(Game, CancellationToken)` - always targets Player's board
+   - `IOpponentStrategyFactory`: Factory for per-game strategy resolution
+   - `IPromptBuilder`: Abstraction for LLM prompt construction
+   - Simplified `GameStateContext`: Only essential properties, uses existing `GameState` enum (built internally by strategy)
+
+3. **Infrastructure Implementations:**
+   - `RandomAttackStrategy`: Simple random selection from Player's available cells
+   - `SemanticKernelStrategy`: LLM-based strategy, builds `GameStateContext` internally for prompt construction
+   - `OpponentStrategyFactory`: Resolves strategies using .NET 8 keyed DI services
+   - `BattleshipPromptBuilder`: Extracted LLM prompt logic
+
+4. **DI Registration:**
+   - Strategies registered with keyed services: `AddKeyedScoped<IComputerOpponentStrategy, RandomAttackStrategy>(OpponentStrategyType.Random)`
+   - Factory resolves strategy based on `Game.OpponentStrategyType`
+
+5. **API Updates:**
+   - `CreateGameRequest` now accepts optional `OpponentStrategy` parameter
+   - `StartNewGameAsync` passes strategy type through to `Game` constructor
+
+6. **Removed:**
+   - Deleted `GameStateAnalyzer` class (logic moved inline to SemanticKernelStrategy)
+   - Removed redundant properties from `GameStateContext`
+   - Removed unnecessary `IGameStateQueryService` abstraction (simple mapping done inline)
+
+**Benefits Achieved:**
+- ✅ Per-game strategy selection (play Random vs SemanticKernel in different games)
+- ✅ Clean separation of concerns (prompt building extracted to dedicated service)
+- ✅ No redundant repository calls (strategy receives `Game` aggregate)
+- ✅ Simplified `GameStateContext` uses existing domain concepts
+- ✅ Factory pattern enables easy addition of new strategies
+- ✅ All 1021 tests passing
+
 ---
 
 ## 📋 Executive Summary
@@ -574,30 +624,43 @@ public class StartNewGameCommandValidator : AbstractValidator<StartNewGameComman
 
 ---
 
-## 🤖 Phase 3: Smart AI Opponent (Weeks 7-10) - HIGH-VALUE
+## 🤖 Phase 3: Smart AI Opponent (Weeks 7-10) - PARTIALLY COMPLETE
 
 **Business Priority:** HIGH for Portfolio/Demo Value - Makes This an "AI Application"  
 **Risk Level:** LOW - Independent of other phases  
 **Estimated Effort:** 120 hours (1-2 developers, 4 weeks)  
 **Can Be Done:** In parallel with other phases or standalone
 
-### Strategic Value: Transform Into AI-Powered Application
+### ✅ Completed: AI Architecture Foundation
 
-**Why This Matters in 2025:**
-- ✅ **Modern AI Integration** - Hands-on experience with ML/AI technologies
-- ✅ **Technical Innovation** - Demonstrates advanced problem-solving capabilities
-- ✅ **Engaging Demonstration** - Significantly more impressive than random opponent
-- ✅ **Practical Learning** - Real-world application of AI/ML concepts
-- ✅ **Technical Leadership** - Showcases initiative in adopting emerging technologies
+**What's Implemented:**
+- ✅ `OpponentStrategyType` enum for strategy selection
+- ✅ Per-game strategy configuration (stored on `Game` aggregate)
+- ✅ `IComputerOpponentStrategy` interface with simplified signature (always attacks Player's board)
+- ✅ `IOpponentStrategyFactory` for strategy resolution
+- ✅ Keyed DI services for strategy registration
+- ✅ `RandomAttackStrategy` implementation
+- ✅ `SemanticKernelStrategy` with LLM integration (Semantic Kernel)
+- ✅ `IPromptBuilder` for LLM prompt construction
+- ✅ `GameStateContext` built inline by strategy (no separate query service needed)
+- ✅ API support for strategy selection at game creation
 
 **Current State:**
 ```csharp
-// Already stubbed out in code!
-builder.Services.AddScoped<IComputerOpponentStrategy, RandomAttackStrategy>();
-builder.Services.AddKeyedScoped<IComputerOpponentStrategy, SmartAttackStrategy>("AI-Based"); // For future use
+// Per-game strategy selection via API
+POST /api/games
+{
+  "playerId": "...",
+  "boardSize": 10,
+  "opponentStrategy": "SemanticKernel"  // or "Random"
+}
+
+// Strategies resolved via factory
+var strategy = strategyFactory.GetStrategy(game);
+var targetCell = await strategy.SelectNextAttackAsync(game, ct);
 ```
 
-### AI Implementation Approaches (Choose Your Adventure)
+### 🔄 Remaining Work: Strategy Enhancements
 
 #### **Option A: Intelligent Heuristics (Week 7-8) - RECOMMENDED FOR PORTFOLIO**
 
@@ -799,16 +862,18 @@ public class HybridAIStrategy : IComputerOpponentStrategy
 
 ### Implementation Roadmap
 
-**Week 7: Foundation**
-- [ ] Design AI strategy interface (already exists!)
-- [ ] Implement game state analysis utilities
-- [ ] Create strategy evaluation framework
-- [ ] Set up unit tests for AI behavior
+**Week 7: Foundation** ✅ COMPLETE
+- [x] Design AI strategy interface
+- [x] Implement game state projection (inline in strategy)
+- [x] Create strategy factory pattern
+- [x] Per-game strategy configuration
+- [x] LLM integration via Semantic Kernel
 
 **Week 8: Core AI (Choose Option A, B, or C)**
-- [ ] Implement chosen strategy
+- [x] Implement `RandomAttackStrategy` ✅
+- [x] Implement `SemanticKernelStrategy` (LLM-based) ✅
 - [ ] Add difficulty level configuration
-- [ ] Integrate with existing game flow
+- [ ] Implement heuristic `SmartAttackStrategy` (Hunt/Target algorithm)
 - [ ] Performance optimization
 
 **Week 9: Testing & Tuning**

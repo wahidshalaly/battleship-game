@@ -1,6 +1,7 @@
 using BattleshipGame.Application.Common.Services;
 using BattleshipGame.Application.Contracts.OpponentStrategy;
 using BattleshipGame.Application.Contracts.Persistence;
+using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Infrastructure.OpponentStrategy;
 using BattleshipGame.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
@@ -47,12 +48,19 @@ public static class ServiceCollectionExtensions
         // Register Semantic Kernel instance
         services.AddSingleton(kernel);
 
-        // Register opponent strategies
-        services.AddScoped<IComputerOpponentStrategy, RandomAttackStrategy>();
-        services.AddScoped<IComputerOpponentStrategy, SemanticKernelStrategy>();
+        // Register prompt builder for LLM-based strategies
+        services.AddSingleton<IPromptBuilder, BattleshipPromptBuilder>();
 
-        // Register AI services
-        services.AddScoped<GameStateAnalyzer>();
+        // Register opponent strategies using keyed services for per-game selection
+        services.AddKeyedScoped<IComputerOpponentStrategy, RandomAttackStrategy>(
+            OpponentStrategyType.Random
+        );
+        services.AddKeyedScoped<IComputerOpponentStrategy, SemanticKernelStrategy>(
+            OpponentStrategyType.SemanticKernel
+        );
+
+        // Register strategy factory
+        services.AddScoped<IOpponentStrategyFactory, OpponentStrategyFactory>();
 
         // Register repositories (singleton for in-memory, will be scoped when using EF Core)
         services.AddSingleton<IGameRepository, InMemoryGameRepository>();

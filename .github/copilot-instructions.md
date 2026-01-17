@@ -3,6 +3,8 @@
 These instructions define how GitHub Copilot should assist with this project.
 The goal is to ensure consistent, high-quality code generation aligned with our conventions, stack, and best practices.
 
+The solution design exists in the `docs` folder. Make sure to update docs after significant changes and make sure that they reflect the current implementation.
+
 For latest SDKs documentations, use Context 7.
 
 ## 🧠 Context
