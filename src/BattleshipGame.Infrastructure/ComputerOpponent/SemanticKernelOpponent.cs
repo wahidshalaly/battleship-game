@@ -6,6 +6,7 @@ using BattleshipGame.Domain.DomainModel.GameAggregate;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace BattleshipGame.Infrastructure.ComputerOpponent;
 
@@ -26,7 +27,7 @@ public sealed class SemanticKernelOpponent(
     public OpponentStrategy Strategy => OpponentStrategy.SemanticKernel;
 
     /// <inheritdoc />
-    public async Task<string> SelectNextAttackAsync(Game game, CancellationToken cancellationToken)
+    public async Task<string> SelectNextAttackAsync(Game game, CancellationToken ct)
     {
         try
         {
@@ -48,7 +49,7 @@ public sealed class SemanticKernelOpponent(
                 prompt,
                 availableTargets,
                 attemptNumber: 0,
-                cancellationToken
+                ct
             );
 
             if (availableTargets.Contains(selectedCell))
@@ -83,6 +84,7 @@ public sealed class SemanticKernelOpponent(
         {
             BoardSize = game.BoardSize,
             GameState = game.State,
+            BoardRange = game.GetBoardRange(),
             AvailableTargets = game.GetNextTargets(BoardSide.Player).ToList(),
             Hits = game.GetHits(BoardSide.Player).ToList(),
             Misses = game.GetMisseds(BoardSide.Player).ToList(),
@@ -93,7 +95,7 @@ public sealed class SemanticKernelOpponent(
         string prompt,
         IReadOnlyList<string> availableTargets,
         int attemptNumber,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         if (attemptNumber >= MaxRetries)
@@ -110,10 +112,18 @@ public sealed class SemanticKernelOpponent(
             messages.AddSystemMessage(promptBuilder.BuildSystemPrompt());
             messages.AddUserMessage(prompt);
 
+            // Limit response size for faster inference on CPU
+            var executionSettings = new OpenAIPromptExecutionSettings
+            {
+                MaxTokens = 100, // Short JSON response only
+                Temperature = 0.3, // More deterministic
+            };
+
             var response = await chatService.GetChatMessageContentAsync(
                 messages,
-                kernel: kernel,
-                cancellationToken: cancellationToken
+                executionSettings,
+                kernel,
+                ct
             );
 
             var selectedCell = ParseCellFromResponse(
@@ -136,7 +146,7 @@ public sealed class SemanticKernelOpponent(
                 retryPrompt,
                 availableTargets,
                 attemptNumber + 1,
-                cancellationToken
+                ct
             );
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -147,12 +157,7 @@ public sealed class SemanticKernelOpponent(
                 attemptNumber + 1
             );
 
-            return await SelectCellWithRetryAsync(
-                prompt,
-                availableTargets,
-                attemptNumber + 1,
-                cancellationToken
-            );
+            return await SelectCellWithRetryAsync(prompt, availableTargets, attemptNumber + 1, ct);
         }
     }
 

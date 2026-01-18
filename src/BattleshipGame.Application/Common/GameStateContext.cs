@@ -18,6 +18,11 @@ public sealed record GameStateContext
     public required GameState GameState { get; init; }
 
     /// <summary>
+    /// The range of the board in cell codes (e.g., "A1-J10").
+    /// </summary>
+    public required string BoardRange { get; set; }
+
+    /// <summary>
     /// Cells that are valid targets for the next attack (not yet attacked).
     /// </summary>
     public required IReadOnlyList<string> AvailableTargets { get; init; }

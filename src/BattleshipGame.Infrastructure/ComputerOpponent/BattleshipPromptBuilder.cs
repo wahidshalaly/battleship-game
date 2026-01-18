@@ -1,6 +1,5 @@
 using BattleshipGame.Application.Common;
 using BattleshipGame.Application.Interfaces.ComputerOpponent;
-using BattleshipGame.Domain.DomainModel.GameAggregate;
 
 namespace BattleshipGame.Infrastructure.ComputerOpponent;
 
@@ -32,81 +31,46 @@ public sealed class BattleshipPromptBuilder : IPromptBuilder
     public string BuildStrategicPrompt(GameStateContext context)
     {
         var hitDisplay =
-            context.Hits.Count > 0 ? string.Join(", ", context.Hits.OrderBy(c => c)) : "None yet";
+            context.Hits.Count > 0 ? string.Join(", ", context.Hits.OrderBy(c => c)) : "None";
 
         var missDisplay =
-            context.Misses.Count > 0
-                ? string.Join(", ", context.Misses.OrderBy(c => c))
-                : "None yet";
+            context.Misses.Count > 0 ? string.Join(", ", context.Misses.OrderBy(c => c)) : "None";
 
-        var totalAttacks = context.Hits.Count + context.Misses.Count;
-        var hitRatio = totalAttacks > 0 ? $"{context.Hits.Count * 100 / totalAttacks}%" : "0%";
-
-        var availableSample = string.Join(", ", context.AvailableTargets.Take(15));
-        var moreAvailable =
-            context.AvailableTargets.Count > 15
-                ? $" ...and {context.AvailableTargets.Count - 15} more cells"
-                : "";
-
-        var gameStateDisplay = context.GameState switch
-        {
-            GameState.Started => "Active",
-            GameState.Ready => "Ready",
-            GameState.GameOver => "Game Over",
-            _ => context.GameState.ToString(),
-        };
+        var boardRange = context.BoardRange;
 
         return $$"""
-            BATTLESHIP GAME - YOUR ATTACK ANALYSIS
-            ======================================
+            BATTLESHIP GAME - SELECT YOUR NEXT ATTACK
+            ==========================================
 
-            GAME PROGRESS:
-            - Board Size: {{context.BoardSize}}×{{context.BoardSize}}
-            - Total Attacks Made: {{totalAttacks}} (Hit Ratio: {{hitRatio}})
-            - Game State: {{gameStateDisplay}}
+            BOARD RANGE: {{boardRange}} - {{context.BoardSize}} x {{context.BoardSize}} grid
 
-            ACCUMULATED ATTACK HISTORY (from your perspective):
-            - HITS ({{context.Hits.Count}}): {{hitDisplay}}
-            - MISSES ({{context.Misses.Count}}): {{missDisplay}}
+            YOUR ATTACK HISTORY:
+            - HITS: {{hitDisplay}}
+            - MISSES: {{missDisplay}}
 
-            REMAINING OPPONENT SHIPS:
-            - Carrier (5 spaces)
-            - Battleship (4 spaces)
-            - Cruiser (3 spaces)
-            - Submarine (3 spaces)
-            - Destroyer (2 spaces)
+            VALID TARGETS: Any cell from {{boardRange}} that is NOT listed above.
 
-            AVAILABLE TARGETS:
-            {{availableSample}}{{moreAvailable}}
+            STRATEGY TIPS:
+            - If you have HITS, attack adjacent cells (up/down/left/right) to sink the ship
+            - Multiple hits in a line indicate ship orientation - continue that direction
+            - Avoid cells already attacked (listed above)
 
-            STRATEGIC ANALYSIS GUIDELINES:
-            1. ADJACENCY STRATEGY: After hitting a ship, attack adjacent cells (up/down/left/right)
-            2. PATTERN RECOGNITION: Look for rows/columns with multiple hits
-            3. PROBABILITY MAPPING: Focus on untested areas near previous hits
-            4. ELIMINATE IMPOSSIBLE: Ships cannot overlap, use this to narrow search
-            5. SHIP SIZING: Remaining ship sizes help predict placement probability
-
-            RESPOND WITH VALID JSON (no markdown formatting):
-            {"cell": "A5", "reasoning": "Attacking adjacent to previous hit at A4"}
-
-            Choose your next attack cell wisely:
+            RESPOND WITH JSON ONLY (no markdown):
+            {"cell": "E5", "reasoning": "brief reason"}
             """;
     }
 
     /// <inheritdoc />
     public string BuildRetryPrompt(string originalPrompt, IReadOnlyList<string> availableTargets)
     {
-        var cellList = string.Join(", ", availableTargets.Take(20));
+        var sampleCells = string.Join(", ", availableTargets.Take(10));
         return $$"""
             {{originalPrompt}}
 
-            IMPORTANT: You MUST respond with valid JSON containing "cell" and "reasoning" keys.
-            Available cells include: {{cellList}}
+            Your previous response was invalid. You MUST respond with valid JSON only.
+            Example valid cells: {{sampleCells}}
 
-            Example correct response:
-            {"cell": "B5", "reasoning": "Targeting high-probability area"}
-
-            Now respond with your cell choice:
+            {"cell": "X", "reasoning": "Y"}
             """;
     }
 }

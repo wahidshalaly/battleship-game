@@ -4,7 +4,6 @@ using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Infrastructure.ComputerOpponent;
 using BattleshipGame.Infrastructure.Persistence;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 
@@ -21,20 +20,17 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The configuration for AI opponent.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddInfrastructureServices(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
     {
-        // Register Semantic Kernel with Ollama or Azure OpenAI
-        var modelId = configuration.GetValue<string>("SemanticKernel:ModelId");
-        var endpoint = configuration.GetValue<string>("SemanticKernel:Endpoint");
-        var apiKey = configuration.GetValue<string>("SemanticKernel:ApiKey");
+        // Load LLM configuration from environment variables
+        var modelId = Environment.GetEnvironmentVariable("OPENAI_MODEL_ID");
+        var endpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
+        var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
 
         if (string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(modelId))
         {
             throw new InvalidOperationException(
-                "SemanticKernel configuration missing. Please, set `SemanticKernel` configuration section."
+                "LLM configuration missing. Set environment variables: OPENAI_MODEL_ID, OPENAI_ENDPOINT, OPENAI_API_KEY."
             );
         }
 

@@ -252,6 +252,20 @@ public sealed class Game(
     }
 
     /// <summary>
+    /// Gets the board coordinate range as a human-readable string.
+    /// </summary>
+    /// <remarks>
+    /// For a 10×10 board, returns "A1 to J10".
+    /// Useful for prompts and UI display.
+    /// </remarks>
+    /// <returns>A string representing the board range (e.g., "A1 to J10")</returns>
+    public string GetBoardRange()
+    {
+        var lastColumn = ColumnHeaders[BoardSize - 1];
+        return $"A1 to {lastColumn}{BoardSize}";
+    }
+
+    /// <summary>
     /// Gets the board for the specified side
     /// </summary>
     /// <param name="side">The side whose board to get</param>
