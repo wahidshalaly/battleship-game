@@ -4,7 +4,6 @@ namespace BattleshipGame.Application.Common;
 
 /// <summary>
 /// Read-only projection of the game state for AI opponent decision-making.
-/// Contains only the information needed for strategy selection.
 /// </summary>
 public sealed record GameStateContext
 {

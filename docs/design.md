@@ -22,12 +22,12 @@ classDiagram
         +GameId Id
         +PlayerId PlayerId
         +int BoardSize
-        +OpponentStrategyType OpponentStrategyType
+        +OpponentStrategy OpponentStrategy
         +GameState State
         +BoardSide WinnerSide
         +DateTime CreatedAt
         +DateTime LastUpdatedAt
-        +Game(PlayerId, int, OpponentStrategyType)
+        +Game(PlayerId, int, OpponentStrategy)
         +ShipId PlaceShip(BoardSide, ShipKind, ShipOrientation, string)
         +void Attack(BoardSide, string)
         +ShipKind GetShipKind(BoardSide, ShipId)
@@ -136,14 +136,15 @@ classDiagram
         GameOver
     }
 
-    class OpponentStrategyType {
+    class OpponentStrategy {
         <<Enumeration>>
+        None
         Random
         SemanticKernel
     }
 
     Game "1" --> "2" Board : owns
-    Game --> OpponentStrategyType : configured with
+    Game --> OpponentStrategy : configured with
     Board "1" --> "*" Cell : contains
     Board "1" --> "*" Ship : contains
     Ship --> ShipKind : has type
@@ -159,7 +160,7 @@ classDiagram
     %% Application Services
     class IGameplayService {
         <<Interface>>
-        +Task~GameId~ StartNewGameAsync(PlayerId, int, OpponentStrategyType)
+        +Task~GameId~ StartNewGameAsync(PlayerId, int, OpponentStrategy)
         +Task~ShipId~ PlaceShipAsync(GameId, BoardSide, ShipKind, ShipOrientation, string)
         +Task StartGameplayAsync(GameId)
         +Task~LastRoundResult~ PlayerAttackThenCounterAttackAsync(GameId, string)
@@ -167,7 +168,7 @@ classDiagram
     }
 
     class GameplayService {
-        +Task~GameId~ StartNewGameAsync(PlayerId, int, OpponentStrategyType)
+        +Task~GameId~ StartNewGameAsync(PlayerId, int, OpponentStrategy)
         +Task~ShipId~ PlaceShipAsync(GameId, BoardSide, ShipKind, ShipOrientation, string)
         +Task StartGameplayAsync(GameId)
         +Task~LastRoundResult~ PlayerAttackThenCounterAttackAsync(GameId, string)
@@ -276,7 +277,7 @@ classDiagram
     class CreateGameRequest {
         +Guid PlayerId
         +int? BoardSize
-        +OpponentStrategyType? OpponentStrategy
+        +OpponentStrategy? OpponentStrategy
     }
 
     class PlaceShipRequest {

@@ -1,8 +1,8 @@
 using BattleshipGame.Application.Common.Services;
-using BattleshipGame.Application.Contracts.OpponentStrategy;
-using BattleshipGame.Application.Contracts.Persistence;
+using BattleshipGame.Application.Interfaces.ComputerOpponent;
+using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
-using BattleshipGame.Infrastructure.OpponentStrategy;
+using BattleshipGame.Infrastructure.ComputerOpponent;
 using BattleshipGame.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +19,7 @@ public static class ServiceCollectionExtensions
     /// Adds Infrastructure layer services to the dependency injection container.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="configuration">The configuration for AI strategy selection.</param>
+    /// <param name="configuration">The configuration for AI opponent.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services,
@@ -52,15 +52,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPromptBuilder, BattleshipPromptBuilder>();
 
         // Register opponent strategies using keyed services for per-game selection
-        services.AddKeyedScoped<IComputerOpponentStrategy, RandomAttackStrategy>(
-            OpponentStrategyType.Random
-        );
-        services.AddKeyedScoped<IComputerOpponentStrategy, SemanticKernelStrategy>(
-            OpponentStrategyType.SemanticKernel
+        services.AddKeyedScoped<IComputerOpponent, RandomAttackOpponent>(OpponentStrategy.Random);
+        services.AddKeyedScoped<IComputerOpponent, SemanticKernelOpponent>(
+            OpponentStrategy.SemanticKernel
         );
 
         // Register strategy factory
-        services.AddScoped<IOpponentStrategyFactory, OpponentStrategyFactory>();
+        services.AddScoped<IComputerOpponentFactory, ComputerOpponentFactory>();
 
         // Register repositories (singleton for in-memory, will be scoped when using EF Core)
         services.AddSingleton<IGameRepository, InMemoryGameRepository>();

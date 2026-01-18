@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using BattleshipGame.Application.Contracts.Persistence;
+using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 
 namespace BattleshipGame.Infrastructure.Persistence;

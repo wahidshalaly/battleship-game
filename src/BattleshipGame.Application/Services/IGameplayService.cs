@@ -19,7 +19,7 @@ public interface IGameplayService
     Task<GameId> StartNewGameAsync(
         PlayerId playerId,
         int boardSize,
-        OpponentStrategyType opponentStrategy,
+        OpponentStrategy opponentStrategy,
         CancellationToken ct
     );
 

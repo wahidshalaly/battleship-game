@@ -1,17 +1,17 @@
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 
-namespace BattleshipGame.Application.Contracts.OpponentStrategy;
+namespace BattleshipGame.Application.Interfaces.ComputerOpponent;
 
 /// <summary>
 /// Defines the contract for computer opponent attack strategies.
 /// The opponent always attacks the Player's board.
 /// </summary>
-public interface IComputerOpponentStrategy
+public interface IComputerOpponent
 {
     /// <summary>
-    /// Gets the strategy type this implementation represents.
+    /// Gets the opponent strategy that this implementation represents.
     /// </summary>
-    OpponentStrategyType StrategyType { get; }
+    OpponentStrategy Strategy { get; }
 
     /// <summary>
     /// Selects the next attack cell for the computer opponent on the Player's board.

@@ -103,9 +103,9 @@ graph TB
 - Event handlers can implement cross-cutting concerns (notifications, logging, etc.)
 - Aggregates maintain `IReadOnlyList<IDomainEvent>` of pending events
 
-**AI Opponent Contracts**:
-- `IComputerOpponentStrategy`: Strategy interface for AI attack selection (always targets Player's board)
-- `IOpponentStrategyFactory`: Factory for per-game strategy resolution
+**Opponent Contracts**:
+- `IComputerOpponent`: Strategy interface for AI attack selection (always targets Player's board)
+- `IComputerOpponentFactory`: Factory for per-game strategy resolution
 - `IPromptBuilder`: LLM prompt construction for SemanticKernel strategy
 - `GameStateContext`: Read-only projection for AI decision-making (built by strategy internally)
 
@@ -119,7 +119,7 @@ graph TB
   - `InMemoryGameRepository`: Implements `IGameRepository` for game persistence
   - `InMemoryPlayerRepository`: Implements `IPlayerRepository` for player persistence
   - Methods: `GetByIdAsync()`, `SaveAsync()`, `DeleteAsync()`, `GetAllAsync()`, `UsernameExistsAsync()`
-- **AI Opponent Strategies**:
+- **Opponent Strategies**:
   - `RandomAttackStrategy`: Random cell selection from available targets on Player's board
   - `SemanticKernelStrategy`: LLM-based strategic attack selection using Semantic Kernel
   - `OpponentStrategyFactory`: Factory resolving strategies via keyed DI services
@@ -378,13 +378,13 @@ sequenceDiagram
 - **Game Statistics**: Player performance tracking
 - **Tournament Mode**: Multi-game competitions
 
-### AI Opponent Architecture (Implemented)
+### Opponent Architecture (Implemented)
 
 The AI opponent system follows Clean Architecture principles:
 
 **Application Layer Contracts**:
-- `IComputerOpponentStrategy`: Defines strategy interface with `SelectNextAttackAsync(Game, CancellationToken)` - always attacks Player's board
-- `IOpponentStrategyFactory`: Factory pattern for per-game strategy resolution
+- `IComputerOpponent`: Defines strategy interface with `SelectNextAttackAsync(Game, CancellationToken)` - always attacks Player's board
+- `IComputerOpponentFactory`: Factory pattern for per-game strategy resolution
 - `IPromptBuilder`: Abstracts LLM prompt construction
 - `GameStateContext`: Simplified read-only record with essential game state (built internally by strategy)
 
@@ -395,7 +395,7 @@ The AI opponent system follows Clean Architecture principles:
 - `BattleshipPromptBuilder`: Constructs strategic prompts for LLM
 
 **Per-Game Strategy Selection**:
-- `OpponentStrategyType` enum stored on `Game` aggregate
+- `OpponentStrategy` enum stored on `Game` aggregate (None, Random, SemanticKernel)
 - Strategy selected at game creation time via API
 - Factory resolves correct strategy based on game configuration
 

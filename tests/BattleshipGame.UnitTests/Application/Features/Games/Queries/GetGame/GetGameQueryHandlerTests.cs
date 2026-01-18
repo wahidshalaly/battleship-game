@@ -1,8 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Application.Features.Games.Queries;
+using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.UnitTests.Domain.DomainModel;

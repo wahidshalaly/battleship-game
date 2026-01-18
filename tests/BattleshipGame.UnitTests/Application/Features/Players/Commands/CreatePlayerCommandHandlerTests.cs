@@ -1,8 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using BattleshipGame.Application.Contracts.Persistence;
 using BattleshipGame.Application.Features.Players.Commands;
+using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using FakeItEasy;
 using FluentAssertions;

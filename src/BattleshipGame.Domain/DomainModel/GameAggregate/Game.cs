@@ -22,7 +22,7 @@ public record GameId(Guid Value) : EntityId(Value);
 public sealed class Game(
     PlayerId playerId,
     int boardSize = DefaultBoardSize,
-    OpponentStrategyType opponentStrategyType = OpponentStrategyType.Random
+    OpponentStrategy strategy = OpponentStrategy.Random
 ) : AggregateRoot<GameId>
 {
     private readonly Board _ownBoard = new(boardSize);
@@ -33,9 +33,9 @@ public sealed class Game(
     public int BoardSize { get; } = boardSize;
 
     /// <summary>
-    /// Gets the AI opponent strategy type configured for this game.
+    /// Gets the computer opponent strategy configured for this game.
     /// </summary>
-    public OpponentStrategyType OpponentStrategyType { get; } = opponentStrategyType;
+    public OpponentStrategy OpponentStrategy { get; } = strategy;
 
     public GameState State { get; private set; } = GameState.New;
 
@@ -204,7 +204,6 @@ public sealed class Game(
 
     /// <summary>
     /// Gets all cells that were hit on the specified boardSide.
-    /// Used by AI for strategic decision-making.
     /// </summary>
     /// <param name="boardSide">The boardSide to get hit cells from</param>
     /// <returns>List of cell codes that were hit</returns>
@@ -219,7 +218,6 @@ public sealed class Game(
 
     /// <summary>
     /// Gets all cells that were missed on the specified boardSide.
-    /// Used by AI for strategic decision-making.
     /// </summary>
     /// <param name="boardSide">The boardSide to get missed cells from</param>
     /// <returns>List of cell codes that were missed</returns>

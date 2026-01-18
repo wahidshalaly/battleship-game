@@ -1,8 +1,8 @@
 using BattleshipGame.Application.Common;
-using BattleshipGame.Application.Contracts.OpponentStrategy;
+using BattleshipGame.Application.Interfaces.ComputerOpponent;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 
-namespace BattleshipGame.Infrastructure.OpponentStrategy;
+namespace BattleshipGame.Infrastructure.ComputerOpponent;
 
 /// <summary>
 /// Builds prompts for Battleship game LLM-based strategies.

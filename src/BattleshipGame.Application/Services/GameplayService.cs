@@ -11,7 +11,7 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
     public async Task<GameId> StartNewGameAsync(
         PlayerId playerId,
         int boardSize,
-        OpponentStrategyType opponentStrategy,
+        OpponentStrategy opponentStrategy,
         CancellationToken ct
     )
     {

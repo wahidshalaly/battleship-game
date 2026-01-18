@@ -1,6 +1,6 @@
 using BattleshipGame.Application.Common;
 
-namespace BattleshipGame.Application.Contracts.OpponentStrategy;
+namespace BattleshipGame.Application.Interfaces.ComputerOpponent;
 
 /// <summary>
 /// Builds prompts for LLM-based opponent strategies.

@@ -39,7 +39,7 @@ public class GamesController(
         var gameId = await gameplayService.StartNewGameAsync(
             playerId,
             request.BoardSize ?? 10,
-            request.OpponentStrategy ?? OpponentStrategyType.Random,
+            request.OpponentStrategy ?? OpponentStrategy.Random,
             ct
         );
 
@@ -217,7 +217,7 @@ public class GamesController(
 public record CreateGameRequest(
     Guid PlayerId,
     int? BoardSize = 10,
-    OpponentStrategyType? OpponentStrategy = null
+    OpponentStrategy? OpponentStrategy = null
 );
 
 public record PlaceShipRequest(

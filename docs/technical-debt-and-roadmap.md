@@ -89,7 +89,7 @@
 - Added 10 unit tests for new properties (`WinnerSide`, `CreatedAt`, `LastUpdatedAt`)
 - All tests passing (1021/1021)
 
-### ✅ AI Opponent Architecture Refactoring (January 2026)
+### ✅ Opponent Architecture Refactoring (January 2026)
 
 **Objective:** Redesign the AI opponent implementation to follow Clean Architecture principles with per-game strategy selection.
 
@@ -103,12 +103,12 @@
 **Implementation:**
 
 1. **Domain Layer Changes:**
-   - Added `OpponentStrategyType` enum (`Random`, `SemanticKernel`)
-   - Added `OpponentStrategyType` property to `Game` aggregate (set at creation time)
+   - Added `OpponentStrategy` enum (`None`, `Random`, `SemanticKernel`)
+   - Added `OpponentStrategy` property to `Game` aggregate (set at creation time)
 
 2. **Application Layer Contracts:**
-   - `IComputerOpponentStrategy`: Simplified interface `SelectNextAttackAsync(Game, CancellationToken)` - always targets Player's board
-   - `IOpponentStrategyFactory`: Factory for per-game strategy resolution
+   - `IComputerOpponent`: Simplified interface `SelectNextAttackAsync(Game, CancellationToken)` - always targets Player's board
+   - `IComputerOpponentFactory`: Factory for per-game strategy resolution
    - `IPromptBuilder`: Abstraction for LLM prompt construction
    - Simplified `GameStateContext`: Only essential properties, uses existing `GameState` enum (built internally by strategy)
 
@@ -119,8 +119,8 @@
    - `BattleshipPromptBuilder`: Extracted LLM prompt logic
 
 4. **DI Registration:**
-   - Strategies registered with keyed services: `AddKeyedScoped<IComputerOpponentStrategy, RandomAttackStrategy>(OpponentStrategyType.Random)`
-   - Factory resolves strategy based on `Game.OpponentStrategyType`
+   - Strategies registered with keyed services: `AddKeyedScoped<IComputerOpponent, RandomAttackStrategy>(OpponentStrategy.Random)`
+   - Factory resolves strategy based on `Game.OpponentStrategy`
 
 5. **API Updates:**
    - `CreateGameRequest` now accepts optional `OpponentStrategy` parameter
@@ -624,7 +624,7 @@ public class StartNewGameCommandValidator : AbstractValidator<StartNewGameComman
 
 ---
 
-## 🤖 Phase 3: Smart AI Opponent (Weeks 7-10) - PARTIALLY COMPLETE
+## 🤖 Phase 3: Smart Opponent (Weeks 7-10) - PARTIALLY COMPLETE
 
 **Business Priority:** HIGH for Portfolio/Demo Value - Makes This an "AI Application"  
 **Risk Level:** LOW - Independent of other phases  
@@ -634,10 +634,10 @@ public class StartNewGameCommandValidator : AbstractValidator<StartNewGameComman
 ### ✅ Completed: AI Architecture Foundation
 
 **What's Implemented:**
-- ✅ `OpponentStrategyType` enum for strategy selection
+- ✅ `OpponentStrategy` enum for opponent selection
 - ✅ Per-game strategy configuration (stored on `Game` aggregate)
-- ✅ `IComputerOpponentStrategy` interface with simplified signature (always attacks Player's board)
-- ✅ `IOpponentStrategyFactory` for strategy resolution
+- ✅ `IComputerOpponent` interface with simplified signature (always attacks Player's board)
+- ✅ `IComputerOpponentFactory` for strategy resolution
 - ✅ Keyed DI services for strategy registration
 - ✅ `RandomAttackStrategy` implementation
 - ✅ `SemanticKernelStrategy` with LLM integration (Semantic Kernel)
@@ -671,7 +671,7 @@ var targetCell = await strategy.SelectNextAttackAsync(game, ct);
 
 **Strategy:**
 ```csharp
-public class SmartAttackStrategy : IComputerOpponentStrategy
+public class SmartAttackStrategy : IComputerOpponent
 {
     // Hunt Mode: Find ships using probability density
     // Target Mode: Sink ships using adjacent cell logic
@@ -722,7 +722,7 @@ public class SmartAttackStrategy : IComputerOpponentStrategy
 **Approach 1: Supervised Learning (Recommended)**
 ```csharp
 // Train on game data
-public class MLAttackStrategy : IComputerOpponentStrategy
+public class MLAttackStrategy : IComputerOpponent
 {
     private readonly PredictionEngine<GameState, CellPrediction> _model;
     
@@ -772,7 +772,7 @@ public class MLAttackStrategy : IComputerOpponentStrategy
 
 **Approach: Use Azure OpenAI or OpenAI API**
 ```csharp
-public class LLMAttackStrategy : IComputerOpponentStrategy
+public class LLMAttackStrategy : IComputerOpponent
 {
     private readonly OpenAIClient _openAI;
     
@@ -828,7 +828,7 @@ Respond with JSON: { "cell": "A4", "reasoning": "..." }
 **Combine multiple strategies for maximum flexibility**
 
 ```csharp
-public class HybridAIStrategy : IComputerOpponentStrategy
+public class HybridAIStrategy : IComputerOpponent
 {
     private readonly SmartAttackStrategy _heuristics;
     private readonly MLAttackStrategy _mlModel;
@@ -1230,7 +1230,7 @@ public class OutboxProcessor : BackgroundService
 ```
 Week 1-2:   ████████ Phase 1: Critical Fixes
 Week 3-6:   ████████████████ Phase 2: Core Enhancements  
-Week 7-10:  ████████████ Phase 3: AI Opponent ⭐
+Week 7-10:  ████████████ Phase 3: Opponent ⭐
 Week 11-16: ████████████████████████ Phase 4: Production Hardening
             └─────────────────────────────────────────────────────┘
                           16 Weeks Total (or 12 without AI)

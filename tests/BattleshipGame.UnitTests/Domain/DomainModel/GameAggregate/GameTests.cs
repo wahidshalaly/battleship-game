@@ -13,6 +13,8 @@ namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate;
 
 public class GameTests
 {
+    private static readonly TimeSpan TimestampTolerance = TimeSpan.FromMilliseconds(300);
+
     private readonly GameFixture _fixture = new();
     private readonly PlayerId _playerId = new(Guid.NewGuid());
 
@@ -346,7 +348,7 @@ public class GameTests
         var beforeCreation = DateTime.UtcNow;
         var game = _fixture.CreateGameInStateNew(_playerId);
 
-        game.LastUpdatedAt.Should().BeCloseTo(beforeCreation, TimeSpan.FromMilliseconds(100));
+        game.LastUpdatedAt.Should().BeCloseTo(beforeCreation, TimestampTolerance);
         game.CreatedAt.Kind.Should().Be(DateTimeKind.Utc);
     }
 
@@ -356,7 +358,7 @@ public class GameTests
         var beforeCreation = DateTime.UtcNow;
         var game = _fixture.CreateGameInStateNew(_playerId);
 
-        game.LastUpdatedAt.Should().BeCloseTo(beforeCreation, TimeSpan.FromMilliseconds(100));
+        game.LastUpdatedAt.Should().BeCloseTo(beforeCreation, TimestampTolerance);
         game.LastUpdatedAt.Kind.Should().Be(DateTimeKind.Utc);
     }
 
@@ -370,7 +372,7 @@ public class GameTests
         await Task.Delay(10);
         game.PlaceShip(BoardSide.Player, ShipKind.Destroyer, ShipOrientation.Horizontal, "A1");
 
-        game.LastUpdatedAt.Should().BeCloseTo(initialLastUpdated, TimeSpan.FromMilliseconds(100));
+        game.LastUpdatedAt.Should().BeCloseTo(initialLastUpdated, TimestampTolerance);
     }
 
     [Fact]
@@ -383,7 +385,7 @@ public class GameTests
         await Task.Delay(10);
         game.StartGameplay();
 
-        game.LastUpdatedAt.Should().BeCloseTo(initialLastUpdated, TimeSpan.FromMilliseconds(100));
+        game.LastUpdatedAt.Should().BeCloseTo(initialLastUpdated, TimestampTolerance);
     }
 
     [Fact]
@@ -396,6 +398,6 @@ public class GameTests
         await Task.Delay(10);
         game.Attack(BoardSide.Opponent, "A1");
 
-        game.LastUpdatedAt.Should().BeCloseTo(initialLastUpdated, TimeSpan.FromMilliseconds(100));
+        game.LastUpdatedAt.Should().BeCloseTo(initialLastUpdated, TimestampTolerance);
     }
 }

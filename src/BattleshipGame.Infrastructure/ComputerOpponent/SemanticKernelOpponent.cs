@@ -1,48 +1,48 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using BattleshipGame.Application.Common;
-using BattleshipGame.Application.Contracts.OpponentStrategy;
+using BattleshipGame.Application.Interfaces.ComputerOpponent;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
-namespace BattleshipGame.Infrastructure.OpponentStrategy;
+namespace BattleshipGame.Infrastructure.ComputerOpponent;
 
 /// <summary>
-/// AI opponent strategy using Semantic Kernel and LLM (Ollama or Azure OpenAI).
+/// A computer opponent uses Semantic Kernel and OpenAI-based LLM (Ollama or Azure OpenAI).
 /// Provides explainable move selection with reasoning visible to players.
-/// Always attacks the Player's board.
+/// This is an Opponent, it only attacks the Player's board.
 /// </summary>
-public sealed class SemanticKernelStrategy(
+public sealed class SemanticKernelOpponent(
     IPromptBuilder promptBuilder,
     Kernel kernel,
-    ILogger<SemanticKernelStrategy> logger
-) : IComputerOpponentStrategy
+    ILogger<SemanticKernelOpponent> logger
+) : IComputerOpponent
 {
     private const int MaxRetries = 3;
 
     /// <inheritdoc />
-    public OpponentStrategyType StrategyType => OpponentStrategyType.SemanticKernel;
+    public OpponentStrategy Strategy => OpponentStrategy.SemanticKernel;
 
     /// <inheritdoc />
     public async Task<string> SelectNextAttackAsync(Game game, CancellationToken cancellationToken)
     {
         try
         {
-            logger.LogInformation("AI: Analyzing game state for strategic move");
+            logger.LogInformation("Opponent: Analyzing game state for strategic move");
 
             var gameState = BuildGameStateContext(game);
             var availableTargets = gameState.AvailableTargets;
 
             if (availableTargets.Count == 0)
             {
-                logger.LogWarning("AI: No available cells remaining");
+                logger.LogWarning("Opponent: No available cells remaining");
                 throw new InvalidOperationException("No available targets remaining.");
             }
 
             var prompt = promptBuilder.BuildStrategicPrompt(gameState);
-            logger.LogDebug("AI: Prompt built, querying LLM");
+            logger.LogDebug("Opponent: Prompt built, querying LLM");
 
             var selectedCell = await SelectCellWithRetryAsync(
                 prompt,
@@ -54,21 +54,21 @@ public sealed class SemanticKernelStrategy(
             if (availableTargets.Contains(selectedCell))
             {
                 logger.LogInformation(
-                    "AI: Selected cell {Cell} via strategic analysis",
+                    "Opponent: Selected cell {Cell} via strategic analysis",
                     selectedCell
                 );
                 return selectedCell;
             }
 
             logger.LogWarning(
-                "AI: LLM selected invalid cell {Cell}, falling back to first available target",
+                "Opponent: LLM selected invalid cell {Cell}, falling back to first available target",
                 selectedCell
             );
             return availableTargets.First();
         }
         catch (Exception ex) when (ex is not InvalidOperationException)
         {
-            logger.LogError(ex, "AI: Error during strategic selection, using fallback");
+            logger.LogError(ex, "Opponent: Error during strategic selection, using fallback");
             var availableTargets = game.GetNextTargets(BoardSide.Player);
             return availableTargets.FirstOrDefault() ?? "A1";
         }
@@ -98,7 +98,7 @@ public sealed class SemanticKernelStrategy(
     {
         if (attemptNumber >= MaxRetries)
         {
-            logger.LogWarning("AI: Max retries reached, using first available cell");
+            logger.LogWarning("Opponent: Max retries reached, using first available cell");
             return availableTargets.First();
         }
 
@@ -127,7 +127,7 @@ public sealed class SemanticKernelStrategy(
             }
 
             logger.LogWarning(
-                "AI: Failed to parse valid cell from LLM response (attempt {Attempt}), retrying",
+                "Opponent: Failed to parse valid cell from LLM response (attempt {Attempt}), retrying",
                 attemptNumber + 1
             );
 
@@ -143,7 +143,7 @@ public sealed class SemanticKernelStrategy(
         {
             logger.LogWarning(
                 ex,
-                "AI: LLM call failed (attempt {Attempt}), retrying",
+                "Opponent: LLM call failed (attempt {Attempt}), retrying",
                 attemptNumber + 1
             );
 
@@ -170,7 +170,7 @@ public sealed class SemanticKernelStrategy(
                     var cell = cellObj?.ToString()?.Trim().ToUpper();
                     if (!string.IsNullOrEmpty(cell) && availableTargets.Contains(cell))
                     {
-                        logger.LogInformation("AI: Parsed cell from JSON: {Cell}", cell);
+                        logger.LogInformation("Opponent: Parsed cell from JSON: {Cell}", cell);
                         return cell;
                     }
                 }
@@ -178,7 +178,7 @@ public sealed class SemanticKernelStrategy(
         }
         catch (JsonException ex)
         {
-            logger.LogDebug(ex, "AI: Failed to parse JSON from response");
+            logger.LogDebug(ex, "Opponent: Failed to parse JSON from response");
         }
 
         // Fallback: regex pattern matching for cell codes (e.g., A1, B10, J5)
@@ -188,13 +188,13 @@ public sealed class SemanticKernelStrategy(
             var cell = match.Groups[1].Value.ToUpper();
             if (availableTargets.Contains(cell))
             {
-                logger.LogInformation("AI: Parsed cell from regex: {Cell}", cell);
+                logger.LogInformation("Opponent: Parsed cell from regex: {Cell}", cell);
                 return cell;
             }
         }
 
         logger.LogWarning(
-            "AI: Could not parse any valid cell from response:\n{Response}",
+            "Opponent: Could not parse any valid cell from response:\n{Response}",
             response
         );
         return null;

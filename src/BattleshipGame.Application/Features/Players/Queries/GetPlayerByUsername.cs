@@ -1,4 +1,4 @@
-﻿using BattleshipGame.Application.Contracts.Persistence;
+﻿using BattleshipGame.Application.Interfaces.Persistence;
 using MediatR;
 
 namespace BattleshipGame.Application.Features.Players.Queries;

@@ -1,5 +1,5 @@
 using BattleshipGame.Application.Common.Services;
-using BattleshipGame.Application.Contracts.Persistence;
+using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.Exceptions;
@@ -14,11 +14,11 @@ namespace BattleshipGame.Application.Features.Games.Commands;
 /// </summary>
 /// <param name="PlayerId">The player creating the game.</param>
 /// <param name="BoardSize">The size of the game board (optional, defaults to 10).</param>
-/// <param name="OpponentStrategy">The AI opponent strategy type (optional, defaults to Random).</param>
+/// <param name="OpponentStrategy">Computer opponent strategy (optional, defaults to Random).</param>
 public record StartNewGameCommand(
     PlayerId PlayerId,
     int BoardSize = DefaultBoardSize,
-    OpponentStrategyType OpponentStrategy = OpponentStrategyType.Random
+    OpponentStrategy OpponentStrategy = OpponentStrategy.Random
 ) : IRequest<Guid>;
 
 internal class StartNewGameHandler(

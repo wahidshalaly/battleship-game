@@ -25,16 +25,18 @@ public class GameApiSimulationTests(
         })
         .CreateClient();
 
-    [Fact]
-    public async Task Simulate_Full_Game_Playthrough_Via_Api()
+    [Theory]
+    [InlineData(OpponentStrategy.Random)]
+    [InlineData(OpponentStrategy.SemanticKernel)]
+    public async Task Simulate_Full_Game_Playthrough_Via_Api(OpponentStrategy strategy)
     {
         const string playerUsername = "testuser";
 
         // 1. Create player
         var playerId = await CreatePlayer(playerUsername);
 
-        // 2. Create game
-        var gameId = await CreateGame(playerId);
+        // 2. Create game with selected opponent strategy
+        var gameId = await CreateGame(playerId, strategy);
         await VerifyGameState(gameId, GameState.New);
 
         // 3. Place ships for both sides
@@ -121,11 +123,16 @@ public class GameApiSimulationTests(
         }
     }
 
-    private async Task<Guid> CreateGame(Guid playerId)
+    private async Task<Guid> CreateGame(Guid playerId, OpponentStrategy opponentStrategy)
     {
         var response = await _client.PostAsJsonAsync(
             "/api/games",
-            new { PlayerId = playerId, BoardSize = 10 }
+            new
+            {
+                PlayerId = playerId,
+                BoardSize = 10,
+                OpponentStrategy = opponentStrategy,
+            }
         );
         response.EnsureSuccessStatusCode();
         var createdGameLocation = response.Headers.Location;
