@@ -1,13 +1,13 @@
 /**
  * Full Game Simulation - Complete game playthrough
  *
- * Purpose: Simulate complete games from start to finish
- * VUs: 10 concurrent complete games
- * Duration: 10 minutes
+ * Purpose: Simulate one complete game from start to finish
+ * VUs: 1
+ * Iterations: 1 (plays exactly one complete game)
  */
 
 import { sleep, check } from "k6";
-import { config, GameState, CellState } from "../config.js";
+import { config, GameState, CellState, OpponentStrategy } from "../config.js";
 import {
   createPlayer,
   createGame,
@@ -20,8 +20,8 @@ import {
 } from "../lib/game-helpers.js";
 
 export const options = {
-  vus: 10,
-  duration: "10m",
+  vus: 1,
+  iterations: 1,
   thresholds: config.defaultThresholds
 };
 
@@ -34,10 +34,19 @@ export default function () {
   }
 
   // 2. Create game
-  const gameId = createGame(playerId);
+  // Use environment variable to choose strategy: K6_OPPONENT_STRATEGY=SemanticKernel or Random
+  // If not set, defaults to API's default (Random)
+  const strategyEnv = __ENV.K6_OPPONENT_STRATEGY;
+  const strategy = strategyEnv === "SemanticKernel" ? OpponentStrategy.SemanticKernel : 
+                   strategyEnv === "Random" ? OpponentStrategy.Random : 
+                   undefined; // Let API use default
+  
+  const gameId = createGame(playerId, config.boardSize, strategy);
   if (!gameId) {
     return;
   }
+
+  console.log(`Creating game with strategy: ${strategy || 'default (Random)'}`);
 
   // Verify initial game state
   let game = getGame(gameId);
@@ -87,7 +96,7 @@ export default function () {
   for (const cellCode of positions) {
     const result = attack(gameId, cellCode);
 
-    if (result && result.playerAttackResult && result.playerAttackResult.hit) {
+    if (result && result.playerAttackResult === "Hit") {
       hitCount++;
     }
 

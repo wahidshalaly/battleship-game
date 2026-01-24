@@ -9,6 +9,7 @@
     "test:spike": "docker run --rm --network=host -e K6_INSECURE_SKIP_TLS_VERIFY=true -v $(pwd):/scripts grafana/k6:latest run /scripts/scenarios/spike-test.js",
     "test:soak": "docker run --rm --network=host -e K6_INSECURE_SKIP_TLS_VERIFY=true -v $(pwd):/scripts grafana/k6:latest run /scripts/scenarios/soak-test.js",
     "test:full-game": "docker run --rm --network=host -e K6_INSECURE_SKIP_TLS_VERIFY=true -v $(pwd):/scripts grafana/k6:latest run /scripts/scenarios/full-game-simulation.js",
+    "test:full-game:sk": "docker run --rm --network=host -e K6_INSECURE_SKIP_TLS_VERIFY=true -e K6_OPPONENT_STRATEGY=SemanticKernel -v $(pwd):/scripts grafana/k6:latest run /scripts/scenarios/full-game-simulation.js",
     "test:all": "npm run test:smoke && npm run test:load && npm run test:stress"
   },
   "keywords": [
