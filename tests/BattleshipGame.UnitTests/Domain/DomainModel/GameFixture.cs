@@ -40,7 +40,6 @@ public class GameFixture
         playerId ??= new PlayerId(Guid.NewGuid());
         var game = CreateGameInStateStarted(playerId);
         var defeatedSide = winnerSide.OppositeSide();
-        var rng = new Random();
 
         // Collect target cells on the defeated side - all are confirmed hits
         var confirmedTargets = game.GetShips(defeatedSide)
@@ -48,7 +47,7 @@ public class GameFixture
             .ToList();
 
         // Collect target cells on the winner side - random hits and misses
-        var randomTargets = game.GetAvailableCellCodes(winnerSide)
+        var randomTargets = game.GetNextTargets(winnerSide)
             .OrderByDescending(c => c)
             .Take(confirmedTargets.Count)
             .ToList();
@@ -79,7 +78,7 @@ public class GameFixture
 
         // Collect target cells on the winner side - random hits and misses
         var attackerSide = attackedSide.OppositeSide();
-        var randomTargets = game.GetAvailableCellCodes(attackerSide)
+        var randomTargets = game.GetNextTargets(attackerSide)
             .OrderByDescending(c => c)
             .Take(confirmedTargets.Count)
             .ToList();

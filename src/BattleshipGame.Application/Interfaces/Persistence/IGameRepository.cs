@@ -1,7 +1,7 @@
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 
-namespace BattleshipGame.Application.Contracts.Persistence;
+namespace BattleshipGame.Application.Interfaces.Persistence;
 
 /// <summary>
 /// Repository contract for Game aggregate persistence operations.

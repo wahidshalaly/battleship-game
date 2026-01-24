@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using BattleshipGame.Application.Contracts.Persistence;
+using BattleshipGame.Application.Interfaces.Persistence;
 using Microsoft.Extensions.Logging;
 
 namespace BattleshipGame.Infrastructure.Persistence;

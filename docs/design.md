@@ -22,11 +22,12 @@ classDiagram
         +GameId Id
         +PlayerId PlayerId
         +int BoardSize
+        +OpponentStrategy OpponentStrategy
         +GameState State
         +BoardSide WinnerSide
         +DateTime CreatedAt
         +DateTime LastUpdatedAt
-        +Game(PlayerId, int)
+        +Game(PlayerId, int, OpponentStrategy)
         +ShipId PlaceShip(BoardSide, ShipKind, ShipOrientation, string)
         +void Attack(BoardSide, string)
         +ShipKind GetShipKind(BoardSide, ShipId)
@@ -135,7 +136,15 @@ classDiagram
         GameOver
     }
 
+    class OpponentStrategy {
+        <<Enumeration>>
+        None
+        Random
+        SemanticKernel
+    }
+
     Game "1" --> "2" Board : owns
+    Game --> OpponentStrategy : configured with
     Board "1" --> "*" Cell : contains
     Board "1" --> "*" Ship : contains
     Ship --> ShipKind : has type
@@ -151,7 +160,7 @@ classDiagram
     %% Application Services
     class IGameplayService {
         <<Interface>>
-        +Task~GameId~ StartNewGameAsync(PlayerId, int)
+        +Task~GameId~ StartNewGameAsync(PlayerId, int, OpponentStrategy)
         +Task~ShipId~ PlaceShipAsync(GameId, BoardSide, ShipKind, ShipOrientation, string)
         +Task StartGameplayAsync(GameId)
         +Task~LastRoundResult~ PlayerAttackThenCounterAttackAsync(GameId, string)
@@ -159,7 +168,7 @@ classDiagram
     }
 
     class GameplayService {
-        +Task~GameId~ StartNewGameAsync(PlayerId, int)
+        +Task~GameId~ StartNewGameAsync(PlayerId, int, OpponentStrategy)
         +Task~ShipId~ PlaceShipAsync(GameId, BoardSide, ShipKind, ShipOrientation, string)
         +Task StartGameplayAsync(GameId)
         +Task~LastRoundResult~ PlayerAttackThenCounterAttackAsync(GameId, string)
@@ -268,6 +277,7 @@ classDiagram
     class CreateGameRequest {
         +Guid PlayerId
         +int? BoardSize
+        +OpponentStrategy? OpponentStrategy
     }
 
     class PlaceShipRequest {

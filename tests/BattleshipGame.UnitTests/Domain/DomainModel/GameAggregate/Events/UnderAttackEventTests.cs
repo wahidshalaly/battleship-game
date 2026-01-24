@@ -35,7 +35,7 @@ public class UnderAttackEventTests
     {
         // Arrange
         var game = _gameFixture.CreateGameInStateStarted();
-        var clearCell = game.GetAvailableCellCodes(BoardSide.Opponent).Last();
+        var clearCell = game.GetNextTargets(BoardSide.Opponent).Last();
 
         // Act
         game.Attack(BoardSide.Opponent, clearCell);
@@ -56,7 +56,7 @@ public class UnderAttackEventTests
     {
         // Arrange
         var game = _gameFixture.CreateGameInStateStarted();
-        var occupiedCell = game.GetAvailableCellCodes(BoardSide.Opponent).First();
+        var occupiedCell = game.GetNextTargets(BoardSide.Opponent).First();
 
         // Act
         game.Attack(BoardSide.Opponent, occupiedCell);

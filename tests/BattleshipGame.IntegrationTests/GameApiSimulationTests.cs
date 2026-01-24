@@ -5,6 +5,7 @@ using BattleshipGame.WebAPI.Controllers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit.Abstractions;
+using static BattleshipGame.Domain.Common.Constants;
 
 namespace BattleshipGame.IntegrationTests;
 
@@ -25,62 +26,86 @@ public class GameApiSimulationTests(
         })
         .CreateClient();
 
-    [Fact]
-    public async Task Simulate_Full_Game_Playthrough_Via_Api()
+    private const int BoardSize = DefaultBoardSize;
+
+    [Theory]
+    [InlineData(OpponentStrategy.Random)]
+    [InlineData(OpponentStrategy.SemanticKernel)]
+    public async Task Simulate_Full_Game_Playthrough_Via_Api(OpponentStrategy strategy)
     {
         const string playerUsername = "testuser";
 
         // 1. Create player
         var playerId = await CreatePlayer(playerUsername);
 
-        // 2. Create game
-        var gameId = await CreateGame(playerId);
+        // 2. Create game with selected opponent strategy
+        var gameId = await CreateGame(playerId, BoardSize, strategy);
         await VerifyGameState(gameId, GameState.New);
 
-        // 3. Place ships for both sides
-        await PlaceShips(gameId);
+        // 3. Generate random ship placements
+        var shipPlacements = GenerateRandomShipPlacements(BoardSize);
+
+        // 4. Place ships for both sides
+        await PlaceShips(gameId, shipPlacements);
         await VerifyGameState(gameId, GameState.Ready);
 
-        // 4. Start gameplay
+        // 5. Start gameplay
         await StartGameplay(gameId);
         await VerifyGameState(gameId, GameState.Started);
 
-        // 5. Attack all Opponent ship positions
-        await AttackShips(gameId);
+        // 6. Attack all Opponent ship positions
+        await AttackShips(gameId, shipPlacements);
         await VerifyGameState(gameId, GameState.GameOver);
+    }
+
+    private async Task<GetGameQueryResult> GetGame(Guid gameId)
+    {
+        var result = await _client.GetFromJsonAsync<GetGameQueryResult>($"/api/games/{gameId}");
+        result.Should().NotBeNull();
+        return result;
     }
 
     private async Task VerifyGameState(Guid gameId, GameState gameState)
     {
-        var getGameResult = await _client.GetFromJsonAsync<GetGameQueryResult>(
-            $"/api/games/{gameId}"
-        );
-        getGameResult.Should().NotBeNull();
-        getGameResult.State.Should().Be(gameState);
+        var result = await GetGame(gameId);
+        result.State.Should().Be(gameState);
     }
 
-    private static (
+    private (
         string BowCode,
         ShipKind Kind,
         ShipOrientation Orientation,
         string[] Position
-    )[] DefineShips(Guid gameId)
+    )[] GenerateRandomShipPlacements(int boardSize)
     {
-        return
-        [
-            ("A1", ShipKind.Destroyer, ShipOrientation.Horizontal, ["A1", "B1"]),
-            ("B2", ShipKind.Submarine, ShipOrientation.Vertical, ["B2", "B3", "B4"]),
-            ("C3", ShipKind.Cruiser, ShipOrientation.Horizontal, ["C3", "D3", "E3"]),
-            ("D4", ShipKind.Battleship, ShipOrientation.Vertical, ["D4", "D5", "D6", "D7"]),
-            ("E5", ShipKind.Carrier, ShipOrientation.Horizontal, ["E5", "F5", "G5", "H5", "I5"]),
-        ];
+        var generator = new RandomShipPlacementGenerator(boardSize);
+        var placements = generator.GeneratePlacements();
+
+        foreach (var (bowCode, kind, orientation, position) in placements)
+        {
+            output.WriteLine(
+                "Ship {0}: Bow={1}, Orientation={2}, Position=[{3}]",
+                kind,
+                bowCode,
+                orientation,
+                string.Join(", ", position)
+            );
+        }
+
+        return placements;
     }
 
-    private async Task PlaceShips(Guid gameId)
+    private async Task PlaceShips(
+        Guid gameId,
+        (
+            string BowCode,
+            ShipKind Kind,
+            ShipOrientation Orientation,
+            string[] Position
+        )[] shipPlacements
+    )
     {
-        var shipDefs = DefineShips(gameId);
-
-        foreach (var (bowCode, kind, orientation, _) in shipDefs)
+        foreach (var (bowCode, kind, orientation, _) in shipPlacements)
         {
             await _client.PostAsJsonAsync(
                 $"/api/games/{gameId}/ships",
@@ -102,11 +127,17 @@ public class GameApiSimulationTests(
         response.EnsureSuccessStatusCode();
     }
 
-    private async Task AttackShips(Guid gameId)
+    private async Task AttackShips(
+        Guid gameId,
+        (
+            string BowCode,
+            ShipKind Kind,
+            ShipOrientation Orientation,
+            string[] Position
+        )[] shipPlacements
+    )
     {
-        var shipDefs = DefineShips(gameId);
-
-        foreach (var (_, _, _, position) in shipDefs)
+        foreach (var (_, _, _, position) in shipPlacements)
         {
             foreach (var cellCode in position)
             {
@@ -121,11 +152,20 @@ public class GameApiSimulationTests(
         }
     }
 
-    private async Task<Guid> CreateGame(Guid playerId)
+    private async Task<Guid> CreateGame(
+        Guid playerId,
+        int boardSize,
+        OpponentStrategy opponentStrategy
+    )
     {
         var response = await _client.PostAsJsonAsync(
             "/api/games",
-            new { PlayerId = playerId, BoardSize = 10 }
+            new
+            {
+                PlayerId = playerId,
+                BoardSize = boardSize,
+                OpponentStrategy = opponentStrategy,
+            }
         );
         response.EnsureSuccessStatusCode();
         var createdGameLocation = response.Headers.Location;

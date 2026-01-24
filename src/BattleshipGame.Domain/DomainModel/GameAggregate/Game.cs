@@ -19,8 +19,11 @@ public record GameId(Guid Value) : EntityId(Value);
 /// <summary>
 /// This represents an instance of the Battleship game, and it tracks the state of the game.
 /// </summary>
-public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
-    : AggregateRoot<GameId>
+public sealed class Game(
+    PlayerId playerId,
+    int boardSize = DefaultBoardSize,
+    OpponentStrategy strategy = OpponentStrategy.Random
+) : AggregateRoot<GameId>
 {
     private readonly Board _ownBoard = new(boardSize);
     private readonly Board _oppBoard = new(boardSize);
@@ -28,6 +31,11 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
     public PlayerId PlayerId { get; } = playerId;
 
     public int BoardSize { get; } = boardSize;
+
+    /// <summary>
+    /// Gets the computer opponent strategy configured for this game.
+    /// </summary>
+    public OpponentStrategy OpponentStrategy { get; } = strategy;
 
     public GameState State { get; private set; } = GameState.New;
 
@@ -159,7 +167,7 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
     /// </summary>
     /// <param name="boardSide">The boardSide whose available cell codes to get</param>
     /// <returns>The available cell codes for the specified boardSide</returns>
-    public IReadOnlyCollection<string> GetAvailableCellCodes(BoardSide boardSide)
+    public IReadOnlyCollection<string> GetNextTargets(BoardSide boardSide)
     {
         return BoardSelector(boardSide)
             .Cells.Where(s => s.State is CellState.Clear or CellState.Occupied)
@@ -195,6 +203,34 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
         BoardSelector(boardSide).Ships.First(s => s.Id == shipId).Kind;
 
     /// <summary>
+    /// Gets all cells that were hit on the specified boardSide.
+    /// </summary>
+    /// <param name="boardSide">The boardSide to get hit cells from</param>
+    /// <returns>List of cell codes that were hit</returns>
+    public IReadOnlyCollection<string> GetHits(BoardSide boardSide)
+    {
+        return BoardSelector(boardSide)
+            .Cells.Where(c => c.State == CellState.Hit)
+            .Select(c => c.Code)
+            .ToList()
+            .AsReadOnly();
+    }
+
+    /// <summary>
+    /// Gets all cells that were missed on the specified boardSide.
+    /// </summary>
+    /// <param name="boardSide">The boardSide to get missed cells from</param>
+    /// <returns>List of cell codes that were missed</returns>
+    public IReadOnlyCollection<string> GetMisseds(BoardSide boardSide)
+    {
+        return BoardSelector(boardSide)
+            .Cells.Where(c => c.State == CellState.Missed)
+            .Select(c => c.Code)
+            .ToList()
+            .AsReadOnly();
+    }
+
+    /// <summary>
     /// Starts the gameplay for a game that is ready.
     /// </summary>
     /// <returns>A completed task.</returns>
@@ -213,6 +249,20 @@ public sealed class Game(PlayerId playerId, int boardSize = DefaultBoardSize)
         LastUpdatedAt = DateTime.UtcNow;
 
         AddDomainEvent(new GameStartedEvent(Id));
+    }
+
+    /// <summary>
+    /// Gets the board coordinate range as a human-readable string.
+    /// </summary>
+    /// <remarks>
+    /// For a 10×10 board, returns "A1 to J10".
+    /// Useful for prompts and UI display.
+    /// </remarks>
+    /// <returns>A string representing the board range (e.g., "A1 to J10")</returns>
+    public string GetBoardRange()
+    {
+        var lastColumn = ColumnHeaders[BoardSize - 1];
+        return $"A1 to {lastColumn}{BoardSize}";
     }
 
     /// <summary>

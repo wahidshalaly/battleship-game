@@ -1,6 +1,6 @@
 using BattleshipGame.Application.Common.Services;
-using BattleshipGame.Application.Contracts.OpponentStrategy;
-using BattleshipGame.Application.Contracts.Persistence;
+using BattleshipGame.Application.Interfaces.ComputerOpponent;
+using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
@@ -21,12 +21,12 @@ public record OpponentAttackCommand(GameId GameId) : IRequest<AttackResult>;
 /// </summary>
 /// <param name="logger">The logger instance.</param>
 /// <param name="gameRepository">The game repository.</param>
-/// <param name="opponentStrategy">The computer opponent strategy service.</param>
+/// <param name="opponentFactory">The opponent strategy factory.</param>
 /// <param name="eventDispatcher">The domain event dispatcher.</param>
 internal class OpponentAttackHandler(
     ILogger<OpponentAttackHandler> logger,
     IGameRepository gameRepository,
-    IComputerOpponentStrategy opponentStrategy,
+    IComputerOpponentFactory opponentFactory,
     IDomainEventDispatcher eventDispatcher
 ) : IRequestHandler<OpponentAttackCommand, AttackResult>
 {
@@ -41,9 +41,10 @@ internal class OpponentAttackHandler(
         // 1. Load aggregate
         var game = await gameRepository.GetByIdOrThrowAsync(request.GameId, ct);
 
-        // 2. Select target cell and perform attack
-        var targetCell = await opponentStrategy.SelectNextAttack(request.GameId);
-        var cellState = game.Attack(BoardSide.Player, targetCell);
+        // 2. Get strategy based on game configuration and select target cell
+        var opponent = opponentFactory.GetByGame(game);
+        var target = await opponent.SelectNextAttackAsync(game, ct);
+        var cellState = game.Attack(BoardSide.Player, target);
 
         // 3. Check if a ship was sunk by inspecting domain events
         var shipSunkEvent = game
@@ -62,7 +63,7 @@ internal class OpponentAttackHandler(
         logger.LogInformation(
             "Opponent Attack! Game `{GameId}` X {CellCode}, Outcome: {CellState}, Ship Sunk: {SunkShip}",
             request.GameId.Value,
-            targetCell,
+            target,
             cellState,
             sunkShip?.ToString() ?? "None"
         );
@@ -72,7 +73,7 @@ internal class OpponentAttackHandler(
 
         // 6. Return attack result
         return new AttackResult(
-            TargetCell: targetCell,
+            TargetCell: target,
             CellState: cellState,
             GameState: game.State,
             WinnerSide: game.WinnerSide,

@@ -434,6 +434,8 @@ components:
           type: integer
           format: int32
           nullable: true
+        opponentStrategy:
+          $ref: '#/components/schemas/OpponentStrategyType'
       additionalProperties: false
     CreatePlayerRequest:
       type: object
@@ -484,6 +486,12 @@ components:
         winnerSide:
           $ref: '#/components/schemas/BoardSide'
       additionalProperties: false
+    OpponentStrategyType:
+      description: The AI opponent strategy type for the game.
+      enum:
+        - Random
+        - SemanticKernel
+      type: string
     LastRoundResult:
       type: object
       properties:

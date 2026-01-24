@@ -1,4 +1,4 @@
-namespace BattleshipGame.Application.Contracts.Persistence;
+namespace BattleshipGame.Application.Interfaces.Persistence;
 
 /// <summary>
 /// Repository contract for broadcasting announcements.
