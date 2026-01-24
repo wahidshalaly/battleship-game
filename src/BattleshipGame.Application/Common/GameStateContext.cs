@@ -20,7 +20,7 @@ public sealed record GameStateContext
     /// <summary>
     /// The range of the board in cell codes (e.g., "A1-J10").
     /// </summary>
-    public required string BoardRange { get; set; }
+    public required string BoardRange { get; init; }
 
     /// <summary>
     /// Cells that are valid targets for the next attack (not yet attacked).

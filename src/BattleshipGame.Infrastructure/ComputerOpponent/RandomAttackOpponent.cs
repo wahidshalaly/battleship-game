@@ -8,8 +8,6 @@ namespace BattleshipGame.Infrastructure.ComputerOpponent;
 /// </summary>
 public sealed class RandomAttackOpponent : IComputerOpponent
 {
-    private readonly Random _random = new();
-
     /// <inheritdoc />
     public OpponentStrategy Strategy => OpponentStrategy.Random;
 
@@ -23,7 +21,7 @@ public sealed class RandomAttackOpponent : IComputerOpponent
             throw new InvalidOperationException("No available targets remaining.");
         }
 
-        var index = _random.Next(targets.Count);
+        var index = Random.Shared.Next(targets.Count);
         var selectedTarget = targets.ElementAt(index);
 
         return Task.FromResult(selectedTarget);

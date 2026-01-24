@@ -13,6 +13,8 @@ namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate;
 
 public class GameTests
 {
+    // NOTE: Timestamp tolerance is intentionally set to 300 ms.
+    // This keeps the assertions strict enough and sorts flakiness in tests as well.
     private static readonly TimeSpan TimestampTolerance = TimeSpan.FromMilliseconds(300);
 
     private readonly GameFixture _fixture = new();

@@ -27,7 +27,11 @@ public static class ServiceCollectionExtensions
         var endpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
         var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
 
-        if (string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(modelId))
+        if (
+            string.IsNullOrEmpty(endpoint)
+            || string.IsNullOrEmpty(modelId)
+            || string.IsNullOrEmpty(apiKey)
+        )
         {
             throw new InvalidOperationException(
                 "LLM configuration missing. Set environment variables: OPENAI_MODEL_ID, OPENAI_ENDPOINT, OPENAI_API_KEY."
