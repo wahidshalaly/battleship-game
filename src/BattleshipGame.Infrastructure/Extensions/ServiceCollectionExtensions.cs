@@ -129,7 +129,7 @@ public static class ServiceCollectionExtensions
                 .Value;
             var logger = provider.GetRequiredService<ILogger<ResiliencePipeline<string>>>();
 
-            return AiOpponentResiliencePolicyFactory.CreateCombinedPipeline<string>(
+            return AiOpponentResiliencePolicyFactory.CreateResiliencePipeline<string>(
                 options,
                 logger
             );

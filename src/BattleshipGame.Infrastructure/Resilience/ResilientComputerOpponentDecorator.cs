@@ -26,7 +26,7 @@ public sealed class ResilientComputerOpponentDecorator(
         try
         {
             return await resilientPipeline.ExecuteAsync(
-                async token => await innerOpponent.SelectNextAttackAsync(game, token),
+                async ct2 => await innerOpponent.SelectNextAttackAsync(game, ct2),
                 ct
             );
         }

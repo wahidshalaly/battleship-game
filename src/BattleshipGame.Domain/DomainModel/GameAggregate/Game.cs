@@ -258,11 +258,11 @@ public sealed class Game(
     /// For a 10×10 board, returns "A1 to J10".
     /// Useful for prompts and UI display.
     /// </remarks>
-    /// <returns>A string representing the board range (e.g., "A1 to J10")</returns>
-    public string GetBoardRange()
+    /// <returns>A string representing the board range (e.g., "A1 to J10 (10x10 grid, columns A-J, rows 1-10)")</returns>
+    public string DescribeBoard()
     {
         var lastColumn = ColumnHeaders[BoardSize - 1];
-        return $"A1 to {lastColumn}{BoardSize}";
+        return $"A1 to {lastColumn} ({BoardSize}x{BoardSize} grid, columns A-{lastColumn}, rows 1-{BoardSize})";
     }
 
     /// <summary>

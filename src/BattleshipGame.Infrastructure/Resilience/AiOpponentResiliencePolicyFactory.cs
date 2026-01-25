@@ -1,3 +1,5 @@
+using System.Net;
+using BattleshipGame.Infrastructure.ComputerOpponent;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.CircuitBreaker;
@@ -16,7 +18,7 @@ public static class AiOpponentResiliencePolicyFactory
     /// Creates a combined resilience pipeline that includes retry, circuit breaker, and timeout strategies.
     /// Order: Timeout -> CircuitBreaker -> Retry
     /// </summary>
-    public static ResiliencePipeline<T> CreateCombinedPipeline<T>(
+    public static ResiliencePipeline<T> CreateResiliencePipeline<T>(
         AiOpponentResilienceOptions options,
         ILogger logger
     )
@@ -34,8 +36,7 @@ public static class AiOpponentResiliencePolicyFactory
                     .Handle<HttpRequestException>(ex =>
                     {
                         // Check if it's a 429 Too Many Requests error
-                        var isRateLimited =
-                            ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests;
+                        var isRateLimited = ex.StatusCode == HttpStatusCode.TooManyRequests;
                         if (isRateLimited)
                         {
                             logger.LogWarning(
@@ -44,7 +45,7 @@ public static class AiOpponentResiliencePolicyFactory
                         }
                         return isRateLimited;
                     })
-                    .Handle<OperationCanceledException>(),
+                    .Handle<AiOpponentException>(),
                 MaxRetryAttempts = options.MaxRetryAttempts,
                 BackoffType = DelayBackoffType.Exponential,
                 Delay = TimeSpan.FromSeconds(2),
@@ -62,7 +63,7 @@ public static class AiOpponentResiliencePolicyFactory
                 BreakDuration = TimeSpan.FromSeconds(options.CircuitBreakerBreakDurationSeconds),
                 ShouldHandle = new PredicateBuilder<T>()
                     .Handle<HttpRequestException>()
-                    .Handle<OperationCanceledException>(),
+                    .Handle<AiOpponentException>(),
             }
         );
 

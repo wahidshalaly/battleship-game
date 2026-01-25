@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using BattleshipGame.Application.Common;
 using BattleshipGame.Application.Interfaces.ComputerOpponent;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
@@ -21,7 +20,10 @@ public sealed class SemanticKernelOpponent(
     ILogger<SemanticKernelOpponent> logger
 ) : IComputerOpponent
 {
-    private const int MaxRetries = 3;
+    private readonly JsonSerializerOptions jsonSerializerOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
 
     /// <inheritdoc />
     public OpponentStrategy Strategy => OpponentStrategy.SemanticKernel;
@@ -29,179 +31,98 @@ public sealed class SemanticKernelOpponent(
     /// <inheritdoc />
     public async Task<string> SelectNextAttackAsync(Game game, CancellationToken ct)
     {
-        try
+        logger.LogInformation("Opponent: Analyzing game state for strategic move");
+
+        var gameSnapshot = BuildGameSnapshot(game);
+        var systemPrompt = promptBuilder.BuildSystemPrompt();
+        var strategicPrompt = promptBuilder.BuildStrategicPrompt(gameSnapshot);
+        logger.LogDebug("Opponent: Prompt built. Strategic Prompt: {Prompt}", strategicPrompt);
+
+        var chatService = kernel.GetRequiredService<IChatCompletionService>();
+        var messages = new ChatHistory();
+        messages.AddSystemMessage(systemPrompt);
+        messages.AddUserMessage(strategicPrompt);
+
+        var executionSettings = new OpenAIPromptExecutionSettings
         {
-            logger.LogInformation("Opponent: Analyzing game state for strategic move");
+            MaxTokens = 100, // Short JSON response only
+            Temperature = 0.3, // More deterministic
+        };
 
-            var gameState = BuildGameStateContext(game);
-            var availableTargets = gameState.AvailableTargets;
+        var response = await chatService.GetChatMessageContentAsync(
+            messages,
+            executionSettings,
+            kernel,
+            ct
+        );
 
-            if (availableTargets.Count == 0)
-            {
-                logger.LogWarning("Opponent: No available cells remaining");
-                throw new InvalidOperationException("No available targets remaining.");
-            }
+        var responseContent = response.Content ?? string.Empty;
+        logger.LogDebug("Opponent: LLM response: {Response}", responseContent);
+        var availableTargets = gameSnapshot.AvailableTargets;
+        var selectedCell = ParseCellFromResponse(responseContent, availableTargets);
 
-            var prompt = promptBuilder.BuildStrategicPrompt(gameState);
-            logger.LogDebug("Opponent: Prompt built, querying LLM");
-
-            var selectedCell = await SelectCellWithRetryAsync(
-                prompt,
-                availableTargets,
-                attemptNumber: 0,
-                ct
-            );
-
-            if (availableTargets.Contains(selectedCell))
-            {
-                logger.LogInformation(
-                    "Opponent: Selected cell {Cell} via strategic analysis",
-                    selectedCell
-                );
-                return selectedCell;
-            }
-
-            logger.LogWarning(
-                "Opponent: LLM selected invalid cell {Cell}, falling back to first available target",
-                selectedCell
-            );
-            return availableTargets.First();
-        }
-        catch (Exception ex) when (ex is not InvalidOperationException)
-        {
-            logger.LogError(ex, "Opponent: Error during strategic selection, using fallback");
-            var availableTargets = game.GetNextTargets(BoardSide.Player);
-            return availableTargets.FirstOrDefault() ?? "A1";
-        }
+        logger.LogInformation(
+            "Opponent: Selected cell {Cell} via strategic analysis",
+            selectedCell
+        );
+        return selectedCell;
     }
 
     /// <summary>
     /// Builds a read-only game state context for prompt construction.
     /// </summary>
-    private static GameStateContext BuildGameStateContext(Game game)
+    private static GameSnapshot BuildGameSnapshot(Game game)
     {
-        return new GameStateContext
+        return new GameSnapshot
         {
             BoardSize = game.BoardSize,
             GameState = game.State,
-            BoardRange = game.GetBoardRange(),
+            BoardDescription = game.DescribeBoard(),
             AvailableTargets = game.GetNextTargets(BoardSide.Player).ToList(),
             Hits = game.GetHits(BoardSide.Player).ToList(),
             Misses = game.GetMisseds(BoardSide.Player).ToList(),
         };
     }
 
-    private async Task<string> SelectCellWithRetryAsync(
-        string prompt,
-        IReadOnlyList<string> availableTargets,
-        int attemptNumber,
-        CancellationToken ct
-    )
+    private string ParseCellFromResponse(string response, IReadOnlyList<string> availableTargets)
     {
-        if (attemptNumber >= MaxRetries)
-        {
-            logger.LogWarning("Opponent: Max retries reached, using first available cell");
-            return availableTargets.First();
-        }
+        AiOpponentNextTarget aiOpponentNextTarget;
 
         try
         {
-            var chatService = kernel.GetRequiredService<IChatCompletionService>();
-
-            var messages = new ChatHistory();
-            messages.AddSystemMessage(promptBuilder.BuildSystemPrompt());
-            messages.AddUserMessage(prompt);
-
-            // Limit response size for faster inference on CPU
-            var executionSettings = new OpenAIPromptExecutionSettings
-            {
-                MaxTokens = 100, // Short JSON response only
-                Temperature = 0.3, // More deterministic
-            };
-
-            var response = await chatService.GetChatMessageContentAsync(
-                messages,
-                executionSettings,
-                kernel,
-                ct
-            );
-
-            var selectedCell = ParseCellFromResponse(
-                response.Content ?? string.Empty,
-                availableTargets
-            );
-
-            if (selectedCell is not null)
-            {
-                return selectedCell;
-            }
-
-            logger.LogWarning(
-                "Opponent: Failed to parse valid cell from LLM response (attempt {Attempt}), retrying",
-                attemptNumber + 1
-            );
-
-            var retryPrompt = promptBuilder.BuildRetryPrompt(prompt, availableTargets);
-            return await SelectCellWithRetryAsync(
-                retryPrompt,
-                availableTargets,
-                attemptNumber + 1,
-                ct
-            );
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            logger.LogWarning(
-                ex,
-                "Opponent: LLM call failed (attempt {Attempt}), retrying",
-                attemptNumber + 1
-            );
-
-            return await SelectCellWithRetryAsync(prompt, availableTargets, attemptNumber + 1, ct);
-        }
-    }
-
-    private string? ParseCellFromResponse(string response, IReadOnlyList<string> availableTargets)
-    {
-        // Try JSON parsing first
-        try
-        {
-            var jsonMatch = Regex.Match(response, @"\{[^}]*""cell""[^}]*\}");
-            if (jsonMatch.Success)
-            {
-                var json = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonMatch.Value);
-                if (json?.TryGetValue("cell", out var cellObj) == true)
-                {
-                    var cell = cellObj?.ToString()?.Trim().ToUpper();
-                    if (!string.IsNullOrEmpty(cell) && availableTargets.Contains(cell))
-                    {
-                        logger.LogInformation("Opponent: Parsed cell from JSON: {Cell}", cell);
-                        return cell;
-                    }
-                }
-            }
+            aiOpponentNextTarget =
+                JsonSerializer.Deserialize<AiOpponentNextTarget>(response, jsonSerializerOptions)
+                ?? throw new AiOpponentException("Deserialized response is null");
         }
         catch (JsonException ex)
         {
-            logger.LogDebug(ex, "Opponent: Failed to parse JSON from response");
+            logger.LogWarning(ex, "Opponent: Failed to deserialize JSON response");
+            throw new AiOpponentException("Failed to parse LLM response as JSON", ex);
         }
 
-        // Fallback: regex pattern matching for cell codes (e.g., A1, B10, J5)
-        var matches = Regex.Matches(response, @"\b([A-J]\d{1,2})\b");
-        foreach (Match match in matches)
+        var cell = aiOpponentNextTarget.Cell?.Trim().ToUpper();
+
+        if (string.IsNullOrEmpty(cell))
         {
-            var cell = match.Groups[1].Value.ToUpper();
-            if (availableTargets.Contains(cell))
-            {
-                logger.LogInformation("Opponent: Parsed cell from regex: {Cell}", cell);
-                return cell;
-            }
+            logger.LogWarning("Opponent: Cell property is null or empty in response");
+            throw new AiOpponentException("LLM response contains null or empty cell value");
         }
 
-        logger.LogWarning(
-            "Opponent: Could not parse any valid cell from response:\n{Response}",
-            response
+        if (!availableTargets.Contains(cell))
+        {
+            logger.LogWarning(
+                "Opponent: LLM selected unavailable cell {Cell}. Available cells: {AvailableCount}",
+                cell,
+                availableTargets.Count
+            );
+            throw new AiOpponentException($"LLM selected unavailable cell: {cell}");
+        }
+
+        logger.LogInformation(
+            "Opponent: Successfully parsed cell {Cell} (Reasoning: {Reasoning})",
+            cell,
+            aiOpponentNextTarget.Reasoning
         );
-        return null;
+        return cell;
     }
 }

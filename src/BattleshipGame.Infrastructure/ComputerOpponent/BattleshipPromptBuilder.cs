@@ -20,15 +20,17 @@ public sealed class BattleshipPromptBuilder : IPromptBuilder
             - How to follow up on hits to sink ships efficiently
             - Probability density mapping for ship locations
             - Adapting strategy based on remaining ship sizes
+            - You opponent's board has 5 ships of sizes 5, 4, 3, 3, and 2 cells.
+            - They're either placed horizontally or vertically without overlapping.
 
             Always respond with valid JSON containing "cell" and "reasoning" fields.
-            The cell must be a valid board position (A1 through J10, or equivalent for larger boards).
+            The cell must be a valid board position within the board rage (A1 through J10, or equivalent for larger boards).
             Keep reasoning brief but strategic.
             """;
     }
 
     /// <inheritdoc />
-    public string BuildStrategicPrompt(GameStateContext context)
+    public string BuildStrategicPrompt(GameSnapshot context)
     {
         var hitDisplay =
             context.Hits.Count > 0 ? string.Join(", ", context.Hits.OrderBy(c => c)) : "None";
@@ -36,41 +38,34 @@ public sealed class BattleshipPromptBuilder : IPromptBuilder
         var missDisplay =
             context.Misses.Count > 0 ? string.Join(", ", context.Misses.OrderBy(c => c)) : "None";
 
-        var boardRange = context.BoardRange;
+        var boardDescription = context.BoardDescription;
 
         return $$"""
-            BATTLESHIP GAME - SELECT YOUR NEXT ATTACK
-            ==========================================
+            Select your next attack cell based on the following game context.
 
-            BOARD RANGE: {{boardRange}} - {{context.BoardSize}} x {{context.BoardSize}} grid
+            BOARD: {{boardDescription}}
 
-            YOUR ATTACK HISTORY:
+            ATTACK HISTORY:
             - HITS: {{hitDisplay}}
             - MISSES: {{missDisplay}}
 
-            VALID TARGETS: Any cell from {{boardRange}} that is NOT listed above.
+            VALID TARGETS: Any cell NOT in the attack history above
+
+
 
             STRATEGY TIPS:
-            - If you have HITS, attack adjacent cells (up/down/left/right) to sink the ship
-            - Multiple hits in a line indicate ship orientation - continue that direction
-            - Avoid cells already attacked (listed above)
+            1. If you have HITS with unknown adjacent cells (up/down/left/right only, NOT diagonal), attack an adjacent cell
+            2. If multiple HITS form a line, continue in that direction until you miss or sink
+            3. Otherwise, target cells with highest probability (center area, checkerboard pattern)
+            4. Never attack previously attacked cells or invalid coordinates
 
-            RESPOND WITH JSON ONLY (no markdown):
-            {"cell": "E5", "reasoning": "brief reason"}
-            """;
-    }
+            OUTPUT FORMAT:
+            Respond with ONLY raw JSON (no markdown, no code blocks, no backticks):
 
-    /// <inheritdoc />
-    public string BuildRetryPrompt(string originalPrompt, IReadOnlyList<string> availableTargets)
-    {
-        var sampleCells = string.Join(", ", availableTargets.Take(10));
-        return $$"""
-            {{originalPrompt}}
+            Example: 
+                {"cell": "B3", "reasoning": "Adjacent to hit at C3 to determine ship orientation"}
+            Or
 
-            Your previous response was invalid. You MUST respond with valid JSON only.
-            Example valid cells: {{sampleCells}}
-
-            {"cell": "X", "reasoning": "Y"}
             """;
     }
 }

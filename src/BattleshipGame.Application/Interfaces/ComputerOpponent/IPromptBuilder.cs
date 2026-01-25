@@ -18,13 +18,5 @@ public interface IPromptBuilder
     /// </summary>
     /// <param name="context">The current game state context.</param>
     /// <returns>The strategic prompt string.</returns>
-    string BuildStrategicPrompt(GameStateContext context);
-
-    /// <summary>
-    /// Builds a retry prompt with additional guidance when the LLM response is invalid.
-    /// </summary>
-    /// <param name="originalPrompt">The original prompt that was sent.</param>
-    /// <param name="availableTargets">The list of valid target cells.</param>
-    /// <returns>The retry prompt string.</returns>
-    string BuildRetryPrompt(string originalPrompt, IReadOnlyList<string> availableTargets);
+    string BuildStrategicPrompt(GameSnapshot context);
 }
