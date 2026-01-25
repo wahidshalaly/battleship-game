@@ -1,5 +1,6 @@
 using BattleshipGame.Application.Interfaces.ComputerOpponent;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Infrastructure.ComputerOpponent;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.CircuitBreaker;
@@ -38,6 +39,29 @@ public sealed class ResilientComputerOpponentDecorator(
             );
 
             // Use pre-resolved fallback opponent (avoids factory lookup during error handling)
+            return await fallbackOpponent.SelectNextAttackAsync(game, ct);
+        }
+        catch (AiOpponentException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "AI opponent {Strategy} failed after all retries. Falling back to Random strategy.",
+                innerOpponent.Strategy
+            );
+
+            // All retries exhausted, use fallback
+            return await fallbackOpponent.SelectNextAttackAsync(game, ct);
+        }
+        catch (Exception ex)
+        {
+            // Catch any other exception (e.g., HttpOperationException, TimeoutException)
+            logger.LogError(
+                ex,
+                "Unexpected error in AI opponent {Strategy} after resilience handling. Falling back to Random strategy.",
+                innerOpponent.Strategy
+            );
+
+            // Use fallback as last resort
             return await fallbackOpponent.SelectNextAttackAsync(game, ct);
         }
     }

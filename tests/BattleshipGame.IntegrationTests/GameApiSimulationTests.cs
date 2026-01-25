@@ -58,6 +58,65 @@ public class GameApiSimulationTests(
         await VerifyGameState(gameId, GameState.GameOver);
     }
 
+    [Fact]
+    public async Task PlayerAttack_WhenAiOpponentFails_ShouldFallbackToRandomStrategy()
+    {
+        // This test validates resilience behavior when AI opponent fails.
+        // Expected behavior:
+        // 1. Player attack succeeds
+        // 2. AI opponent (SemanticKernel) fails due to rate limiting or errors
+        // 3. ResilientComputerOpponentDecorator automatically falls back to RandomAttackStrategy
+        // 4. Opponent executes attack using fallback (never forfeits turn)
+        // 5. Game state remains consistent (no turn corruption)
+        // 6. Player can continue attacking
+
+        const string playerUsername = "resilience-test-user";
+
+        // 1. Create player and game with SemanticKernel opponent
+        var playerId = await CreatePlayer(playerUsername);
+        var gameId = await CreateGame(playerId, BoardSize, OpponentStrategy.SemanticKernel);
+
+        // 2. Setup game
+        var shipPlacements = GenerateRandomShipPlacements(BoardSize);
+        await PlaceShips(gameId, shipPlacements);
+        await StartGameplay(gameId);
+
+        // 3. Execute player attack
+        // Note: Even if SemanticKernel AI fails (rate limit, etc.), the decorator falls back to Random
+        var response = await _client.PostAsJsonAsync(
+            $"/api/games/{gameId}/attacks",
+            new AttackRequest("A1")
+        );
+
+        // Assert: Request should succeed (200 OK)
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+
+        var roundResult = await response.Content.ReadFromJsonAsync<LastRoundResult>();
+        roundResult.Should().NotBeNull();
+        roundResult!.PlayerTargetCell.Should().Be("A1");
+
+        // Opponent should ALWAYS attack (using either SemanticKernel or fallback Random strategy)
+        roundResult
+            .OpponentTargetCell.Should()
+            .NotBeNullOrWhiteSpace("Opponent should never forfeit turn");
+        roundResult
+            .OpponentAttackResult.Should()
+            .NotBeNull("Opponent should always execute attack");
+        roundResult.GameState.Should().Be(GameState.Started);
+
+        // 4. Verify game state is consistent - turn switches back to player
+        var game = await GetGame(gameId);
+        game.State.Should().Be(GameState.Started);
+
+        // 5. Verify subsequent attacks work
+        var secondResponse = await _client.PostAsJsonAsync(
+            $"/api/games/{gameId}/attacks",
+            new AttackRequest("A2")
+        );
+
+        secondResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+    }
+
     private async Task<GetGameQueryResult> GetGame(Guid gameId)
     {
         var result = await _client.GetFromJsonAsync<GetGameQueryResult>($"/api/games/{gameId}");

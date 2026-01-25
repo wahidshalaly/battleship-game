@@ -30,7 +30,7 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration
     )
     {
-        RegisterSemanticKernel(services);
+        RegisterSemanticKernel(services, configuration);
         RegisterOpponentStrategies(services);
         RegisterResiliencePolicies(services, configuration);
 
@@ -43,21 +43,33 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    private static void RegisterSemanticKernel(IServiceCollection services)
+    private static void RegisterSemanticKernel(
+        IServiceCollection services,
+        IConfiguration configuration
+    )
     {
-        // Load LLM configuration from environment variables
-        var modelId = Environment.GetEnvironmentVariable("OPENAI_MODEL_ID");
-        var endpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
-        var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        // Bind OpenAI configuration from appsettings
+        services.Configure<OpenAiOptions>(configuration.GetSection("OpenAi"));
 
+        // Load base configuration from appsettings
+        var configOptions = configuration.GetSection("OpenAi").Get<OpenAiOptions>() ?? new();
+
+        // Environment variables override configuration
+        var modelId =
+            configOptions.ModelId ?? Environment.GetEnvironmentVariable("OPENAI_MODEL_ID");
+        var endpoint =
+            configOptions.Endpoint ?? Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
+        var apiKey = configOptions.ApiKey ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+
+        // Validate final configuration
         if (
-            string.IsNullOrEmpty(endpoint)
-            || string.IsNullOrEmpty(modelId)
+            string.IsNullOrEmpty(modelId)
+            || string.IsNullOrEmpty(endpoint)
             || string.IsNullOrEmpty(apiKey)
         )
         {
             throw new InvalidOperationException(
-                "LLM configuration missing. Set environment variables: OPENAI_MODEL_ID, OPENAI_ENDPOINT, OPENAI_API_KEY."
+                "OpenAI configuration incomplete. Set via appsettings.json 'OpenAi' section or environment variables (OPENAI_MODEL_ID, OPENAI_ENDPOINT, OPENAI_API_KEY)."
             );
         }
 

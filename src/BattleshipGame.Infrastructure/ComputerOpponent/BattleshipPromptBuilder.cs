@@ -40,6 +40,10 @@ public sealed class BattleshipPromptBuilder : IPromptBuilder
 
         var boardDescription = context.BoardDescription;
 
+        // Provide explicit list of valid targets to prevent LLM from selecting already-attacked cells
+        var validTargetsDisplay = string.Join(", ", context.AvailableTargets.OrderBy(c => c));
+        var validTargetsCount = context.AvailableTargets.Count;
+
         return $$"""
             Select your next attack cell based on the following game context.
 
@@ -49,9 +53,14 @@ public sealed class BattleshipPromptBuilder : IPromptBuilder
             - HITS: {{hitDisplay}}
             - MISSES: {{missDisplay}}
 
-            VALID TARGETS: Any cell NOT in the attack history above
+            VALID TARGETS ({{validTargetsCount}} cells available - you MUST choose from this list):
+            {{validTargetsDisplay}}
 
-
+            CRITICAL RULES:
+            - You MUST select a cell from the VALID TARGETS list above
+            - NEVER select cells from HITS or MISSES
+            - The cell you select MUST be in the valid targets list
+            - Double-check your selection is in the valid targets before responding
 
             STRATEGY TIPS:
             1. If you have HITS with unknown adjacent cells (up/down/left/right only, NOT diagonal), attack an adjacent cell
@@ -64,7 +73,8 @@ public sealed class BattleshipPromptBuilder : IPromptBuilder
 
             Example: 
                 {"cell": "B3", "reasoning": "Adjacent to hit at C3 to determine ship orientation"}
-            Or
+
+            IMPORTANT: Verify your chosen cell is in the VALID TARGETS list above before responding.
 
             """;
     }

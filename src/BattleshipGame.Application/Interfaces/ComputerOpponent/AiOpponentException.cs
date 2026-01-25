@@ -1,4 +1,4 @@
-namespace BattleshipGame.Infrastructure.ComputerOpponent;
+namespace BattleshipGame.Application.Interfaces.ComputerOpponent;
 
 /// <summary>
 /// Exception thrown when an AI opponent fails to select a valid target cell.

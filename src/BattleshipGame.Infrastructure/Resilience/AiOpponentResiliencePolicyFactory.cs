@@ -1,5 +1,5 @@
 using System.Net;
-using BattleshipGame.Infrastructure.ComputerOpponent;
+using BattleshipGame.Application.Interfaces.ComputerOpponent;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.CircuitBreaker;

@@ -262,7 +262,9 @@ public sealed class Game(
     public string DescribeBoard()
     {
         var lastColumn = ColumnHeaders[BoardSize - 1];
-        return $"A1 to {lastColumn} ({BoardSize}x{BoardSize} grid, columns A-{lastColumn}, rows 1-{BoardSize})";
+        var gridDescription =
+            $"{BoardSize}x{BoardSize} grid, columns A-{lastColumn}, rows 1-{BoardSize}";
+        return $"A1 to {lastColumn}{BoardSize} ({gridDescription})";
     }
 
     /// <summary>

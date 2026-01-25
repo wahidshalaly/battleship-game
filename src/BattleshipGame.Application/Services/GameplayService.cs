@@ -65,6 +65,7 @@ public sealed class GameplayService(IMediator mediator) : IGameplayService
         }
 
         // Execute opponent's counter-attack
+        // Note: ResilientComputerOpponentDecorator handles failures by falling back to RandomAttackStrategy
         var opponentAttack = await mediator.Send(new OpponentAttackCommand(gameId), ct);
 
         // Return complete round result

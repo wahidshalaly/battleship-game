@@ -5,6 +5,8 @@ namespace BattleshipGame.Infrastructure.Resilience;
 /// </summary>
 public sealed class AiOpponentResilienceOptions
 {
+    public const string ConfigurationSectionName = "Resilience:AiOpponent";
+
     /// <summary>
     /// Maximum number of retry attempts before giving up.
     /// </summary>
