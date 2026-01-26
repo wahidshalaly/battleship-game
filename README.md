@@ -1,3 +1,8 @@
+> **About this project:**
+> This Battleship Game is more than a coding exercise, it's an ongoing experiment and learning playground. The real purpose behind this project is to deepen my hands-on experience with Domain-Driven Design (DDD), Engineering acceleration with AI, and explore how to build practical AI-powered applications with GenAI.
+> I expect to add more design patterns and architecture styles in the future, but based on need and my limited time.
+>
+
 # Battleship Game Documentation
 
 This a comprehensive documentation for the Battleship Game project, providing detailed insights into the system architecture, domain analysis, and design decisions.
