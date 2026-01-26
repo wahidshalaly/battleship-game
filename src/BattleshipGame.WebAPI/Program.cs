@@ -1,6 +1,7 @@
 using System.Reflection;
 using BattleshipGame.Application.Common.Extensions;
 using BattleshipGame.Infrastructure.Extensions;
+using BattleshipGame.Infrastructure.Resilience;
 using BattleshipGame.WebAPI.Filters;
 using BattleshipGame.WebAPI.Middleware;
 using FluentValidation.AspNetCore;
@@ -66,9 +67,25 @@ builder.Services.AddSwaggerGen(c =>
     c.IncludeXmlComments(xmlPath);
 });
 
+// Read Configuration
+builder
+    .Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile(
+        $"appsettings.{builder.Environment.EnvironmentName}.json",
+        optional: true,
+        reloadOnChange: true
+    )
+    .AddEnvironmentVariables();
+
+// TODO: Review options pattern usage across the solution for consistency
+builder
+    .Services.AddOptions<AiOpponentResilienceOptions>()
+    .Bind(builder.Configuration.GetSection(AiOpponentResilienceOptions.ConfigurationSectionName))
+    .ValidateDataAnnotations();
+
 // Register application and infrastructure services
 builder.Services.AddApplicationServices();
-builder.Services.AddInfrastructureServices();
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 var app = builder.Build();
 

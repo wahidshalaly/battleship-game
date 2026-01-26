@@ -1,0 +1,316 @@
+# Comprehensive Fix Plan for AI Opponent & Resilience Issues
+
+## 🎯 Executive Summary
+
+Three critical issues identified from logs:
+1. **LLM repeatedly attacks already-hit cells** (E4 attacked 4 times despite being in MISSES)
+2. **Turn control corruption** when AI fails completely
+3. **Polly resilience fallback not working** - exceptions propagate instead of falling back to RandomAttackStrategy
+
+---
+
+## 📊 Issue Analysis
+
+### Issue 1: LLM Ignoring Attack History ❌
+
+**Symptoms:**
+```
+MISSES: E1, E2, E4, E6, E7, E8, E9
+LLM Response: {"cell": "E4"} ← Already in MISSES!
+```
+
+**Root Cause:**
+- Current prompt format lists hits/misses as text
+- LLM must parse and understand "Any cell NOT in the attack history"
+- LLM's reasoning ("E4 is between E3 and E5") overrides constraint checking
+- No explicit list of valid cells provided
+
+**Impact:** 
+- Wastes retry attempts on invalid cells
+- Triggers circuit breaker unnecessarily
+- Poor user experience (AI appears "broken")
+
+---
+
+### Issue 2: Turn Control Corruption 🔴
+
+**Symptoms:**
+```
+InvalidTargetSideException: It's not the player's turn. 
+Current turn: Player, Attacker turn: Opponent
+```
+
+**Sequence:**
+1. Player attacks → Success, turn switches to Opponent
+2. OpponentAttackCommand executes
+3. AI fails 3 times → `AiOpponentException` thrown
+4. Exception propagates → 500 error
+5. **Game state stuck:** Turn = Opponent, but opponent never completed attack
+6. Client retries → "It's not the player's turn" error
+
+**Root Cause:**
+- When AI fails after all retries, exception propagates
+- Transaction rollback may not work for in-memory repositories
+- Game aggregate left in inconsistent state
+
+---
+
+### Issue 3: Polly Fallback Not Triggering 🚨
+
+**Expected Behavior:**
+```
+Retry (3x) → Circuit Breaker → Fallback to RandomAttackStrategy
+```
+
+**Actual Behavior:**
+```
+Retry (3x) → Circuit Breaker → Exception propagates → 500 error
+```
+
+**Root Cause Analysis Needed:**
+Check `ResilientComputerOpponentDecorator` - it should catch `BrokenCircuitException` and use fallback, but exceptions are escaping.
+
+---
+
+## 🔧 Detailed Fix Plan
+
+### **Fix 1: Improve LLM Prompt with Explicit Valid Cells**
+
+**Files to Modify:**
+- `BattleshipGame.Infrastructure/ComputerOpponent/BattleshipPromptBuilder.cs`
+
+**Changes:**
+1. **Add explicit valid cells list** to prompt:
+   ```
+   VALID TARGETS (choose from these):
+   A1, A2, A3, ..., J10
+   (91 cells available)
+   ```
+
+2. **Improve constraint emphasis:**
+   ```
+   CRITICAL RULES:
+   - You MUST select a cell from the VALID TARGETS list above
+   - NEVER select cells from HITS or MISSES
+   - The cell you select MUST be in the valid targets list
+   ```
+
+3. **Add validation hint in output format:**
+   ```json
+   {"cell": "A1", "reasoning": "..."}
+   
+   IMPORTANT: Verify "A1" is in the VALID TARGETS list above before responding.
+   ```
+
+**Testing:**
+- Unit test: Verify prompt contains all available cells
+- Integration test: Verify LLM selects only from valid cells
+
+---
+
+### **Fix 2: Add Resilience to GameplayService**
+
+**Files to Modify:**
+- `BattleshipGame.Application/Services/GameplayService.cs`
+
+**Current Code (PlayerAttackThenCounterAttackAsync):**
+```csharp
+// Player attacks
+var playerResult = await mediator.Send(new PlayerAttackCommand(...), ct);
+
+// Opponent counter-attacks (PROBLEM: if this fails, player's attack already succeeded)
+var opponentResult = await mediator.Send(new OpponentAttackCommand(...), ct);
+```
+
+**Changes:**
+
+**Option A: Try-Catch with Compensation** ✅ Recommended
+```csharp
+public async Task<LastRoundResult> PlayerAttackThenCounterAttackAsync(...)
+{
+    var playerResult = await mediator.Send(new PlayerAttackCommand(...), ct);
+    
+    AttackResult? opponentResult = null;
+    try
+    {
+        opponentResult = await mediator.Send(new OpponentAttackCommand(...), ct);
+    }
+    catch (AiOpponentException ex)
+    {
+        logger.LogError(ex, "AI opponent failed completely, using fallback result");
+        
+        // Create fallback result - opponent "misses" turn
+        opponentResult = AttackResult.Miss(
+            targetSide: BoardSide.Player,
+            cellCode: "SKIPPED", // Or use a sentinel value
+            gameState: GameState.InProgress
+        );
+    }
+    
+    return new LastRoundResult(playerResult, opponentResult);
+}
+```
+
+**Option B: Make OpponentAttack Non-Blocking** (More complex)
+- Use Saga pattern
+- Compensating transactions
+- Eventual consistency
+
+**Recommendation:** Option A - simpler, handles the edge case gracefully
+
+---
+
+### **Fix 3: Investigate & Fix Polly Fallback**
+
+**Files to Check:**
+1. ResilientComputerOpponentDecorator.cs
+2. AiOpponentResiliencePolicyFactory.cs
+
+**Investigation Steps:**
+
+1. **Check ResilientComputerOpponentDecorator:**
+```csharp
+public async Task<string> SelectNextAttackAsync(Game game, CancellationToken ct)
+{
+    try
+    {
+        return await resilientPipeline.ExecuteAsync(
+            async token => await innerOpponent.SelectNextAttackAsync(game, token),
+            ct
+        );
+    }
+    catch (BrokenCircuitException)
+    {
+        // This should catch and fallback - WHY ISN'T IT WORKING?
+        logger.LogWarning("Circuit breaker is open...");
+        return await fallbackOpponent.SelectNextAttackAsync(game, ct);
+    }
+}
+```
+
+**Hypothesis:** The exception is `AiOpponentException`, not `BrokenCircuitException`!
+
+**Fix:**
+```csharp
+catch (BrokenCircuitException)
+{
+    // Circuit is open, use fallback
+    return await fallbackOpponent.SelectNextAttackAsync(game, ct);
+}
+catch (AiOpponentException ex) when (/* after retries exhausted */)
+{
+    // All retries failed, use fallback
+    logger.LogWarning(ex, "AI opponent failed after all retries, using fallback");
+    return await fallbackOpponent.SelectNextAttackAsync(game, ct);
+}
+```
+
+2. **Verify Polly Configuration:**
+   - Ensure `AiOpponentException` is in `ShouldHandle` for both retry and circuit breaker ✅ (Already done)
+   - Check circuit breaker threshold settings
+   - Verify retry exhaustion behavior
+
+---
+
+## 📋 Implementation Checklist
+
+### Phase 1: Critical Fixes
+- [ ] **Fix 1:** Improve prompt with explicit valid cells list
+- [ ] **Fix 2:** Add try-catch in GameplayService for opponent failures
+- [ ] **Fix 3:** Update ResilientComputerOpponentDecorator to catch AiOpponentException
+
+### Phase 2: Testing
+- [ ] Unit test: BattleshipPromptBuilder includes all valid cells
+- [ ] Unit test: ResilientComputerOpponentDecorator falls back on exception
+- [ ] Integration test: Full game simulation with AI failures
+- [ ] Load test: Verify circuit breaker opens and closes correctly
+
+### Phase 3: Monitoring
+- [ ] Add metrics for AI opponent failures
+- [ ] Add metrics for fallback usage
+- [ ] Add structured logging for troubleshooting
+
+---
+
+## 🗂️ Files Requiring Changes
+
+### Priority 1 (Critical)
+1. `BattleshipGame.Infrastructure/ComputerOpponent/BattleshipPromptBuilder.cs` - Fix prompt
+2. `BattleshipGame.Application/Services/GameplayService.cs` - Add exception handling
+3. ResilientComputerOpponentDecorator.cs - Catch AiOpponentException
+
+### Priority 2 (Testing)
+4. `BattleshipGame.UnitTests/Infrastructure/ComputerOpponent/BattleshipPromptBuilderTests.cs` - Add tests
+5. `BattleshipGame.UnitTests/Infrastructure/Resilience/ResilientComputerOpponentDecoratorTests.cs` - Add tests
+6. `BattleshipGame.IntegrationTests/GameApiSimulationTests.cs` - Update tests
+
+---
+
+## 🔍 Required Context for Implementation
+
+### Context 1: BattleshipPromptBuilder
+- Located: BattleshipPromptBuilder.cs
+- Method: `BuildStrategicPrompt(GameStateContext context)`
+- Need: Current prompt template
+- Need: GameStateContext.AvailableTargets property
+
+### Context 2: GameplayService
+- Located: GameplayService.cs
+- Method: `PlayerAttackThenCounterAttackAsync`
+- Need: AttackResult structure
+- Need: Exception handling patterns in application layer
+
+### Context 3: ResilientComputerOpponentDecorator
+- Located: ResilientComputerOpponentDecorator.cs
+- Method: `SelectNextAttackAsync`
+- Need: Exception handling logic
+- Need: Polly pipeline behavior
+
+### Context 4: Polly Configuration
+- Located: AiOpponentResiliencePolicyFactory.cs
+- Need: Current retry/circuit breaker settings
+- Need: Exception handling configuration
+
+---
+
+## ⚡ Quick Wins vs. Long-term Solutions
+
+### Quick Wins (Implement First)
+1. **Fix 2:** Catch exception in GameplayService - **30 minutes**
+2. **Fix 3:** Catch AiOpponentException in decorator - **15 minutes**
+
+### Medium Priority
+3. **Fix 1:** Improve prompt with explicit cells - **1 hour**
+
+### Long-term
+4. Add comprehensive metrics and monitoring - **2-3 hours**
+5. Implement Saga pattern for resilient game state - **1 day**
+
+---
+
+## 🧪 Testing Strategy
+
+### Unit Tests
+- Prompt contains all and only valid cells
+- Decorator catches and falls back correctly
+- GameplayService handles AI failures gracefully
+
+### Integration Tests
+- Full game with AI failures at different stages
+- Verify game state consistency
+- Verify fallback to random strategy works
+
+### Load Tests
+- Simulate sustained AI failures
+- Verify circuit breaker opens/closes correctly
+- Measure performance impact of fallbacks
+
+---
+
+## 📝 Success Criteria
+
+✅ **LLM never selects already-attacked cells**  
+✅ **Game state never corrupted on AI failure**  
+✅ **Fallback to RandomAttackStrategy works 100% of time**  
+✅ **No 500 errors from AI failures**  
+✅ **Circuit breaker metrics show correct behavior**

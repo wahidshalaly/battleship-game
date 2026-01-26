@@ -41,6 +41,12 @@ export const ShipOrientation = {
   Horizontal: 2
 };
 
+// Opponent strategies
+export const OpponentStrategy = {
+  Random: "Random",
+  SemanticKernel: "SemanticKernel"
+};
+
 // Game states
 export const GameState = {
   None: "None",

@@ -102,14 +102,20 @@ k6 run scenarios/soak-test.js
 ### 6. Full Game Simulation
 
 **Purpose:** Simulate complete game flows
-**Duration:** 10 minutes
-**VUs:** 10
+**VUs:** 1
+**Iterations:** 1 (plays exactly one complete game)
 **When to use:** End-to-end performance validation
 
 ```bash
+# Run with default strategy (Random)
 npm run test:full-game
-# or
+
+# Run with SemanticKernel AI opponent
+npm run test:full-game:sk
+
+# Or run directly with k6
 k6 run scenarios/full-game-simulation.js
+k6 run -e K6_OPPONENT_STRATEGY=SemanticKernel scenarios/full-game-simulation.js
 ```
 
 ## ⚙️ Configuration
@@ -121,9 +127,17 @@ k6 run scenarios/full-game-simulation.js
 $env:API_BASE_URL="http://localhost:8080"  # PowerShell
 export API_BASE_URL="http://localhost:8080"  # Bash
 
-# Run test with custom URL
-k6 run -e API_BASE_URL=http://localhost:8080 scenarios/load-test.js
+# Set opponent strategy (Random or SemanticKernel)
+$env:K6_OPPONENT_STRATEGY="SemanticKernel"  # PowerShell
+export K6_OPPONENT_STRATEGY="SemanticKernel"  # Bash
+
+# Run test with custom configuration
+k6 run -e API_BASE_URL=http://localhost:8080 -e K6_OPPONENT_STRATEGY=SemanticKernel scenarios/full-game-simulation.js
 ```
+
+**Available Opponent Strategies:**
+- `Random` (default) - Simple random opponent
+- `SemanticKernel` - AI-powered opponent using Semantic Kernel
 
 ### Custom Thresholds
 

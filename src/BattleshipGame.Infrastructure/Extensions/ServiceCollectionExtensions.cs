@@ -4,8 +4,13 @@ using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Infrastructure.ComputerOpponent;
 using BattleshipGame.Infrastructure.Persistence;
+using BattleshipGame.Infrastructure.Resilience;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using Polly;
 
 namespace BattleshipGame.Infrastructure.Extensions;
 
@@ -18,23 +23,53 @@ public static class ServiceCollectionExtensions
     /// Adds Infrastructure layer services to the dependency injection container.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="configuration">The configuration for AI opponent.</param>
+    /// <param name="configuration">The application configuration.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructureServices(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
-        // Load LLM configuration from environment variables
-        var modelId = Environment.GetEnvironmentVariable("OPENAI_MODEL_ID");
-        var endpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
-        var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        RegisterSemanticKernel(services, configuration);
+        RegisterOpponentStrategies(services);
+        RegisterResiliencePolicies(services, configuration);
 
+        // Register repositories (singleton for in-memory, will change when using EF Core)
+        services.AddSingleton<IGameRepository, InMemoryGameRepository>();
+        services.AddSingleton<IPlayerRepository, InMemoryPlayerRepository>();
+        services.AddSingleton<IBroadcastRepository, InMemoryBroadcastRepository>();
+        services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
+
+        return services;
+    }
+
+    private static void RegisterSemanticKernel(
+        IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        // Bind OpenAI configuration from appsettings
+        services.Configure<OpenAiOptions>(configuration.GetSection("OpenAi"));
+
+        // Load base configuration from appsettings
+        var configOptions = configuration.GetSection("OpenAi").Get<OpenAiOptions>() ?? new();
+
+        // Environment variables override configuration
+        var modelId =
+            configOptions.ModelId ?? Environment.GetEnvironmentVariable("OPENAI_MODEL_ID");
+        var endpoint =
+            configOptions.Endpoint ?? Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
+        var apiKey = configOptions.ApiKey ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+
+        // Validate final configuration
         if (
-            string.IsNullOrEmpty(endpoint)
-            || string.IsNullOrEmpty(modelId)
+            string.IsNullOrEmpty(modelId)
+            || string.IsNullOrEmpty(endpoint)
             || string.IsNullOrEmpty(apiKey)
         )
         {
             throw new InvalidOperationException(
-                "LLM configuration missing. Set environment variables: OPENAI_MODEL_ID, OPENAI_ENDPOINT, OPENAI_API_KEY."
+                "OpenAI configuration incomplete. Set via appsettings.json 'OpenAi' section or environment variables (OPENAI_MODEL_ID, OPENAI_ENDPOINT, OPENAI_API_KEY)."
             );
         }
 
@@ -47,25 +82,69 @@ public static class ServiceCollectionExtensions
 
         // Register Semantic Kernel instance
         services.AddSingleton(kernel);
+    }
 
+    private static void RegisterOpponentStrategies(IServiceCollection services)
+    {
         // Register prompt builder for LLM-based strategies
         services.AddSingleton<IPromptBuilder, BattleshipPromptBuilder>();
 
-        // Register opponent strategies using keyed services for per-game selection
+        // Register Basic Opponent (Random strategy)
         services.AddKeyedScoped<IComputerOpponent, RandomAttackOpponent>(OpponentStrategy.Random);
-        services.AddKeyedScoped<IComputerOpponent, SemanticKernelOpponent>(
-            OpponentStrategy.SemanticKernel
+
+        // Register base SemanticKernelOpponent (needed for decorator)
+        services.AddScoped<SemanticKernelOpponent>();
+
+        // Register AI Opponent (LLM-based strategy) with resilience decorator
+        services.AddKeyedScoped<IComputerOpponent>(
+            OpponentStrategy.SemanticKernel,
+            (provider, key) =>
+            {
+                var baseOpponent = provider.GetRequiredService<SemanticKernelOpponent>();
+                var pipeline = provider.GetRequiredService<ResiliencePipeline<string>>();
+                // Get fallback opponent directly to avoid circular dependency with factory
+                var fallbackOpponent = provider.GetRequiredKeyedService<IComputerOpponent>(
+                    OpponentStrategy.Random
+                );
+                var logger = provider.GetRequiredService<
+                    ILogger<ResilientComputerOpponentDecorator>
+                >();
+
+                return new ResilientComputerOpponentDecorator(
+                    baseOpponent,
+                    pipeline,
+                    fallbackOpponent,
+                    logger
+                );
+            }
         );
 
         // Register strategy factory
         services.AddScoped<IComputerOpponentFactory, ComputerOpponentFactory>();
+    }
 
-        // Register repositories (singleton for in-memory, will be scoped when using EF Core)
-        services.AddSingleton<IGameRepository, InMemoryGameRepository>();
-        services.AddSingleton<IPlayerRepository, InMemoryPlayerRepository>();
-        services.AddSingleton<IBroadcastRepository, InMemoryBroadcastRepository>();
-        services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
+    private static void RegisterResiliencePolicies(
+        IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        // Configure and register resilience options
+        services.Configure<AiOpponentResilienceOptions>(
+            configuration.GetSection("Resilience:AiOpponent")
+        );
 
-        return services;
+        // Register the resilience pipeline
+        services.AddSingleton(provider =>
+        {
+            var options = provider
+                .GetRequiredService<IOptions<AiOpponentResilienceOptions>>()
+                .Value;
+            var logger = provider.GetRequiredService<ILogger<ResiliencePipeline<string>>>();
+
+            return AiOpponentResiliencePolicyFactory.CreateResiliencePipeline<string>(
+                options,
+                logger
+            );
+        });
     }
 }

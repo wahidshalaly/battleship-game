@@ -36,10 +36,13 @@ export function createPlayer(username) {
  * Creates a new game
  * @param {string} playerId - The player ID
  * @param {number} boardSize - The board size (default: 10)
+ * @param {string} opponentStrategy - Opponent strategy: "Random" or "SemanticKernel" (default: undefined for API default)
  * @returns {string|null} The game ID or null if failed
  */
-export function createGame(playerId, boardSize = config.boardSize) {
-  const payload = JSON.stringify({ playerId, boardSize });
+export function createGame(playerId, boardSize = config.boardSize, opponentStrategy = undefined) {
+  const payload = opponentStrategy 
+    ? JSON.stringify({ playerId, boardSize, opponentStrategy })
+    : JSON.stringify({ playerId, boardSize });
   const params = {
     headers: { "Content-Type": "application/json" },
     tags: { api: "create_game" }
