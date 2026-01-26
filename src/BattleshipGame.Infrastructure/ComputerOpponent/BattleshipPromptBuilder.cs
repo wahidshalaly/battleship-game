@@ -24,7 +24,7 @@ public sealed class BattleshipPromptBuilder : IPromptBuilder
             - They're either placed horizontally or vertically without overlapping.
 
             Always respond with valid JSON containing "cell" and "reasoning" fields.
-            The cell must be a valid board position within the board rage (A1 through J10, or equivalent for larger boards).
+            The cell must be a valid board position within the board range (A1 through J10, or equivalent for larger boards).
             Keep reasoning brief but strategic.
             """;
     }
@@ -32,17 +32,19 @@ public sealed class BattleshipPromptBuilder : IPromptBuilder
     /// <inheritdoc />
     public string BuildStrategicPrompt(GameSnapshot context)
     {
-        var hitDisplay =
-            context.Hits.Count > 0 ? string.Join(", ", context.Hits.OrderBy(c => c)) : "None";
+        var hitDisplay = context.Hits.Any()
+            ? string.Join(", ", context.Hits.OrderBy(c => c))
+            : "None";
 
-        var missDisplay =
-            context.Misses.Count > 0 ? string.Join(", ", context.Misses.OrderBy(c => c)) : "None";
+        var missDisplay = context.Misses.Any()
+            ? string.Join(", ", context.Misses.OrderBy(c => c))
+            : "None";
 
         var boardDescription = context.BoardDescription;
 
         // Provide explicit list of valid targets to prevent LLM from selecting already-attacked cells
         var validTargetsDisplay = string.Join(", ", context.AvailableTargets.OrderBy(c => c));
-        var validTargetsCount = context.AvailableTargets.Count;
+        var validTargetsCount = context.AvailableTargets.Length;
 
         return $$"""
             Select your next attack cell based on the following game context.

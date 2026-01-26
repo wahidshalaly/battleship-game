@@ -28,15 +28,15 @@ public sealed record GameSnapshot
     /// <summary>
     /// Cells that are valid targets for the next attack (not yet attacked).
     /// </summary>
-    public required IReadOnlyList<string> AvailableTargets { get; init; }
+    public required string[] AvailableTargets { get; init; }
 
     /// <summary>
     /// Cells that were attacked and hit a ship.
     /// </summary>
-    public required IReadOnlyList<string> Hits { get; init; }
+    public required string[] Hits { get; init; }
 
     /// <summary>
     /// Cells that were attacked but missed.
     /// </summary>
-    public required IReadOnlyList<string> Misses { get; init; }
+    public required string[] Misses { get; init; }
 }

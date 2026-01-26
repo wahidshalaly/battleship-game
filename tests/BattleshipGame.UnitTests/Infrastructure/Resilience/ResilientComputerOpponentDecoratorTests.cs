@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using BattleshipGame.Application.Interfaces.ComputerOpponent;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
-using BattleshipGame.Infrastructure.ComputerOpponent;
 using BattleshipGame.Infrastructure.Resilience;
 using BattleshipGame.UnitTests.Domain.DomainModel;
 using FakeItEasy;

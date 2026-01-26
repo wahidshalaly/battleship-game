@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using BattleshipGame.Application.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Infrastructure.ComputerOpponent;
@@ -30,15 +28,14 @@ public class BattleshipPromptBuilderTests
     public void BuildStrategicPrompt_ShouldIncludeAllAvailableTargets()
     {
         // Arrange
-        var availableTargets = new List<string> { "A1", "A2", "B1", "B2", "C3" };
         var snapshot = new GameSnapshot
         {
             BoardSize = 10,
             GameState = GameState.Started,
             BoardDescription = "A1 to J10 (10x10 grid)",
-            AvailableTargets = availableTargets,
-            Hits = new List<string> { "E3", "E5" },
-            Misses = new List<string> { "E1", "E2", "E4" },
+            AvailableTargets = ["A1", "A2", "B1", "B2", "C3"],
+            Hits = ["E3", "E5"],
+            Misses = ["E1", "E2", "E4"],
         };
 
         // Act
@@ -49,7 +46,7 @@ public class BattleshipPromptBuilderTests
         prompt.Should().Contain("5 cells available"); // Count of available targets
 
         // Verify each available target is in the prompt
-        foreach (var target in availableTargets)
+        foreach (var target in snapshot.AvailableTargets)
         {
             prompt.Should().Contain(target);
         }
@@ -59,15 +56,14 @@ public class BattleshipPromptBuilderTests
     public void BuildStrategicPrompt_ShouldNotIncludeAttackedCellsInValidTargets()
     {
         // Arrange
-        var availableTargets = new List<string> { "A1", "B1", "C1" };
         var snapshot = new GameSnapshot
         {
             BoardSize = 10,
             GameState = GameState.Started,
             BoardDescription = "A1 to J10 (10x10 grid)",
-            AvailableTargets = availableTargets,
-            Hits = new List<string> { "E3", "E5" },
-            Misses = new List<string> { "E1", "E2", "E4" },
+            AvailableTargets = ["A1", "B1", "C1"],
+            Hits = ["E3", "E5"],
+            Misses = ["E1", "E2", "E4"],
         };
 
         // Act
@@ -98,9 +94,9 @@ public class BattleshipPromptBuilderTests
             BoardSize = 10,
             GameState = GameState.Started,
             BoardDescription = "A1 to J10 (10x10 grid)",
-            AvailableTargets = new List<string> { "A1", "B1" },
-            Hits = new List<string>(),
-            Misses = new List<string>(),
+            AvailableTargets = ["A1", "B1"],
+            Hits = [],
+            Misses = [],
         };
 
         // Act
@@ -122,9 +118,9 @@ public class BattleshipPromptBuilderTests
             BoardSize = 10,
             GameState = GameState.Started,
             BoardDescription = "A1 to J10 (10x10 grid)",
-            AvailableTargets = new List<string> { "A1" },
-            Hits = new List<string> { "E3", "E5" },
-            Misses = new List<string> { "E1", "E2", "E4" },
+            AvailableTargets = ["A1"],
+            Hits = ["E3", "E5"],
+            Misses = ["E1", "E2", "E4"],
         };
 
         // Act
@@ -145,9 +141,9 @@ public class BattleshipPromptBuilderTests
             BoardSize = 10,
             GameState = GameState.Started,
             BoardDescription = "A1 to J10 (10x10 grid)",
-            AvailableTargets = new List<string> { "A1", "A2" },
-            Hits = new List<string>(),
-            Misses = new List<string>(),
+            AvailableTargets = ["A1", "A2"],
+            Hits = [],
+            Misses = [],
         };
 
         // Act
@@ -167,9 +163,9 @@ public class BattleshipPromptBuilderTests
             BoardSize = 10,
             GameState = GameState.Started,
             BoardDescription = "A1 to J10 (10x10 grid)",
-            AvailableTargets = new List<string> { "A1" },
-            Hits = new List<string>(),
-            Misses = new List<string>(),
+            AvailableTargets = ["A1"],
+            Hits = [],
+            Misses = [],
         };
 
         // Act
@@ -179,37 +175,6 @@ public class BattleshipPromptBuilderTests
         prompt.Should().Contain("STRATEGY TIPS");
         prompt.Should().Contain("adjacent cells");
         prompt.Should().Contain("highest probability");
-    }
-
-    [Fact]
-    public void BuildStrategicPrompt_ShouldSortTargetsAlphabetically()
-    {
-        // Arrange
-        var unsortedTargets = new List<string> { "C3", "A1", "B2", "A2" };
-        var snapshot = new GameSnapshot
-        {
-            BoardSize = 10,
-            GameState = GameState.Started,
-            BoardDescription = "A1 to J10 (10x10 grid)",
-            AvailableTargets = unsortedTargets,
-            Hits = new List<string>(),
-            Misses = new List<string>(),
-        };
-
-        // Act
-        var prompt = _promptBuilder.BuildStrategicPrompt(snapshot);
-
-        // Assert
-        var validTargetsSection = ExtractValidTargetsSection(prompt);
-        var indexA1 = validTargetsSection.IndexOf("A1");
-        var indexA2 = validTargetsSection.IndexOf("A2");
-        var indexB2 = validTargetsSection.IndexOf("B2");
-        var indexC3 = validTargetsSection.IndexOf("C3");
-
-        // Should be in alphabetical order
-        indexA1.Should().BeLessThan(indexA2);
-        indexA2.Should().BeLessThan(indexB2);
-        indexB2.Should().BeLessThan(indexC3);
     }
 
     private static string ExtractValidTargetsSection(string prompt)

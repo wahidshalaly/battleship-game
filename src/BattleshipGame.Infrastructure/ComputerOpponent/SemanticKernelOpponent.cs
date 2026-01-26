@@ -78,9 +78,9 @@ public sealed class SemanticKernelOpponent(
             BoardSize = game.BoardSize,
             GameState = game.State,
             BoardDescription = game.DescribeBoard(),
-            AvailableTargets = game.GetNextTargets(BoardSide.Player).ToList(),
-            Hits = game.GetHits(BoardSide.Player).ToList(),
-            Misses = game.GetMisseds(BoardSide.Player).ToList(),
+            AvailableTargets = [.. game.GetNextTargets(BoardSide.Player)],
+            Hits = [.. game.GetHits(BoardSide.Player)],
+            Misses = [.. game.GetMisseds(BoardSide.Player)],
         };
     }
 
