@@ -1,5 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
-<Sdk Name="Aspire.AppHost.Sdk" Version="13.1.0" />
+<Project Sdk="Aspire.AppHost.Sdk/13.2.2">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,10 +8,6 @@
     <IsAspireHost>true</IsAspireHost>
     <UserSecretsId>1c399e78-1efe-4813-a97e-26aa78ae9f95</UserSecretsId>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost" Version="13.1.0" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BattleshipGame.WebAPI\BattleshipGame.WebAPI.csproj" />
