@@ -30,7 +30,7 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration
     )
     {
-        RegisterSemanticKernel(services, configuration);
+        RegisterSemanticKernel(services);
         RegisterOpponentStrategies(services);
         RegisterResiliencePolicies(services, configuration);
 
@@ -43,25 +43,13 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    private static void RegisterSemanticKernel(
-        IServiceCollection services,
-        IConfiguration configuration
-    )
+    private static void RegisterSemanticKernel(IServiceCollection services)
     {
-        // Bind OpenAI configuration from appsettings
-        services.Configure<OpenAiOptions>(configuration.GetSection("OpenAi"));
+        var modelId = Environment.GetEnvironmentVariable("OPENAI_MODEL_ID");
+        var endpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
+        var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
 
-        // Load base configuration from appsettings
-        var configOptions = configuration.GetSection("OpenAi").Get<OpenAiOptions>() ?? new();
-
-        // Environment variables override configuration
-        var modelId =
-            configOptions.ModelId ?? Environment.GetEnvironmentVariable("OPENAI_MODEL_ID");
-        var endpoint =
-            configOptions.Endpoint ?? Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
-        var apiKey = configOptions.ApiKey ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-
-        // Validate final configuration
+        // Validate OpenAI configuration
         if (
             string.IsNullOrEmpty(modelId)
             || string.IsNullOrEmpty(endpoint)
@@ -69,14 +57,14 @@ public static class ServiceCollectionExtensions
         )
         {
             throw new InvalidOperationException(
-                "OpenAI configuration incomplete. Set via appsettings.json 'OpenAi' section or environment variables (OPENAI_MODEL_ID, OPENAI_ENDPOINT, OPENAI_API_KEY)."
+                "OpenAI configuration incomplete. Set environment variables: OPENAI_MODEL_ID, OPENAI_ENDPOINT, and OPENAI_API_KEY."
             );
         }
 
 #pragma warning disable SKEXP0010
         var kernel = Kernel
             .CreateBuilder()
-            .AddOpenAIChatCompletion(modelId: modelId, endpoint: new Uri(endpoint), apiKey: apiKey)
+            .AddOpenAIChatCompletion(modelId, endpoint: new Uri(endpoint), apiKey)
             .Build();
 #pragma warning restore SKEXP0010
 
