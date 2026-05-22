@@ -96,4 +96,10 @@ public sealed class Player : AggregateRoot<PlayerId>
     /// Gets the total number of games the player has participated in.
     /// </summary>
     public int TotalGamesPlayed => _gameHistory.Count + (IsInActiveGame ? 1 : 0);
+
+    internal void RestoreGameHistory(IEnumerable<GameId> gameIds)
+    {
+        _gameHistory.Clear();
+        _gameHistory.AddRange(gameIds);
+    }
 }

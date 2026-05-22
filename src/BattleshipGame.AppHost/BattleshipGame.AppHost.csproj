@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.2.2">
+<Project Sdk="Aspire.AppHost.Sdk/13.3.5">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -11,6 +11,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BattleshipGame.WebAPI\BattleshipGame.WebAPI.csproj" />
+    <ProjectReference Include="..\BattleshipGame.MigrationRunner\BattleshipGame.MigrationRunner.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.3.5" />
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.3.5" />
   </ItemGroup>
 
 </Project>

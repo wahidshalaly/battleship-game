@@ -6,7 +6,9 @@ using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Infrastructure.Broadcasting;
 using BattleshipGame.Infrastructure.ComputerOpponent;
 using BattleshipGame.Infrastructure.Persistence;
+using BattleshipGame.Infrastructure.Persistence.Repositories;
 using BattleshipGame.Infrastructure.Resilience;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -35,10 +37,9 @@ public static class ServiceCollectionExtensions
         RegisterSemanticKernel(services);
         RegisterOpponentStrategies(services);
         RegisterResiliencePolicies(services, configuration);
+        RegisterPersistence(services, configuration);
 
         // Register repositories (singleton for in-memory, will change when using EF Core)
-        services.AddSingleton<IGameRepository, InMemoryGameRepository>();
-        services.AddSingleton<IPlayerRepository, InMemoryPlayerRepository>();
         services.AddSingleton<IBroadcastor, Broadcaster>();
         services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
 
@@ -136,5 +137,19 @@ public static class ServiceCollectionExtensions
                 logger
             );
         });
+    }
+
+    private static void RegisterPersistence(
+        IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services.AddDbContext<BattleshipGameDbContext>(options =>
+            options.UseNpgsql(configuration.GetConnectionString("battleship"))
+        );
+
+        services.AddScoped<IGameRepository, GameRepository>();
+        services.AddScoped<IPlayerRepository, PlayerRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
     }
 }

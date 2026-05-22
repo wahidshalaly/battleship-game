@@ -1,4 +1,4 @@
-﻿using BattleshipGame.Domain.Common;
+using BattleshipGame.Domain.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.Exceptions;
@@ -19,27 +19,71 @@ public record GameId(Guid Value) : EntityId(Value);
 /// <summary>
 /// This represents an instance of the Battleship game, and it tracks the state of the game.
 /// </summary>
-public sealed class Game(
-    PlayerId playerId,
-    int boardSize = DefaultBoardSize,
-    OpponentStrategy strategy = OpponentStrategy.Random
-) : AggregateRoot<GameId>
+public sealed class Game : AggregateRoot<GameId>
 {
-    private readonly Board _ownBoard = new(boardSize);
-    private readonly Board _oppBoard = new(boardSize);
+#pragma warning disable IDE0044 // Add readonly modifier - EF cannot use readonly fields
+    private Board _ownBoard;
 
-    public PlayerId PlayerId { get; } = playerId;
+    private Board _oppBoard;
+#pragma warning restore IDE0044
 
-    public int BoardSize { get; } = boardSize;
+    public Game(
+        PlayerId playerId,
+        int boardSize = DefaultBoardSize,
+        OpponentStrategy strategy = OpponentStrategy.Random
+    )
+    {
+        PlayerId = playerId;
+        BoardSize = boardSize;
+        OpponentStrategy = strategy;
+        _ownBoard = new Board(boardSize);
+        _oppBoard = new Board(boardSize);
+        State = GameState.New;
+        TargetSide = BoardSide.None;
+        WinnerSide = BoardSide.None;
+        CreatedAt = DateTime.UtcNow;
+        LastUpdatedAt = DateTime.UtcNow;
+    }
+
+    private Game(
+        GameId id,
+        PlayerId playerId,
+        int boardSize,
+        OpponentStrategy strategy,
+        GameState state,
+        BoardSide targetSide,
+        BoardSide winnerSide,
+        DateTime createdAt,
+        DateTime lastUpdatedAt,
+        Board ownBoard,
+        Board oppBoard
+    )
+        : base(id.Value)
+    {
+        PlayerId = playerId;
+        BoardSize = boardSize;
+        OpponentStrategy = strategy;
+        State = state;
+        TargetSide = targetSide;
+        WinnerSide = winnerSide;
+        CreatedAt = createdAt;
+        LastUpdatedAt = lastUpdatedAt;
+        _ownBoard = ownBoard;
+        _oppBoard = oppBoard;
+    }
+
+    public PlayerId PlayerId { get; }
+
+    public int BoardSize { get; }
 
     /// <summary>
     /// Gets the computer opponent strategy configured for this game.
     /// </summary>
-    public OpponentStrategy OpponentStrategy { get; } = strategy;
+    public OpponentStrategy OpponentStrategy { get; }
 
-    public GameState State { get; private set; } = GameState.New;
+    public GameState State { get; private set; }
 
-    public BoardSide TargetSide { get; private set; } = BoardSide.None;
+    public BoardSide TargetSide { get; private set; }
 
     /// <summary>
     /// Gets the side that won the game. Returns <see cref="BoardSide.None"/> if the game is not over.
@@ -48,12 +92,12 @@ public sealed class Game(
     /// This property is set when the game transitions to <see cref="GameState.GameOver"/> state.
     /// The winner is determined by which side has ships remaining.
     /// </remarks>
-    public BoardSide WinnerSide { get; private set; } = BoardSide.None;
+    public BoardSide WinnerSide { get; private set; }
 
     /// <summary>
     /// Gets the UTC timestamp when the game was created.
     /// </summary>
-    public DateTime CreatedAt { get; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; }
 
     /// <summary>
     /// Gets the UTC timestamp when the game was last updated.
@@ -61,7 +105,7 @@ public sealed class Game(
     /// <remarks>
     /// This property is updated whenever a ship is placed, an attack is made, or gameplay is started.
     /// </remarks>
-    public DateTime LastUpdatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime LastUpdatedAt { get; private set; }
 
     /// <summary>
     /// Places a ship on the specified boardSide's board
@@ -267,11 +311,35 @@ public sealed class Game(
         return $"A1 to {lastColumn}{BoardSize} ({gridDescription})";
     }
 
-    /// <summary>
-    /// Gets the board for the specified side
-    /// </summary>
-    /// <param name="side">The side whose board to get</param>
-    /// <returns>The side's board</returns>
+    internal Guid GetBoardId(BoardSide side) => BoardSelector(side).Id.Value;
+
+    internal static Game Reconstitute(
+        GameId id,
+        PlayerId playerId,
+        int boardSize,
+        OpponentStrategy strategy,
+        GameState state,
+        BoardSide targetSide,
+        BoardSide winnerSide,
+        DateTime createdAt,
+        DateTime lastUpdatedAt,
+        Board ownBoard,
+        Board oppBoard
+    ) =>
+        new(
+            id,
+            playerId,
+            boardSize,
+            strategy,
+            state,
+            targetSide,
+            winnerSide,
+            createdAt,
+            lastUpdatedAt,
+            ownBoard,
+            oppBoard
+        );
+
     private Board BoardSelector(BoardSide side)
     {
         return side switch
@@ -287,14 +355,6 @@ public sealed class Game(
         };
     }
 
-    /// <summary>
-    /// Validates that the game is in a valid state to perform an attack on the specified target side.
-    /// </summary>
-    /// <param name="targetSide">The side to be attacked</param>
-    /// <exception cref="GameOverException">Thrown when the game is already over.</exception>
-    /// <exception cref="GameNotStartedException">Thrown when the game is not in Started state.</exception>
-    /// <exception cref="InvalidTargetSideException">Thrown when the target side does not match the expected side.</exception>
-    /// </summary>
     private void ValidateBeforeAttack(BoardSide targetSide)
     {
         if (State == GameState.GameOver)
