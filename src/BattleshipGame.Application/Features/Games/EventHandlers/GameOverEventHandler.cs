@@ -1,4 +1,4 @@
-using BattleshipGame.Application.Interfaces.Persistence;
+using BattleshipGame.Application.Interfaces.Broadcasting;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 using MediatR;
 
@@ -11,7 +11,7 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// Initializes a new instance of the GameOverEventHandler class.
 /// </remarks>
 /// <param name="logger">The logger instance.</param>
-internal class GameOverEventHandler(IBroadcastRepository broadcastRepository)
+internal class GameOverEventHandler(IBroadcastor broadcastRepository)
     : INotificationHandler<GameOverEvent>
 {
     /// <summary>
@@ -24,6 +24,6 @@ internal class GameOverEventHandler(IBroadcastRepository broadcastRepository)
     {
         var announcement =
             $"Game Over! Game `{notification.GameId.Value}` Winner: {notification.WinnerSide}";
-        await broadcastRepository.AnnounceAsync(announcement, ct);
+        await broadcastRepository.BroadcastAsync(announcement, ct);
     }
 }

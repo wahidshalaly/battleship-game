@@ -1,7 +1,9 @@
 using BattleshipGame.Application.Common.Services;
+using BattleshipGame.Application.Interfaces.Broadcasting;
 using BattleshipGame.Application.Interfaces.ComputerOpponent;
 using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Infrastructure.Broadcasting;
 using BattleshipGame.Infrastructure.ComputerOpponent;
 using BattleshipGame.Infrastructure.Persistence;
 using BattleshipGame.Infrastructure.Resilience;
@@ -37,7 +39,7 @@ public static class ServiceCollectionExtensions
         // Register repositories (singleton for in-memory, will change when using EF Core)
         services.AddSingleton<IGameRepository, InMemoryGameRepository>();
         services.AddSingleton<IPlayerRepository, InMemoryPlayerRepository>();
-        services.AddSingleton<IBroadcastRepository, InMemoryBroadcastRepository>();
+        services.AddSingleton<IBroadcastor, Broadcaster>();
         services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
 
         return services;

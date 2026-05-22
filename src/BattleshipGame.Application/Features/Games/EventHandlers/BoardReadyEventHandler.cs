@@ -1,4 +1,4 @@
-using BattleshipGame.Application.Interfaces.Persistence;
+using BattleshipGame.Application.Interfaces.Broadcasting;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 using MediatR;
 
@@ -11,7 +11,7 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// Initializes a new instance of the BoardReadyEventHandler class.
 /// </remarks>
 /// <param name="logger">The logger instance.</param>
-internal class BoardReadyEventHandler(IBroadcastRepository broadcastRepository)
+internal class BoardReadyEventHandler(IBroadcastor broadcastRepository)
     : INotificationHandler<BoardReadyEvent>
 {
     /// <summary>
@@ -24,6 +24,6 @@ internal class BoardReadyEventHandler(IBroadcastRepository broadcastRepository)
     {
         var announcement =
             $"Board Ready! Game `{notification.GameId.Value}` Side: {notification.BoardSide}";
-        await broadcastRepository.AnnounceAsync(announcement, ct);
+        await broadcastRepository.BroadcastAsync(announcement, ct);
     }
 }
