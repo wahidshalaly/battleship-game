@@ -19,4 +19,9 @@
     <ProjectReference Include="..\..\src\BattleshipGame.Domain\BattleshipGame.Domain.csproj" />
     <ProjectReference Include="..\..\src\BattleshipGame.Infrastructure\BattleshipGame.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Using Include="FakeItEasy" />
+    <Using Include="FluentAssertions" />
+	  <Using Include="Xunit" />
+  </ItemGroup>
 </Project>

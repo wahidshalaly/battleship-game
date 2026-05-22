@@ -1,7 +1,5 @@
 ﻿using System;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
-using FluentAssertions;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Domain.DomainModel.GameAggregate;
 

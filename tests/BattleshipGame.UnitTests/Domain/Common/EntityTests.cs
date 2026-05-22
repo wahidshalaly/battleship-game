@@ -1,7 +1,5 @@
 ﻿using System;
 using BattleshipGame.Domain.SharedKernel;
-using FluentAssertions;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Domain.Common;
 

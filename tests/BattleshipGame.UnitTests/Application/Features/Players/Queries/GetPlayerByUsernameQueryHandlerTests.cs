@@ -5,9 +5,6 @@ using BattleshipGame.Application.Features.Players.Queries;
 using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
-using FakeItEasy;
-using FluentAssertions;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Application.Features.Players.Queries;
 

@@ -6,10 +6,7 @@ using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.Exceptions;
 using BattleshipGame.UnitTests.Domain.DomainModel;
-using FakeItEasy;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Application.Features.Games.Commands;
 

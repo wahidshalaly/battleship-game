@@ -8,9 +8,6 @@ using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.Exceptions;
-using FakeItEasy;
-using FluentAssertions;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Application.Features.Games.Commands;
 

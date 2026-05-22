@@ -1,9 +1,7 @@
 using System;
 using System.Threading;
 using BattleshipGame.Domain.SharedKernel;
-using FluentAssertions;
 using MediatR;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Domain.Common;
 
