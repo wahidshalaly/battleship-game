@@ -67,7 +67,12 @@ public static class ServiceCollectionExtensions
 #pragma warning disable SKEXP0010
         var kernel = Kernel
             .CreateBuilder()
-            .AddOpenAIChatCompletion(modelId, endpoint: new Uri(endpoint), apiKey)
+            .AddOpenAIChatCompletion(
+                modelId,
+                endpoint: new Uri(endpoint),
+                apiKey,
+                httpClient: new HttpClient { Timeout = TimeSpan.FromMinutes(5) }
+            )
             .Build();
 #pragma warning restore SKEXP0010
 
