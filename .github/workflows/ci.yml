@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    # ubuntu-latest ships with a working Docker daemon, which the integration
+    # tests need for Testcontainers (postgres:17). No service container required.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore local tools
+        run: dotnet tool restore
+
+      - name: Restore dependencies
+        run: dotnet restore BattleshipGame.sln
+
+      - name: Check formatting (CSharpier)
+        run: dotnet csharpier check .
+
+      - name: Build
+        run: dotnet build BattleshipGame.sln --no-restore -c Release
+
+      - name: Unit tests
+        run: >-
+          dotnet test tests/BattleshipGame.UnitTests/BattleshipGame.UnitTests.csproj
+          --no-build -c Release --verbosity normal
+
+      - name: Integration tests
+        run: >-
+          dotnet test tests/BattleshipGame.IntegrationTests/BattleshipGame.IntegrationTests.csproj
+          --no-build -c Release --verbosity normal
