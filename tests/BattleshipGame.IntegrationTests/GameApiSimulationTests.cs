@@ -48,10 +48,15 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     [InlineData(OpponentStrategy.SemanticKernel)]
     public async Task Simulate_Full_Game_Playthrough_Via_Api(OpponentStrategy strategy)
     {
-        // SemanticKernel requires a live AI endpoint; skip when OPENAI_API_KEY is absent.
+        // SemanticKernel requires a live AI endpoint. Skip when OPENAI_API_KEY is absent,
+        // or under GitHub Actions where the app boots with placeholder OpenAI config (so it
+        // can start) but no real LLM is reachable.
         if (
             strategy == OpponentStrategy.SemanticKernel
-            && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENAI_API_KEY"))
+            && (
+                string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENAI_API_KEY"))
+                || Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true"
+            )
         )
             return;
 

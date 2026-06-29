@@ -46,6 +46,14 @@ jobs:
           --no-build -c Release --verbosity normal
 
       - name: Integration tests
+        # The API's startup requires OpenAI settings (RegisterSemanticKernel reads
+        # these env vars directly). CI has no real LLM, so we supply placeholders:
+        # registration succeeds and the unreachable endpoint exercises the
+        # resilience/fallback-to-random path the tests assert on.
+        env:
+          OPENAI_MODEL_ID: llama-3.3-70b-versatile
+          OPENAI_ENDPOINT: http://localhost:11434/v1
+          OPENAI_API_KEY: ci-placeholder-not-a-real-key
         run: >-
           dotnet test tests/BattleshipGame.IntegrationTests/BattleshipGame.IntegrationTests.csproj
           --no-build -c Release --verbosity normal
