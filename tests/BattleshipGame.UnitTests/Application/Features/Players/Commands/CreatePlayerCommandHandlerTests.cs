@@ -4,9 +4,6 @@ using System.Threading.Tasks;
 using BattleshipGame.Application.Features.Players.Commands;
 using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
-using FakeItEasy;
-using FluentAssertions;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Application.Features.Players.Commands;
 

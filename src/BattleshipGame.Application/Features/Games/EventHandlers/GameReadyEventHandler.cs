@@ -1,4 +1,4 @@
-using BattleshipGame.Application.Interfaces.Persistence;
+using BattleshipGame.Application.Interfaces.Broadcasting;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 using MediatR;
 
@@ -8,7 +8,7 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// Handles the GameReadyEvent domain event and executes side effects.
 /// </summary>
 /// <param name="logger">The logger instance.</param>
-internal class GameReadyEventHandler(IBroadcastRepository broadcastRepository)
+internal class GameReadyEventHandler(IBroadcastor broadcastRepository)
     : INotificationHandler<GameReadyEvent>
 {
     /// <summary>
@@ -20,6 +20,6 @@ internal class GameReadyEventHandler(IBroadcastRepository broadcastRepository)
     public async Task Handle(GameReadyEvent notification, CancellationToken ct)
     {
         var announcement = $"Ready! Game `{notification.GameId.Value}`";
-        await broadcastRepository.AnnounceAsync(announcement, ct);
+        await broadcastRepository.BroadcastAsync(announcement, ct);
     }
 }

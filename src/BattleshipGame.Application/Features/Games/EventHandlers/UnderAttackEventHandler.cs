@@ -1,4 +1,4 @@
-using BattleshipGame.Application.Interfaces.Persistence;
+using BattleshipGame.Application.Interfaces.Broadcasting;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 using MediatR;
 
@@ -11,7 +11,7 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// Initializes a new instance of the UnderAttackEventHandler class.
 /// </remarks>
 /// <param name="logger">The logger instance.</param>
-internal class UnderAttackEventHandler(IBroadcastRepository broadcastRepository)
+internal class UnderAttackEventHandler(IBroadcastor broadcastRepository)
     : INotificationHandler<UnderAttackEvent>
 {
     /// <summary>
@@ -25,6 +25,6 @@ internal class UnderAttackEventHandler(IBroadcastRepository broadcastRepository)
     {
         var announcement =
             $"Attack! Game `{notification.GameId.Value}` Side: {notification.BoardSide} x {notification.CellCode}: {notification.CellState}";
-        await broadcastRepository.AnnounceAsync(announcement, ct);
+        await broadcastRepository.BroadcastAsync(announcement, ct);
     }
 }

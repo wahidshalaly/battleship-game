@@ -5,12 +5,9 @@ using BattleshipGame.Application.Interfaces.ComputerOpponent;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Infrastructure.Resilience;
 using BattleshipGame.UnitTests.Domain.DomainModel;
-using FakeItEasy;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.CircuitBreaker;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Infrastructure.Resilience;
 

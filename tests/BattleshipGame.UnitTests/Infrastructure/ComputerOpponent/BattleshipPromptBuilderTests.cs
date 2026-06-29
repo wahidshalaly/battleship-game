@@ -1,8 +1,6 @@
 using BattleshipGame.Application.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Infrastructure.ComputerOpponent;
-using FluentAssertions;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Infrastructure.ComputerOpponent;
 

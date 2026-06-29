@@ -4,9 +4,9 @@ using BattleshipGame.Infrastructure.Extensions;
 using BattleshipGame.Infrastructure.Resilience;
 using BattleshipGame.WebAPI.Filters;
 using BattleshipGame.WebAPI.Middleware;
-using FluentValidation.AspNetCore;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -16,8 +16,10 @@ builder.Services.AddControllers(options =>
 {
     options.Filters.Add<DomainContextEnricherFilter>();
     options.Filters.Add<ValidationLoggingFilter>();
+    options.Filters.Add<FluentValidationActionFilter>();
 });
-builder.Services.AddFluentValidationAutoValidation();
+
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
 // Configure API behavior for validation errors
 builder.Services.Configure<ApiBehaviorOptions>(options =>

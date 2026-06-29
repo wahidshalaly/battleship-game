@@ -5,10 +5,7 @@ using BattleshipGame.Application.Features.Games.Commands;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.UnitTests.Domain.DomainModel;
-using FakeItEasy;
-using FluentAssertions;
 using MediatR;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Application.Services;
 

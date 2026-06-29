@@ -45,6 +45,21 @@ internal class Ship : Entity<ShipId>
         _hits = [];
     }
 
+    private Ship(ShipId id, ShipKind kind, IEnumerable<string> codes, IEnumerable<string> hits)
+        : base(id.Value)
+    {
+        Kind = kind;
+        _codes = [.. codes];
+        _hits = [.. hits];
+    }
+
+    internal static Ship Reconstitute(
+        ShipId id,
+        ShipKind kind,
+        IEnumerable<string> codes,
+        IEnumerable<string> hits
+    ) => new(id, kind, codes, hits);
+
     public void TakeHitAt(string code)
     {
         if (!_codes.Contains(code))

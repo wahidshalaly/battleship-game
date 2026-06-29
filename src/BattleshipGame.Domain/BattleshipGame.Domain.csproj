@@ -11,6 +11,12 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>BattleshipGame.Infrastructure</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>BattleshipGame.MigrationRunner</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MediatR.Contracts" Version="2.0.1" />

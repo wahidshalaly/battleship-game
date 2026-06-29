@@ -4,8 +4,6 @@ using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate.Events;
 using BattleshipGame.Domain.Exceptions;
-using FluentAssertions;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Domain.DomainModel.PlayerAggregate.Events;
 

@@ -54,6 +54,12 @@ internal class Cell : ValueObject
         };
     }
 
+    internal void Reconstitute(ShipId? shipId, CellState state)
+    {
+        ShipId = shipId;
+        State = state;
+    }
+
     public static (char Letter, int Digit) FromCode(string code)
     {
         if (string.IsNullOrWhiteSpace(code) || code.Length is < 2 or > 3)

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using BattleshipGame.Domain.SharedKernel;
-using FluentAssertions;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Domain.Common;
 

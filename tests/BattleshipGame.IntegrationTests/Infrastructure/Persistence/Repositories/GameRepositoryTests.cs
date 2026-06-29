@@ -1,22 +1,25 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
-using BattleshipGame.Infrastructure.Persistence;
-using BattleshipGame.UnitTests.Domain.DomainModel;
-using FluentAssertions;
-using Xunit;
+using BattleshipGame.Infrastructure.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
 
-namespace BattleshipGame.UnitTests.Infrastructure.Persistence;
+namespace BattleshipGame.IntegrationTests.Infrastructure.Persistence.Repositories;
 
-public class InMemoryGameRepositoryTests
+public class GameRepositoryTests(PostgresFixture postgres)
+    : BaseRepositoryTests(postgres),
+        IClassFixture<PostgresFixture>
 {
     private readonly GameFixture _fixture = new();
-    private readonly InMemoryGameRepository _repository = new();
+    private IGameRepository _subject = null!;
     private readonly CancellationToken _cancellationToken = CancellationToken.None;
+
+    public override Task InitializeAsync()
+    {
+        base.InitializeAsync();
+        _subject = new GameRepository(_dbcontext);
+        return Task.CompletedTask;
+    }
 
     #region GetByIdAsync Tests
 
@@ -25,10 +28,11 @@ public class InMemoryGameRepositoryTests
     {
         // Arrange
         var game = _fixture.CreateGameInStateReady();
-        await _repository.SaveAsync(game, _cancellationToken);
+        await _subject.SaveAsync(game, _cancellationToken);
+        await CommitAsync();
 
         // Act
-        var result = await _repository.GetByIdAsync(game.Id, _cancellationToken);
+        var result = await _subject.GetByIdAsync(game.Id, _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -43,7 +47,7 @@ public class InMemoryGameRepositoryTests
         var nonExistentGameId = new GameId(Guid.NewGuid());
 
         // Act
-        var result = await _repository.GetByIdAsync(nonExistentGameId, _cancellationToken);
+        var result = await _subject.GetByIdAsync(nonExistentGameId, _cancellationToken);
 
         // Assert
         result.Should().BeNull();
@@ -54,15 +58,14 @@ public class InMemoryGameRepositoryTests
     {
         // Arrange
         var game = _fixture.CreateGameInStateReady();
-        await _repository.SaveAsync(game, _cancellationToken);
+        await _subject.SaveAsync(game, _cancellationToken);
+        await CommitAsync();
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        // Act
-        var result = await _repository.GetByIdAsync(game.Id, cts.Token);
-
-        // Assert - Should complete successfully as method is synchronous internally
-        result.Should().NotBeNull();
+        // Act & Assert - a cancelled token must cancel the operation
+        var act = () => _subject.GetByIdAsync(game.Id, cts.Token);
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     #endregion
@@ -76,10 +79,11 @@ public class InMemoryGameRepositoryTests
         var game = _fixture.CreateGameInStateReady();
 
         // Act
-        await _repository.SaveAsync(game, _cancellationToken);
+        await _subject.SaveAsync(game, _cancellationToken);
+        await CommitAsync();
 
         // Assert
-        var savedGame = await _repository.GetByIdAsync(game.Id, _cancellationToken);
+        var savedGame = await _subject.GetByIdAsync(game.Id, _cancellationToken);
         savedGame.Should().NotBeNull();
         savedGame.Id.Should().Be(game.Id);
     }
@@ -89,16 +93,18 @@ public class InMemoryGameRepositoryTests
     {
         // Arrange
         var game = _fixture.CreateGameInStateStarted();
-        await _repository.SaveAsync(game, _cancellationToken);
+        await _subject.SaveAsync(game, _cancellationToken);
+        await CommitAsync();
 
         // Modify the game
         game.Attack(BoardSide.Opponent, "A1");
 
         // Act
-        await _repository.SaveAsync(game, _cancellationToken);
+        await _subject.SaveAsync(game, _cancellationToken);
+        await CommitAsync();
 
         // Assert
-        var updatedGame = await _repository.GetByIdAsync(game.Id, _cancellationToken);
+        var updatedGame = await _subject.GetByIdAsync(game.Id, _cancellationToken);
         updatedGame.Should().NotBeNull();
         updatedGame.Id.Should().Be(game.Id);
     }
@@ -116,12 +122,13 @@ public class InMemoryGameRepositoryTests
         var game2 = new Game(playerId);
         var otherPlayerGame = _fixture.CreateGameInStateReady(); // Different player
 
-        await _repository.SaveAsync(game1, _cancellationToken);
-        await _repository.SaveAsync(game2, _cancellationToken);
-        await _repository.SaveAsync(otherPlayerGame, _cancellationToken);
+        await _subject.SaveAsync(game1, _cancellationToken);
+        await _subject.SaveAsync(game2, _cancellationToken);
+        await _subject.SaveAsync(otherPlayerGame, _cancellationToken);
+        await CommitAsync();
 
         // Act
-        var result = await _repository.GetByPlayerIdAsync(playerId, _cancellationToken);
+        var result = await _subject.GetByPlayerIdAsync(playerId, _cancellationToken);
 
         // Assert
         result.Should().HaveCount(2);
@@ -137,7 +144,7 @@ public class InMemoryGameRepositoryTests
         var playerId = new PlayerId(Guid.NewGuid());
 
         // Act
-        var result = await _repository.GetByPlayerIdAsync(playerId, _cancellationToken);
+        var result = await _subject.GetByPlayerIdAsync(playerId, _cancellationToken);
 
         // Assert
         result.Should().BeEmpty();
@@ -151,17 +158,15 @@ public class InMemoryGameRepositoryTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        // Act
-        var result = await _repository.GetByPlayerIdAsync(playerId, cts.Token);
-
-        // Assert - Should complete successfully as method is synchronous internally
-        result.Should().BeEmpty();
+        // Act & Assert - a cancelled token must cancel the operation
+        var act = () => _subject.GetByPlayerIdAsync(playerId, cts.Token);
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
     public async Task GetByPlayerIdAsync_ConcurrentOperations_ShouldBeThreadSafe()
     {
-        // Arrange
+        // Arrange - commit games before concurrent reads so each new context can find them
         var playerId = new PlayerId(Guid.NewGuid());
         var games = new List<Game>();
 
@@ -169,13 +174,21 @@ public class InMemoryGameRepositoryTests
         {
             var game = new Game(playerId);
             games.Add(game);
-            await _repository.SaveAsync(game, _cancellationToken);
+            await _subject.SaveAsync(game, _cancellationToken);
         }
+        await CommitAsync();
 
-        // Act - Query same player concurrently
+        // Act - each concurrent read uses its own DbContext (DbContext is not thread-safe)
         var queryTasks = Enumerable
             .Range(0, 10)
-            .Select(_ => _repository.GetByPlayerIdAsync(playerId, _cancellationToken));
+            .Select(async _ =>
+            {
+                await using var ctx = _postgres.CreateDbContext();
+                return await new GameRepository(ctx).GetByPlayerIdAsync(
+                    playerId,
+                    _cancellationToken
+                );
+            });
         var results = await Task.WhenAll(queryTasks);
 
         // Assert
@@ -183,9 +196,7 @@ public class InMemoryGameRepositoryTests
         {
             result.Should().HaveCount(5);
             foreach (var game in games)
-            {
                 result.Should().Contain(g => g.Id == game.Id);
-            }
         }
     }
 
@@ -198,16 +209,13 @@ public class InMemoryGameRepositoryTests
     {
         // Arrange
         var game = _fixture.CreateGameInStateReady();
-        await _repository.SaveAsync(game, _cancellationToken);
+        await _subject.SaveAsync(game, _cancellationToken);
+        await CommitAsync();
 
-        // Act - Use the correct playerId from the game
-        var result = await _repository.GetActiveGameByPlayerIdAsync(
-            game.PlayerId,
-            _cancellationToken
-        );
+        // Act
+        var result = await _subject.GetActiveGameByPlayerIdAsync(game.PlayerId, _cancellationToken);
 
-        // Assert - _fixture.CreateReadyGame() creates a game in Ready state, not GameOver
-        // So this should return the active game
+        // Assert
         result.Should().NotBeNull();
         result.State.Should().NotBe(GameState.GameOver);
         result.Id.Should().Be(game.Id);
@@ -220,7 +228,7 @@ public class InMemoryGameRepositoryTests
         var playerId = new PlayerId(Guid.NewGuid());
 
         // Act
-        var result = await _repository.GetActiveGameByPlayerIdAsync(playerId, _cancellationToken);
+        var result = await _subject.GetActiveGameByPlayerIdAsync(playerId, _cancellationToken);
 
         // Assert
         result.Should().BeNull();
@@ -234,11 +242,12 @@ public class InMemoryGameRepositoryTests
         var game1 = new Game(playerId);
         var game2 = new Game(playerId);
 
-        await _repository.SaveAsync(game1, _cancellationToken);
-        await _repository.SaveAsync(game2, _cancellationToken);
+        await _subject.SaveAsync(game1, _cancellationToken);
+        await _subject.SaveAsync(game2, _cancellationToken);
+        await CommitAsync();
 
         // Act
-        var result = await _repository.GetActiveGameByPlayerIdAsync(playerId, _cancellationToken);
+        var result = await _subject.GetActiveGameByPlayerIdAsync(playerId, _cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -255,11 +264,9 @@ public class InMemoryGameRepositoryTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        // Act
-        var result = await _repository.GetActiveGameByPlayerIdAsync(playerId, cts.Token);
-
-        // Assert - Should complete successfully as method is synchronous internally
-        result.Should().BeNull();
+        // Act & Assert - a cancelled token must cancel the operation
+        var act = () => _subject.GetActiveGameByPlayerIdAsync(playerId, cts.Token);
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     #endregion
@@ -275,8 +282,9 @@ public class InMemoryGameRepositoryTests
         var originalBoardSize = game.BoardSize;
 
         // Act
-        await _repository.SaveAsync(game, _cancellationToken);
-        var retrievedGame = await _repository.GetByIdAsync(game.Id, _cancellationToken);
+        await _subject.SaveAsync(game, _cancellationToken);
+        await CommitAsync();
+        var retrievedGame = await _subject.GetByIdAsync(game.Id, _cancellationToken);
 
         // Assert
         retrievedGame.Should().NotBeNull();
@@ -288,23 +296,38 @@ public class InMemoryGameRepositoryTests
     [Fact]
     public async Task Repository_ConcurrentSaveAndRead_ShouldMaintainConsistency()
     {
-        // Arrange
+        // Arrange - persist game first so concurrent saves are UPDATEs, not INSERTs
         var playerId = new PlayerId(Guid.NewGuid());
         var game = new Game(playerId);
-        await _repository.SaveAsync(game, _cancellationToken);
+        await _subject.SaveAsync(game, _cancellationToken);
+        await CommitAsync();
 
-        var readTasks = new List<Task<Game?>>();
-        var saveTasks = new List<Task>();
-
-        // Act - Perform concurrent reads and saves
-        for (int i = 0; i < 20; i++)
-        {
-            readTasks.Add(_repository.GetByIdAsync(game.Id, _cancellationToken));
-            if (i % 2 == 0)
+        // Act - concurrent reads and updates, each with their own DbContext
+        var readTasks = Enumerable
+            .Range(0, 20)
+            .Select(async _ =>
             {
-                saveTasks.Add(_repository.SaveAsync(game, _cancellationToken));
-            }
-        }
+                await using var ctx = _postgres.CreateDbContext();
+                return await new GameRepository(ctx).GetByIdAsync(game.Id, _cancellationToken);
+            });
+
+        var saveTasks = Enumerable
+            .Range(0, 10)
+            .Select(async _ =>
+            {
+                await using var ctx = _postgres.CreateDbContext();
+                var repo = new GameRepository(ctx);
+                await repo.SaveAsync(game, _cancellationToken);
+                try
+                {
+                    await ctx.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    // Expected under optimistic concurrency (xmin): a losing writer
+                    // sees the row already updated. Consistency is still maintained.
+                }
+            });
 
         var readResults = await Task.WhenAll(readTasks);
         await Task.WhenAll(saveTasks);
@@ -319,19 +342,19 @@ public class InMemoryGameRepositoryTests
     {
         // Arrange
         var game = _fixture.CreateGameInStateStarted();
-        await _repository.SaveAsync(game, _cancellationToken);
+        await _subject.SaveAsync(game, _cancellationToken);
+        await CommitAsync();
 
-        // Act - Attack a cell to change game state
+        // Act - attack a cell to change game state
         game.Attack(BoardSide.Opponent, "A1");
-        await _repository.SaveAsync(game, _cancellationToken);
+        await _subject.SaveAsync(game, _cancellationToken);
+        await CommitAsync();
 
-        // Retrieve updated game
-        var updatedGame = await _repository.GetByIdAsync(game.Id, _cancellationToken);
+        var updatedGame = await _subject.GetByIdAsync(game.Id, _cancellationToken);
 
         // Assert
         updatedGame.Should().NotBeNull();
         updatedGame.Id.Should().Be(game.Id);
-        // The updated game should reflect the attack
     }
 
     #endregion
@@ -349,22 +372,19 @@ public class InMemoryGameRepositoryTests
         var games = new List<Game>();
 
         for (int i = 0; i < gameCount; i++)
-        {
             games.Add(new Game(playerId));
-        }
 
         // Act
-        var saveTasks = games.Select(g => _repository.SaveAsync(g, _cancellationToken));
-        await Task.WhenAll(saveTasks);
+        foreach (var g in games)
+            await _subject.SaveAsync(g, _cancellationToken);
+        await CommitAsync();
 
-        var retrievedGames = await _repository.GetByPlayerIdAsync(playerId, _cancellationToken);
+        var retrievedGames = await _subject.GetByPlayerIdAsync(playerId, _cancellationToken);
 
         // Assert
         retrievedGames.Should().HaveCount(gameCount);
         foreach (var game in games)
-        {
             retrievedGames.Should().Contain(g => g.Id == game.Id);
-        }
     }
 
     #endregion

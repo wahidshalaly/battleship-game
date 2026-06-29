@@ -1,10 +1,14 @@
 using BattleshipGame.Application.Common.Services;
+using BattleshipGame.Application.Interfaces.Broadcasting;
 using BattleshipGame.Application.Interfaces.ComputerOpponent;
 using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Infrastructure.Broadcasting;
 using BattleshipGame.Infrastructure.ComputerOpponent;
 using BattleshipGame.Infrastructure.Persistence;
+using BattleshipGame.Infrastructure.Persistence.Repositories;
 using BattleshipGame.Infrastructure.Resilience;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -33,11 +37,10 @@ public static class ServiceCollectionExtensions
         RegisterSemanticKernel(services);
         RegisterOpponentStrategies(services);
         RegisterResiliencePolicies(services, configuration);
+        RegisterPersistence(services, configuration);
 
         // Register repositories (singleton for in-memory, will change when using EF Core)
-        services.AddSingleton<IGameRepository, InMemoryGameRepository>();
-        services.AddSingleton<IPlayerRepository, InMemoryPlayerRepository>();
-        services.AddSingleton<IBroadcastRepository, InMemoryBroadcastRepository>();
+        services.AddSingleton<IBroadcastor, Broadcaster>();
         services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
 
         return services;
@@ -64,7 +67,12 @@ public static class ServiceCollectionExtensions
 #pragma warning disable SKEXP0010
         var kernel = Kernel
             .CreateBuilder()
-            .AddOpenAIChatCompletion(modelId, endpoint: new Uri(endpoint), apiKey)
+            .AddOpenAIChatCompletion(
+                modelId,
+                endpoint: new Uri(endpoint),
+                apiKey,
+                httpClient: new HttpClient { Timeout = TimeSpan.FromMinutes(5) }
+            )
             .Build();
 #pragma warning restore SKEXP0010
 
@@ -134,5 +142,19 @@ public static class ServiceCollectionExtensions
                 logger
             );
         });
+    }
+
+    private static void RegisterPersistence(
+        IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services.AddDbContext<BattleshipGameDbContext>(options =>
+            options.UseNpgsql(configuration.GetConnectionString("battleship"))
+        );
+
+        services.AddScoped<IGameRepository, GameRepository>();
+        services.AddScoped<IPlayerRepository, PlayerRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
     }
 }

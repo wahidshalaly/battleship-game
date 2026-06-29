@@ -2,20 +2,26 @@ using BattleshipGame.Application.Features.Games.Queries;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.WebAPI.Controllers;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit.Abstractions;
 using static BattleshipGame.Domain.Common.Constants;
 
 namespace BattleshipGame.IntegrationTests;
 
-public class GameApiSimulationTests(
-    ITestOutputHelper output,
-    WebApplicationFactory<Program> factory
-) : IClassFixture<WebApplicationFactory<Program>>
+public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture postgres)
+    : IClassFixture<PostgresFixture>,
+        IAsyncLifetime
 {
-    private readonly HttpClient _client = factory
-        .WithWebHostBuilder(builder =>
+    private WebApplicationFactory<Program> _factory = null!;
+    private HttpClient _client = null!;
+
+    private const int BoardSize = DefaultBoardSize;
+
+    public Task InitializeAsync()
+    {
+        _factory = new BattleshipWebApplicationFactory(
+            postgres.ConnectionString
+        ).WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logging =>
             {
@@ -23,17 +29,34 @@ public class GameApiSimulationTests(
                 logging.AddProvider(new XunitLoggerProvider(output));
                 logging.SetMinimumLevel(LogLevel.Debug);
             });
-        })
-        .CreateClient();
+        });
+        _client = _factory.CreateClient();
+        // SK opponent makes live AI calls that can take minutes per round on a local model;
+        // raise the default 100s timeout to accommodate slow inference.
+        _client.Timeout = TimeSpan.FromMinutes(5);
+        return Task.CompletedTask;
+    }
 
-    private const int BoardSize = DefaultBoardSize;
+    public Task DisposeAsync()
+    {
+        _client.Dispose();
+        return _factory.DisposeAsync().AsTask();
+    }
 
     [Theory]
     [InlineData(OpponentStrategy.Random)]
     [InlineData(OpponentStrategy.SemanticKernel)]
     public async Task Simulate_Full_Game_Playthrough_Via_Api(OpponentStrategy strategy)
     {
-        const string playerUsername = "testuser";
+        // SemanticKernel requires a live AI endpoint; skip when OPENAI_API_KEY is absent.
+        if (
+            strategy == OpponentStrategy.SemanticKernel
+            && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENAI_API_KEY"))
+        )
+            return;
+
+        // Username must be 3-32 chars, letters/digits/underscore only (see CreatePlayerCommandValidator).
+        var playerUsername = $"u_{strategy.ToString().ToLower()}_{Guid.NewGuid():N}"[..32];
 
         // 1. Create player
         var playerId = await CreatePlayer(playerUsername);
@@ -42,19 +65,24 @@ public class GameApiSimulationTests(
         var gameId = await CreateGame(playerId, BoardSize, strategy);
         await VerifyGameState(gameId, GameState.New);
 
-        // 3. Generate random ship placements
-        var shipPlacements = GenerateRandomShipPlacements(BoardSize);
+        // 3. Generate independent ship placements for each side so the player board
+        //    is not a mirror of the opponent board. The test player attacks the
+        //    opponent's known positions (guaranteed win in exactly N moves), while
+        //    the SK opponent must discover the player's different positions by trial
+        //    and error — making it practically impossible to win in those same N turns.
+        var opponentPlacements = GenerateRandomShipPlacements(BoardSize);
+        var playerPlacements = GenerateRandomShipPlacements(BoardSize);
 
         // 4. Place ships for both sides
-        await PlaceShips(gameId, shipPlacements);
+        await PlaceShips(gameId, playerPlacements, opponentPlacements);
         await VerifyGameState(gameId, GameState.Ready);
 
         // 5. Start gameplay
         await StartGameplay(gameId);
         await VerifyGameState(gameId, GameState.Started);
 
-        // 6. Attack all Opponent ship positions
-        await AttackShips(gameId, shipPlacements);
+        // 6. Attack all Opponent ship positions — proves SK called Ollama once per round
+        await AttackShips(gameId, opponentPlacements);
         await VerifyGameState(gameId, GameState.GameOver);
     }
 
@@ -70,7 +98,8 @@ public class GameApiSimulationTests(
         // 5. Game state remains consistent (no turn corruption)
         // 6. Player can continue attacking
 
-        const string playerUsername = "resilience-test-user";
+        // Username must be 3-32 chars, letters/digits/underscore only (see CreatePlayerCommandValidator).
+        var playerUsername = $"resilience_test_{Guid.NewGuid():N}"[..32];
 
         // 1. Create player and game with SemanticKernel opponent
         var playerId = await CreatePlayer(playerUsername);
@@ -78,7 +107,7 @@ public class GameApiSimulationTests(
 
         // 2. Setup game
         var shipPlacements = GenerateRandomShipPlacements(BoardSize);
-        await PlaceShips(gameId, shipPlacements);
+        await PlaceShips(gameId, shipPlacements, shipPlacements);
         await StartGameplay(gameId);
 
         // 3. Execute player attack
@@ -161,20 +190,26 @@ public class GameApiSimulationTests(
             ShipKind Kind,
             ShipOrientation Orientation,
             string[] Position
-        )[] shipPlacements
+        )[] playerPlacements,
+        (
+            string BowCode,
+            ShipKind Kind,
+            ShipOrientation Orientation,
+            string[] Position
+        )[] opponentPlacements
     )
     {
-        foreach (var (bowCode, kind, orientation, _) in shipPlacements)
-        {
+        foreach (var (bowCode, kind, orientation, _) in playerPlacements)
             await _client.PostAsJsonAsync(
                 $"/api/games/{gameId}/ships",
                 new PlaceShipRequest(BoardSide.Player, kind, orientation, bowCode)
             );
+
+        foreach (var (bowCode, kind, orientation, _) in opponentPlacements)
             await _client.PostAsJsonAsync(
                 $"/api/games/{gameId}/ships",
                 new PlaceShipRequest(BoardSide.Opponent, kind, orientation, bowCode)
             );
-        }
     }
 
     private async Task StartGameplay(Guid gameId)
@@ -207,6 +242,8 @@ public class GameApiSimulationTests(
                 response.EnsureSuccessStatusCode();
                 var roundResult = await response.Content.ReadFromJsonAsync<LastRoundResult>();
                 output.WriteLine("Attacked {0}. Outcome: {1}", cellCode, roundResult);
+                if (roundResult?.GameState == GameState.GameOver)
+                    return;
             }
         }
     }

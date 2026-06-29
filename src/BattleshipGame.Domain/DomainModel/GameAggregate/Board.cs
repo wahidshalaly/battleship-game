@@ -50,6 +50,25 @@ internal class Board : Entity<BoardId>
         GenerateBoardCells();
     }
 
+    private Board(BoardId id, int boardSize, Dictionary<string, Cell> grid, List<Ship> ships)
+        : base(id.Value)
+    {
+        _boardSize = boardSize;
+        _grid = grid;
+        _ships = ships;
+    }
+
+    internal static Board Reconstitute(
+        BoardId id,
+        int boardSize,
+        IEnumerable<Cell> cells,
+        IEnumerable<Ship> ships
+    )
+    {
+        var grid = cells.ToDictionary(c => c.Code);
+        return new Board(id, boardSize, grid, [.. ships]);
+    }
+
     /// <summary>
     /// Adds a ship to the board between the specified bow and stern cells.
     /// Validates that the ship follows standard Battleship rules and doesn't overlap with existing ships.

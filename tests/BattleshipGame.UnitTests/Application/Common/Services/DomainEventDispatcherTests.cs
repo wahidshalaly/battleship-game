@@ -7,11 +7,8 @@ using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.SharedKernel;
 using BattleshipGame.UnitTests.Domain.DomainModel;
-using FakeItEasy;
-using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace BattleshipGame.UnitTests.Application.Common.Services;
 

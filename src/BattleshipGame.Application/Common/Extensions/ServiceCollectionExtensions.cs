@@ -24,9 +24,10 @@ public static class ServiceCollectionExtensions
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
         });
 
-        // Register MediatR pipeline behaviors
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        // Register MediatR pipeline behaviors (order matters: first registered = outermost)
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(UnitOfWorkBehavior<,>));
 
         // Register application services
         services.AddScoped<IGameplayService, GameplayService>();

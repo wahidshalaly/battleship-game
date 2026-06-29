@@ -1,4 +1,4 @@
-using BattleshipGame.Application.Interfaces.Persistence;
+using BattleshipGame.Application.Interfaces.Broadcasting;
 using BattleshipGame.Domain.DomainModel.GameAggregate.Events;
 using MediatR;
 
@@ -11,7 +11,7 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// Initializes a new instance of the GameStartedEventHandler class.
 /// </remarks>
 /// <param name="logger">The logger instance.</param>
-internal class GameStartedEventHandler(IBroadcastRepository broadcastRepository)
+internal class GameStartedEventHandler(IBroadcastor broadcastRepository)
     : INotificationHandler<GameStartedEvent>
 {
     /// <summary>
@@ -24,6 +24,6 @@ internal class GameStartedEventHandler(IBroadcastRepository broadcastRepository)
     public async Task Handle(GameStartedEvent notification, CancellationToken ct)
     {
         var announcement = $"Started! Game `{notification.GameId.Value}`";
-        await broadcastRepository.AnnounceAsync(announcement, ct);
+        await broadcastRepository.BroadcastAsync(announcement, ct);
     }
 }
