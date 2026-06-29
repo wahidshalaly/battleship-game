@@ -49,6 +49,9 @@ internal class PlayerRepository(BattleshipGameDbContext context) : IPlayerReposi
 
     public async Task<Player?> GetByUsernameAsync(string username, CancellationToken ct)
     {
+        if (string.IsNullOrEmpty(username))
+            return null;
+
         var entity = await context
             .Players.Include(p => p.GameHistory)
             .FirstOrDefaultAsync(p => p.Username.ToLower() == username.ToLower(), ct);
@@ -57,7 +60,8 @@ internal class PlayerRepository(BattleshipGameDbContext context) : IPlayerReposi
     }
 
     public async Task<bool> UsernameExistsAsync(string username, CancellationToken ct) =>
-        await context.Players.AnyAsync(p => p.Username.ToLower() == username.ToLower(), ct);
+        !string.IsNullOrEmpty(username)
+        && await context.Players.AnyAsync(p => p.Username.ToLower() == username.ToLower(), ct);
 
     private static Player MapToDomain(PlayerEntity entity)
     {

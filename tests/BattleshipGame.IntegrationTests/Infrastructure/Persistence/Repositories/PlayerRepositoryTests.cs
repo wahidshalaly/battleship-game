@@ -1,6 +1,7 @@
 using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Infrastructure.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace BattleshipGame.IntegrationTests.Infrastructure.Persistence.Repositories;
 
@@ -24,7 +25,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres)
     public async Task GetByIdAsync_WhenPlayerExists_ShouldReturnPlayer()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
+        var player = new Player(new PlayerId(Guid.NewGuid()), $"TestPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -54,17 +55,15 @@ public class PlayerRepositoryTests(PostgresFixture postgres)
     public async Task GetByIdAsync_WithCancellationToken_ShouldRespectCancellation()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
+        var player = new Player(new PlayerId(Guid.NewGuid()), $"TestPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        // Act
-        var result = await _subject.GetByIdAsync(player.Id, cts.Token);
-
-        // Assert - Should complete successfully as method is synchronous internally
-        result.Should().NotBeNull();
+        // Act & Assert - a cancelled token must cancel the operation
+        var act = () => _subject.GetByIdAsync(player.Id, cts.Token);
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     #endregion
@@ -75,7 +74,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres)
     public async Task SaveAsync_WhenNewPlayer_ShouldSaveAndReturnPlayerId()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
+        var player = new Player(new PlayerId(Guid.NewGuid()), $"TestPlayer_{Guid.NewGuid():N}");
 
         // Act
         var result = await _subject.SaveAsync(player, _cancellationToken);
@@ -86,7 +85,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres)
         var savedPlayer = await _subject.GetByIdAsync(player.Id, _cancellationToken);
         savedPlayer.Should().NotBeNull();
         savedPlayer.Id.Should().Be(player.Id);
-        savedPlayer.Username.Should().Be("TestPlayer");
+        savedPlayer.Username.Should().Be(player.Username);
     }
 
     [Fact]
@@ -112,15 +111,13 @@ public class PlayerRepositoryTests(PostgresFixture postgres)
     public async Task SaveAsync_WithCancellationToken_ShouldRespectCancellation()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), "TestPlayer");
+        var player = new Player(new PlayerId(Guid.NewGuid()), $"TestPlayer_{Guid.NewGuid():N}");
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        // Act
-        var result = await _subject.SaveAsync(player, cts.Token);
-
-        // Assert - Should complete successfully as method is synchronous internally
-        result.Should().Be(player.Id);
+        // Act & Assert - a cancelled token must cancel the operation
+        var act = () => _subject.SaveAsync(player, cts.Token);
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -261,11 +258,9 @@ public class PlayerRepositoryTests(PostgresFixture postgres)
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        // Act
-        var result = await _subject.GetByUsernameAsync(player.Username, cts.Token);
-
-        // Assert - Should complete successfully as method is synchronous internally
-        result.Should().NotBeNull();
+        // Act & Assert - a cancelled token must cancel the operation
+        var act = () => _subject.GetByUsernameAsync(player.Username, cts.Token);
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     #endregion
@@ -365,11 +360,9 @@ public class PlayerRepositoryTests(PostgresFixture postgres)
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        // Act
-        var result = await _subject.UsernameExistsAsync(player.Username, cts.Token);
-
-        // Assert - Should complete successfully as method is synchronous internally
-        result.Should().BeTrue();
+        // Act & Assert - a cancelled token must cancel the operation
+        var act = () => _subject.UsernameExistsAsync(player.Username, cts.Token);
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -431,7 +424,15 @@ public class PlayerRepositoryTests(PostgresFixture postgres)
                 await using var ctx = _postgres.CreateDbContext();
                 var repo = new PlayerRepository(ctx);
                 await repo.SaveAsync(player, _cancellationToken);
-                await ctx.SaveChangesAsync();
+                try
+                {
+                    await ctx.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    // Expected under optimistic concurrency (xmin): a losing writer
+                    // sees the row already updated. Consistency is still maintained.
+                }
             });
 
         var readResults = await Task.WhenAll(readTasks);
