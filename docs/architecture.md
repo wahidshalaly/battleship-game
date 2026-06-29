@@ -115,16 +115,16 @@ graph TB
 **Purpose**: Implements external concerns and data persistence.
 
 **Components**:
-- **Repositories** (currently in-memory):
-  - `InMemoryGameRepository`: Implements `IGameRepository` for game persistence
-  - `InMemoryPlayerRepository`: Implements `IPlayerRepository` for player persistence
-  - Methods: `GetByIdAsync()`, `SaveAsync()`, `DeleteAsync()`, `GetAllAsync()`, `UsernameExistsAsync()`
+- **Repositories** (EF Core + PostgreSQL):
+  - `GameRepository`: Implements `IGameRepository` over `BattleshipGameDbContext`
+  - `PlayerRepository`: Implements `IPlayerRepository` over `BattleshipGameDbContext`
+  - See the **Persistence (EF Core + PostgreSQL)** section below for the data model
 - **Opponent Strategies**:
   - `RandomAttackStrategy`: Random cell selection from available targets on Player's board
   - `SemanticKernelStrategy`: LLM-based strategic attack selection using Semantic Kernel
   - `OpponentStrategyFactory`: Factory resolving strategies via keyed DI services
   - `BattleshipPromptBuilder`: Constructs prompts for LLM-based strategies
-- **Data Access** (planned): Entity Framework Core DbContext for database integration
+- **Data Access**: `BattleshipGameDbContext` (EF Core 10 + Npgsql) with entity configurations and migrations
 - **External Services**: Semantic Kernel integration for AI/LLM features
 - **Adapters**: Third-party integrations
 
@@ -154,18 +154,19 @@ Abstracts data access to enable testability and flexibility:
 ```csharp
 public interface IGameRepository
 {
-    Task<Game?> GetByIdAsync(GameId id);
-    Task SaveAsync(Game game);
-    Task DeleteAsync(GameId id);
-    Task<IEnumerable<Game>> GetAllAsync();
+    Task<Game?> GetByIdAsync(GameId gameId, CancellationToken ct);
+    Task<Game> GetByIdOrThrowAsync(GameId gameId, CancellationToken ct);
+    Task SaveAsync(Game game, CancellationToken ct);
+    Task<IReadOnlyCollection<Game>> GetByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
+    Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
 }
 
 public interface IPlayerRepository
 {
-    Task<Player?> GetByIdAsync(PlayerId id);
-    Task<PlayerId> SaveAsync(Player player);
-    Task<Player?> GetByUsernameAsync(string username);
-    Task<bool> UsernameExistsAsync(string username);
+    Task<Player?> GetByIdAsync(PlayerId playerId, CancellationToken ct);
+    Task<PlayerId> SaveAsync(Player player, CancellationToken ct);
+    Task<Player?> GetByUsernameAsync(string username, CancellationToken ct);
+    Task<bool> UsernameExistsAsync(string username, CancellationToken ct);
 }
 ```
 
@@ -291,6 +292,41 @@ sequenceDiagram
     Domain-->>API: ShipId
     API-->>Client: 200 OK
 ```
+
+## Persistence (EF Core + PostgreSQL)
+
+Persistence is implemented with **Entity Framework Core 10** on **PostgreSQL** (Npgsql), living entirely in the Infrastructure layer. The Domain and Application layers depend only on the `IGameRepository` / `IPlayerRepository` contracts and stay persistence-agnostic.
+
+### DbContext and tables
+
+`BattleshipGameDbContext` exposes **internal** `DbSet`s (only the repositories touch them) and applies all `IEntityTypeConfiguration` types from the assembly. There are three tables:
+
+| Aggregate / entity | Table | Notes |
+|---|---|---|
+| `PlayerEntity` | `players` | Unique index on `username`; filtered unique index on `active_game_id` |
+| `PlayerGameHistoryEntry` | `player_game_history` | Child of player (FK `player_id`, cascade delete) |
+| `GameEntity` | `games` | Owns both boards as JSON (see below) |
+
+There are **no separate Board / Cell / Ship tables**. Each `GameEntity` owns two boards (`OwnBoard`, `OppBoard`) mapped with `.ToJson()` into the `own_board` / `opp_board` `jsonb` columns; each board in turn owns its `Cells` and `Ships` collections, serialized inside that same JSON document. EF assigns a synthetic ordinal (`__synthesizedOrdinal`) as the key of these JSON-owned collection elements.
+
+### Mapping choices
+
+- **Strongly-typed IDs** (`GameId`, `PlayerId`) are stored as raw `Guid` columns; conversion to/from the domain types happens in the repositories' mapping methods (`MapToDomain` / `MapToEntity`), so no EF concerns leak into the Domain.
+- **Enums** (`State`, `OpponentStrategy`, board sides) are stored as `int`.
+- **Optimistic concurrency**: both `players` and `games` use PostgreSQL's system `xmin` column as a row-version concurrency token (`IsRowVersion()`). A writer that loses a concurrent-update race gets a `DbUpdateConcurrencyException`.
+- Columns use `snake_case` names.
+
+### Unit of work
+
+Repositories **stage** changes (add or mutate tracked entities) but do not call `SaveChanges` themselves. The MediatR `UnitOfWorkBehavior` commits the `DbContext` once per request, so a command that touches multiple aggregates (e.g. `StartNewGame`, which saves both a `Game` and a `Player`) is persisted atomically.
+
+### Migrations and local run
+
+- Migrations live in `src/BattleshipGame.Infrastructure/Persistence/Migrations`.
+- A dedicated `BattleshipGame.MigrationRunner` console project applies migrations.
+- The Aspire AppHost provisions PostgreSQL, runs the MigrationRunner, and starts the Web API only after migrations complete (`WaitForCompletion`). See [local-dev.md](local-dev.md).
+
+DI wiring (`AddInfrastructureServices`) registers `AddDbContext<BattleshipGameDbContext>` with `UseNpgsql(...)` against the `battleship` connection string, plus scoped `IGameRepository`, `IPlayerRepository`, and `IUnitOfWork`.
 
 ## Error Handling Strategy
 
