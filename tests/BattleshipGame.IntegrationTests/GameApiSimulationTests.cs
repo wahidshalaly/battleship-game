@@ -55,7 +55,8 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         )
             return;
 
-        var playerUsername = $"testuser-{strategy.ToString().ToLower()}-{Guid.NewGuid():N}";
+        // Username must be 3-32 chars, letters/digits/underscore only (see CreatePlayerCommandValidator).
+        var playerUsername = $"u_{strategy.ToString().ToLower()}_{Guid.NewGuid():N}"[..32];
 
         // 1. Create player
         var playerId = await CreatePlayer(playerUsername);
@@ -97,7 +98,8 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         // 5. Game state remains consistent (no turn corruption)
         // 6. Player can continue attacking
 
-        var playerUsername = $"resilience-test-user-{Guid.NewGuid():N}";
+        // Username must be 3-32 chars, letters/digits/underscore only (see CreatePlayerCommandValidator).
+        var playerUsername = $"resilience_test_{Guid.NewGuid():N}"[..32];
 
         // 1. Create player and game with SemanticKernel opponent
         var playerId = await CreatePlayer(playerUsername);
