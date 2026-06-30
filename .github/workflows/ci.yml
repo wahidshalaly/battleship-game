@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    # ubuntu-latest ships with a working Docker daemon, which the integration
+    # tests need for Testcontainers (postgres:17). No service container required.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore local tools
+        run: dotnet tool restore
+
+      - name: Restore dependencies
+        run: dotnet restore BattleshipGame.sln
+
+      - name: Check formatting (CSharpier)
+        run: dotnet csharpier check .
+
+      - name: Build
+        run: dotnet build BattleshipGame.sln --no-restore -c Release
+
+      - name: Unit tests
+        run: >-
+          dotnet test tests/BattleshipGame.UnitTests/BattleshipGame.UnitTests.csproj
+          --no-build -c Release --verbosity normal
+
+      - name: Integration tests
+        # The API's startup requires OpenAI settings (RegisterSemanticKernel reads
+        # these env vars directly). CI has no real LLM, so we supply placeholders:
+        # registration succeeds and the unreachable endpoint exercises the
+        # resilience/fallback-to-random path the tests assert on.
+        env:
+          OPENAI_MODEL_ID: llama-3.3-70b-versatile
+          OPENAI_ENDPOINT: http://localhost:11434/v1
+          OPENAI_API_KEY: ci-placeholder-not-a-real-key
+        run: >-
+          dotnet test tests/BattleshipGame.IntegrationTests/BattleshipGame.IntegrationTests.csproj
+          --no-build -c Release --verbosity normal
