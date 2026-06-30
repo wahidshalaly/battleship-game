@@ -1,0 +1,42 @@
+{
+  "realm": "battleship",
+  "enabled": true,
+  "registrationAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 10,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "clients": [
+    {
+      "clientId": "battleship-api",
+      "name": "Battleship API",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "battleship-secret",
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "authorizationServicesEnabled": false,
+      "redirectUris": [],
+      "webOrigins": []
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "player",
+        "description": "A registered game player",
+        "composite": false,
+        "clientRole": false
+      }
+    ]
+  }
+}

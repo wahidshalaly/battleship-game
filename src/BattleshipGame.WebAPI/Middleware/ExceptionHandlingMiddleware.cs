@@ -52,6 +52,20 @@ public class ExceptionHandlingMiddleware(
                 Status = StatusCodes.Status403Forbidden,
                 Instance = context.Request.Path,
             },
+            IdentityConflictException icEx => new ProblemDetails
+            {
+                Title = "Conflict",
+                Detail = icEx.Message,
+                Status = StatusCodes.Status409Conflict,
+                Instance = context.Request.Path,
+            },
+            InvalidCredentialsException => new ProblemDetails
+            {
+                Title = "Unauthorized",
+                Detail = "Invalid username or password.",
+                Status = StatusCodes.Status401Unauthorized,
+                Instance = context.Request.Path,
+            },
             PlayerIsInActiveException piaEx => new ProblemDetails
             {
                 Title = "Player Already In Game",

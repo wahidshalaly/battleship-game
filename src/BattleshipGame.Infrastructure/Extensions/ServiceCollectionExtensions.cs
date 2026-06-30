@@ -1,3 +1,4 @@
+using BattleshipGame.Application.Common.Security;
 using BattleshipGame.Application.Common.Services;
 using BattleshipGame.Application.Interfaces.Broadcasting;
 using BattleshipGame.Application.Interfaces.ComputerOpponent;
@@ -5,6 +6,7 @@ using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Infrastructure.Broadcasting;
 using BattleshipGame.Infrastructure.ComputerOpponent;
+using BattleshipGame.Infrastructure.Identity;
 using BattleshipGame.Infrastructure.Persistence;
 using BattleshipGame.Infrastructure.Persistence.Repositories;
 using BattleshipGame.Infrastructure.Resilience;
@@ -34,6 +36,7 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration
     )
     {
+        RegisterIdentity(services, configuration);
         RegisterSemanticKernel(services);
         RegisterOpponentStrategies(services);
         RegisterResiliencePolicies(services, configuration);
@@ -44,6 +47,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
 
         return services;
+    }
+
+    private static void RegisterIdentity(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<KeycloakOptions>(configuration.GetSection(KeycloakOptions.SectionName));
+        services
+            .AddHttpClient<IIdentityProvider, KeycloakIdentityProvider>()
+            .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30));
     }
 
     private static void RegisterSemanticKernel(IServiceCollection services)

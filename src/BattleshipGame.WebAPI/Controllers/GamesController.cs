@@ -14,7 +14,7 @@ namespace BattleshipGame.WebAPI.Controllers;
 /// </summary>
 /// <param name="logger">The logger.</param>
 /// <param name="gameplayService">The gameplay application service.</param>
-/// <param name="currentPlayer">Resolves the authenticated caller's player profile.</param>
+/// <param name="playerService">Resolves the authenticated caller's player profile.</param>
 /// <param name="gameAccessGuard">Enforces that callers only access games they own.</param>
 /// <param name="mediator">The mediator.</param>
 [ApiController]
@@ -22,7 +22,7 @@ namespace BattleshipGame.WebAPI.Controllers;
 public class GamesController(
     ILogger<GamesController> logger,
     IGameplayService gameplayService,
-    ICurrentPlayerService currentPlayer,
+    IPlayerService playerService,
     IGameAccessGuard gameAccessGuard,
     IMediator mediator
 ) : ControllerBase
@@ -40,7 +40,7 @@ public class GamesController(
     )
     {
         // The owner is the authenticated caller, not a client-supplied id.
-        var player = await currentPlayer.GetRequiredAsync(ct);
+        var player = await playerService.GetCurrentRequiredAsync(ct);
         var gameId = await gameplayService.StartNewGameAsync(
             player.Id,
             request.BoardSize ?? 10,
@@ -79,6 +79,24 @@ public class GamesController(
         var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(gameId);
 
         return Ok(game);
+    }
+
+    /// <summary>
+    /// Returns the caller's active game, or 204 No Content when none is in progress.
+    /// </summary>
+    [HttpGet("active")]
+    [ProducesResponseType(typeof(GetGameQueryResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<GetGameQueryResult>> GetActiveGame(CancellationToken ct)
+    {
+        var player = await playerService.GetCurrentRequiredAsync(ct);
+        if (player.ActiveGameId is null)
+            return NoContent();
+
+        var query = new GetGameQuery(player.ActiveGameId);
+        var game = await mediator.Send(query, ct);
+        return game is null ? NoContent() : Ok(game);
     }
 
     /// <summary>

@@ -1,6 +1,8 @@
 using BattleshipGame.Application.Features.Games.Queries;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
+using BattleshipGame.Infrastructure.Persistence;
+using BattleshipGame.Infrastructure.Persistence.Entities;
 using BattleshipGame.WebAPI.Controllers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit.Abstractions;
@@ -14,6 +16,7 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
 {
     private WebApplicationFactory<Program> _factory = null!;
     private HttpClient _client = null!;
+    private string _clientSubject = null!;
 
     private const int BoardSize = DefaultBoardSize;
 
@@ -32,7 +35,8 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         });
         _client = _factory.CreateClient();
         // Authenticate every request via the test auth scheme (see TestAuthHandler).
-        _client.DefaultRequestHeaders.Add(TestAuthHandler.SubjectHeader, Guid.NewGuid().ToString());
+        _clientSubject = Guid.NewGuid().ToString();
+        _client.DefaultRequestHeaders.Add(TestAuthHandler.SubjectHeader, _clientSubject);
         // SK opponent makes live AI calls that can take minutes per round on a local model;
         // raise the default 100s timeout to accommodate slow inference.
         _client.Timeout = TimeSpan.FromMinutes(5);
@@ -73,29 +77,19 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     [Fact]
     public async Task GetGame_WhenCallerIsNotOwner_IsForbidden()
     {
-        // The owner (default _client) registers and creates a game.
-        await CreatePlayer($"owner_{Guid.NewGuid():N}"[..32]);
+        // The owner (_client) has a seeded player profile.
+        await SeedPlayer(_clientSubject, $"owner_{Guid.NewGuid():N}"[..32]);
         var gameId = await CreateGame(BoardSize, OpponentStrategy.Random);
 
         // A different authenticated player who also has a profile.
-        using var other = CreateAuthenticatedClient(Guid.NewGuid().ToString());
-        var register = await other.PostAsJsonAsync(
-            "/api/players",
-            new { Username = $"other_{Guid.NewGuid():N}"[..32] }
-        );
-        register.EnsureSuccessStatusCode();
+        var otherSubject = Guid.NewGuid().ToString();
+        using var other = CreateAuthenticatedClient(otherSubject);
+        await SeedPlayer(otherSubject, $"other_{Guid.NewGuid():N}"[..32]);
 
         // The non-owner cannot access the owner's game.
         var response = await other.GetAsync($"/api/games/{gameId}");
 
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.Forbidden);
-    }
-
-    private HttpClient CreateAuthenticatedClient(string subject)
-    {
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Add(TestAuthHandler.SubjectHeader, subject);
-        return client;
     }
 
     [Theory]
@@ -115,21 +109,17 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         )
             return;
 
-        // Username must be 3-32 chars, letters/digits/underscore only (see CreatePlayerCommandValidator).
+        // Username must be 3-32 chars, letters/digits/underscore only.
         var playerUsername = $"u_{strategy.ToString().ToLower()}_{Guid.NewGuid():N}"[..32];
 
-        // 1. Register the authenticated caller's player profile
-        await CreatePlayer(playerUsername);
+        // 1. Seed the caller's player profile directly into the DB.
+        await SeedPlayer(_clientSubject, playerUsername);
 
         // 2. Create game with selected opponent strategy (owned by the caller)
         var gameId = await CreateGame(BoardSize, strategy);
         await VerifyGameState(gameId, GameState.New);
 
-        // 3. Generate independent ship placements for each side so the player board
-        //    is not a mirror of the opponent board. The test player attacks the
-        //    opponent's known positions (guaranteed win in exactly N moves), while
-        //    the SK opponent must discover the player's different positions by trial
-        //    and error — making it practically impossible to win in those same N turns.
+        // 3. Generate independent ship placements for each side.
         var opponentPlacements = GenerateRandomShipPlacements(BoardSize);
         var playerPlacements = GenerateRandomShipPlacements(BoardSize);
 
@@ -149,20 +139,10 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     [Fact]
     public async Task PlayerAttack_WhenAiOpponentFails_ShouldFallbackToRandomStrategy()
     {
-        // This test validates resilience behavior when AI opponent fails.
-        // Expected behavior:
-        // 1. Player attack succeeds
-        // 2. AI opponent (SemanticKernel) fails due to rate limiting or errors
-        // 3. ResilientComputerOpponentDecorator automatically falls back to RandomAttackStrategy
-        // 4. Opponent executes attack using fallback (never forfeits turn)
-        // 5. Game state remains consistent (no turn corruption)
-        // 6. Player can continue attacking
-
-        // Username must be 3-32 chars, letters/digits/underscore only (see CreatePlayerCommandValidator).
         var playerUsername = $"resilience_test_{Guid.NewGuid():N}"[..32];
 
-        // 1. Register the caller's player profile and create a SemanticKernel game
-        await CreatePlayer(playerUsername);
+        // 1. Seed the caller's player profile and create a SemanticKernel game
+        await SeedPlayer(_clientSubject, playerUsername);
         var gameId = await CreateGame(BoardSize, OpponentStrategy.SemanticKernel);
 
         // 2. Setup game
@@ -171,20 +151,18 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         await StartGameplay(gameId);
 
         // 3. Execute player attack
-        // Note: Even if SemanticKernel AI fails (rate limit, etc.), the decorator falls back to Random
+        // Even if SemanticKernel AI fails (rate limit, etc.), the decorator falls back to Random
         var response = await _client.PostAsJsonAsync(
             $"/api/games/{gameId}/attacks",
             new AttackRequest("A1")
         );
 
-        // Assert: Request should succeed (200 OK)
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 
         var roundResult = await response.Content.ReadFromJsonAsync<LastRoundResult>();
         roundResult.Should().NotBeNull();
         roundResult!.PlayerTargetCell.Should().Be("A1");
 
-        // Opponent should ALWAYS attack (using either SemanticKernel or fallback Random strategy)
         roundResult
             .OpponentTargetCell.Should()
             .NotBeNullOrWhiteSpace("Opponent should never forfeit turn");
@@ -204,6 +182,29 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         );
 
         secondResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+    }
+
+    // Inserts a Player row directly into the DB so the test auth subject has an owner profile.
+    // This replaces the removed POST /api/players endpoint (registration is now POST /api/auth/register).
+    private async Task SeedPlayer(string subject, string username)
+    {
+        await using var db = postgres.CreateDbContext();
+        db.Players.Add(
+            new PlayerEntity
+            {
+                Id = Guid.NewGuid(),
+                Username = username,
+                IdentitySubject = subject,
+            }
+        );
+        await db.SaveChangesAsync();
+    }
+
+    private HttpClient CreateAuthenticatedClient(string subject)
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.SubjectHeader, subject);
+        return client;
     }
 
     private async Task<GetGameQueryResult> GetGame(Guid gameId)
@@ -320,19 +321,6 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         createdGameLocation.Should().NotBeNull();
         var gameId = ExtractIdFromLocation(createdGameLocation);
         return gameId;
-    }
-
-    private async Task<Guid> CreatePlayer(string playerUsername)
-    {
-        var response = await _client.PostAsJsonAsync(
-            "/api/players",
-            new { Username = playerUsername }
-        );
-        response.EnsureSuccessStatusCode();
-        var location = response.Headers.Location;
-        location.Should().NotBeNull();
-        var playerId = ExtractIdFromLocation(location);
-        return playerId;
     }
 
     private static Guid ExtractIdFromLocation(Uri location)

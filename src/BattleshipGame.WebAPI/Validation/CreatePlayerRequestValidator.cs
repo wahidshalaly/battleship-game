@@ -3,9 +3,9 @@ using FluentValidation;
 
 namespace BattleshipGame.WebAPI.Validation;
 
-public class CreatePlayerRequestValidator : AbstractValidator<CreatePlayerRequest>
+public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
 {
-    public CreatePlayerRequestValidator()
+    public RegisterRequestValidator()
     {
         RuleFor(x => x.Username)
             .NotEmpty()
@@ -13,5 +13,9 @@ public class CreatePlayerRequestValidator : AbstractValidator<CreatePlayerReques
             .MaximumLength(32)
             .Matches("^[a-zA-Z0-9_]+$")
             .WithMessage("Username must be 3-32 chars, letters, digits, underscore only.");
+
+        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+
+        RuleFor(x => x.Password).NotEmpty().MinimumLength(8);
     }
 }
