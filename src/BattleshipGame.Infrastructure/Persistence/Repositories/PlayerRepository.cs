@@ -63,6 +63,21 @@ internal class PlayerRepository(BattleshipGameDbContext context) : IPlayerReposi
         !string.IsNullOrEmpty(username)
         && await context.Players.AnyAsync(p => p.Username.ToLower() == username.ToLower(), ct);
 
+    public async Task<Player?> GetByIdentitySubjectAsync(
+        string identitySubject,
+        CancellationToken ct
+    )
+    {
+        if (string.IsNullOrEmpty(identitySubject))
+            return null;
+
+        var entity = await context
+            .Players.Include(p => p.GameHistory)
+            .FirstOrDefaultAsync(p => p.IdentitySubject == identitySubject, ct);
+
+        return entity is null ? null : MapToDomain(entity);
+    }
+
     private static Player MapToDomain(PlayerEntity entity)
     {
         var playerId = new PlayerId(entity.Id);
@@ -70,7 +85,7 @@ internal class PlayerRepository(BattleshipGameDbContext context) : IPlayerReposi
             ? new GameId(entity.ActiveGameId.Value)
             : null;
 
-        var player = new Player(playerId, entity.Username, activeGameId);
+        var player = new Player(playerId, entity.Username, entity.IdentitySubject, activeGameId);
         player.RestoreGameHistory(entity.GameHistory.Select(h => new GameId(h.GameId)));
         return player;
     }
@@ -80,6 +95,7 @@ internal class PlayerRepository(BattleshipGameDbContext context) : IPlayerReposi
         {
             Id = player.Id.Value,
             Username = player.Username,
+            IdentitySubject = player.IdentitySubject,
             ActiveGameId = player.ActiveGameId?.Value,
             GameHistory = player
                 .GameHistory.Select(gid => new PlayerGameHistoryEntry

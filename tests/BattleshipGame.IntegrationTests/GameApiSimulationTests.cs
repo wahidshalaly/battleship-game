@@ -56,6 +56,48 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
     }
 
+    [Fact]
+    public async Task CreateGame_WhenCallerHasNoPlayerProfile_IsForbidden()
+    {
+        // Authenticated, but has not registered a player profile.
+        using var client = CreateAuthenticatedClient(Guid.NewGuid().ToString());
+
+        var response = await client.PostAsJsonAsync(
+            "/api/games",
+            new { BoardSize, OpponentStrategy = OpponentStrategy.Random }
+        );
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task GetGame_WhenCallerIsNotOwner_IsForbidden()
+    {
+        // The owner (default _client) registers and creates a game.
+        await CreatePlayer($"owner_{Guid.NewGuid():N}"[..32]);
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.Random);
+
+        // A different authenticated player who also has a profile.
+        using var other = CreateAuthenticatedClient(Guid.NewGuid().ToString());
+        var register = await other.PostAsJsonAsync(
+            "/api/players",
+            new { Username = $"other_{Guid.NewGuid():N}"[..32] }
+        );
+        register.EnsureSuccessStatusCode();
+
+        // The non-owner cannot access the owner's game.
+        var response = await other.GetAsync($"/api/games/{gameId}");
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.Forbidden);
+    }
+
+    private HttpClient CreateAuthenticatedClient(string subject)
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.SubjectHeader, subject);
+        return client;
+    }
+
     [Theory]
     [InlineData(OpponentStrategy.Random)]
     [InlineData(OpponentStrategy.SemanticKernel)]
@@ -76,11 +118,11 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         // Username must be 3-32 chars, letters/digits/underscore only (see CreatePlayerCommandValidator).
         var playerUsername = $"u_{strategy.ToString().ToLower()}_{Guid.NewGuid():N}"[..32];
 
-        // 1. Create player
-        var playerId = await CreatePlayer(playerUsername);
+        // 1. Register the authenticated caller's player profile
+        await CreatePlayer(playerUsername);
 
-        // 2. Create game with selected opponent strategy
-        var gameId = await CreateGame(playerId, BoardSize, strategy);
+        // 2. Create game with selected opponent strategy (owned by the caller)
+        var gameId = await CreateGame(BoardSize, strategy);
         await VerifyGameState(gameId, GameState.New);
 
         // 3. Generate independent ship placements for each side so the player board
@@ -119,9 +161,9 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         // Username must be 3-32 chars, letters/digits/underscore only (see CreatePlayerCommandValidator).
         var playerUsername = $"resilience_test_{Guid.NewGuid():N}"[..32];
 
-        // 1. Create player and game with SemanticKernel opponent
-        var playerId = await CreatePlayer(playerUsername);
-        var gameId = await CreateGame(playerId, BoardSize, OpponentStrategy.SemanticKernel);
+        // 1. Register the caller's player profile and create a SemanticKernel game
+        await CreatePlayer(playerUsername);
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.SemanticKernel);
 
         // 2. Setup game
         var shipPlacements = GenerateRandomShipPlacements(BoardSize);
@@ -266,20 +308,12 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         }
     }
 
-    private async Task<Guid> CreateGame(
-        Guid playerId,
-        int boardSize,
-        OpponentStrategy opponentStrategy
-    )
+    private async Task<Guid> CreateGame(int boardSize, OpponentStrategy opponentStrategy)
     {
+        // The owner is taken from the authenticated caller, not the request body.
         var response = await _client.PostAsJsonAsync(
             "/api/games",
-            new
-            {
-                PlayerId = playerId,
-                BoardSize = boardSize,
-                OpponentStrategy = opponentStrategy,
-            }
+            new { BoardSize = boardSize, OpponentStrategy = opponentStrategy }
         );
         response.EnsureSuccessStatusCode();
         var createdGameLocation = response.Headers.Location;

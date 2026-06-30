@@ -14,7 +14,7 @@ public class PlayerTests
     [Fact]
     public void Ctor_WhenValidParameters_ShouldCreatePlayer()
     {
-        var player = new Player(_playerId, ValidUsername);
+        var player = new Player(_playerId, ValidUsername, "auth|subject");
 
         player.Id.Should().Be(_playerId);
         player.Username.Should().Be(ValidUsername);
@@ -30,7 +30,7 @@ public class PlayerTests
     [InlineData("   ")]
     public void Ctor_WhenInvalidUsername_ShouldThrowArgumentException(string? invalidUsername)
     {
-        var act = () => new Player(_playerId, invalidUsername!);
+        var act = () => new Player(_playerId, invalidUsername!, "auth|subject");
 
         const string exceptionMessage = "Username cannot be null or whitespace.*";
         act.Should()
@@ -43,7 +43,7 @@ public class PlayerTests
     [Fact]
     public void JoinGame_WhenNotInActiveGame_ShouldJoinGame()
     {
-        var player = new Player(_playerId, ValidUsername);
+        var player = new Player(_playerId, ValidUsername, "auth|subject");
         var gameId = new GameId(Guid.NewGuid());
 
         player.JoinGame(gameId);
@@ -63,7 +63,7 @@ public class PlayerTests
     [Fact]
     public void JoinGame_WhenAlreadyInActiveGame_ShouldThrowPlayerIsInActiveException()
     {
-        var player = new Player(_playerId, ValidUsername);
+        var player = new Player(_playerId, ValidUsername, "auth|subject");
         var gameId1 = new GameId(Guid.NewGuid());
         var gameId2 = new GameId(Guid.NewGuid());
 
@@ -77,7 +77,7 @@ public class PlayerTests
     [Fact]
     public void LeaveGame_WhenInActiveGame_ShouldLeaveGameAndAddToHistory()
     {
-        var player = new Player(_playerId, ValidUsername);
+        var player = new Player(_playerId, ValidUsername, "auth|subject");
         var gameId = new GameId(Guid.NewGuid());
         player.JoinGame(gameId);
         player.ClearDomainEvents(); // Clear join event to focus on leave event
@@ -100,7 +100,7 @@ public class PlayerTests
     [Fact]
     public void LeaveGame_WhenNotInActiveGame_ShouldThrowPlayerIsNotInActiveException()
     {
-        var player = new Player(_playerId, ValidUsername);
+        var player = new Player(_playerId, ValidUsername, "auth|subject");
 
         var act = () => player.LeaveGame();
 
@@ -110,7 +110,7 @@ public class PlayerTests
     [Fact]
     public void TotalGamesPlayed_WhenMultipleGamesCompleted_ShouldReturnCorrectCount()
     {
-        var player = new Player(_playerId, ValidUsername);
+        var player = new Player(_playerId, ValidUsername, "auth|subject");
 
         // Complete first game
         var gameId1 = new GameId(Guid.NewGuid());
@@ -136,7 +136,7 @@ public class PlayerTests
     [Fact]
     public void GameHistory_ShouldBeReadOnly()
     {
-        var player = new Player(_playerId, ValidUsername);
+        var player = new Player(_playerId, ValidUsername, "auth|subject");
         var gameId = new GameId(Guid.NewGuid());
         player.JoinGame(gameId);
         player.LeaveGame();

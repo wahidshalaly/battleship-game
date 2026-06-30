@@ -76,7 +76,7 @@ public class PlayerLeftGameEventTests
         var playerId = new PlayerId(Guid.NewGuid());
         var gameId = new GameId(Guid.NewGuid());
         const string username = "TestPlayer";
-        var player = new Player(playerId, username);
+        var player = new Player(playerId, username, "auth|subject");
 
         // Join game first
         player.JoinGame(gameId);
@@ -104,7 +104,7 @@ public class PlayerLeftGameEventTests
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
         const string username = "TestPlayer";
-        var player = new Player(playerId, username);
+        var player = new Player(playerId, username, "auth|subject");
 
         // Act & Assert
         var act = () => player.LeaveGame();
@@ -123,7 +123,7 @@ public class PlayerLeftGameEventTests
         var gameId1 = new GameId(Guid.NewGuid());
         var gameId2 = new GameId(Guid.NewGuid());
         const string username = "TestPlayer";
-        var player = new Player(playerId, username);
+        var player = new Player(playerId, username, "auth|subject");
 
         // Act
         // Join and leave first game
@@ -176,7 +176,7 @@ public class PlayerLeftGameEventTests
         var playerId = new PlayerId(Guid.NewGuid());
         var gameId = new GameId(Guid.NewGuid());
         const string username = "TestPlayer";
-        var player = new Player(playerId, username);
+        var player = new Player(playerId, username, "auth|subject");
 
         // Act
         player.JoinGame(gameId);

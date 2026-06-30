@@ -24,7 +24,7 @@ public class CreatePlayerCommandHandlerTests
     {
         // Arrange
         const string username = "TestPlayer";
-        var command = new CreatePlayerCommand(username);
+        var command = new CreatePlayerCommand(username, "auth|subject");
         var expectedPlayerId = new PlayerId(Guid.NewGuid());
 
         A.CallTo(() => _repository.UsernameExistsAsync(username, _cancellationToken))
@@ -54,7 +54,7 @@ public class CreatePlayerCommandHandlerTests
     {
         // Arrange
         const string username = "ExistingPlayer";
-        var command = new CreatePlayerCommand(username);
+        var command = new CreatePlayerCommand(username, "auth|subject");
 
         A.CallTo(() => _repository.UsernameExistsAsync(username, _cancellationToken)).Returns(true);
 
@@ -80,7 +80,7 @@ public class CreatePlayerCommandHandlerTests
     )
     {
         // Arrange
-        var command = new CreatePlayerCommand(username!);
+        var command = new CreatePlayerCommand(username!, "auth|subject");
 
         // Act
         var act = () => _handler.Handle(command, _cancellationToken);

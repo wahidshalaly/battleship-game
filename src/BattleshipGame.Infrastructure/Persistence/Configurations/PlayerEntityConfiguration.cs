@@ -13,11 +13,13 @@ internal class PlayerEntityConfiguration : IEntityTypeConfiguration<PlayerEntity
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Id).HasColumnName("id");
         builder.Property(p => p.Username).HasColumnName("username").IsRequired();
+        builder.Property(p => p.IdentitySubject).HasColumnName("identity_subject").IsRequired();
         builder.Property(p => p.ActiveGameId).HasColumnName("active_game_id");
 
         builder.Property<uint>("xmin").HasColumnType("xid").IsRowVersion();
 
         builder.HasIndex(p => p.Username).IsUnique();
+        builder.HasIndex(p => p.IdentitySubject).IsUnique();
         builder.HasIndex(p => p.ActiveGameId).IsUnique().HasFilter("active_game_id IS NOT NULL");
 
         builder

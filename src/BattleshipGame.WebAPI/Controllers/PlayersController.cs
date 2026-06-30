@@ -1,3 +1,4 @@
+using BattleshipGame.Application.Common.Security;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.Exceptions;
@@ -10,11 +11,15 @@ namespace BattleshipGame.WebAPI.Controllers;
 /// </summary>
 /// <param name="logger">The logger.</param>
 /// <param name="playerService">The player application service.</param>
+/// <param name="currentUser">The authenticated caller's identity.</param>
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class PlayersController(ILogger<PlayersController> logger, IPlayerService playerService)
-    : ControllerBase
+public class PlayersController(
+    ILogger<PlayersController> logger,
+    IPlayerService playerService,
+    ICurrentUser currentUser
+) : ControllerBase
 {
     /// <summary>
     /// Creates a new player.
@@ -31,8 +36,12 @@ public class PlayersController(ILogger<PlayersController> logger, IPlayerService
         CancellationToken ct
     )
     {
-        // Delegate to service for creation + validation
-        var playerId = await playerService.CreateAsync(request.Username, ct);
+        // Identity comes from the authenticated token, not the request body.
+        var playerId = await playerService.CreateAsync(
+            request.Username,
+            currentUser.SubjectId!,
+            ct
+        );
 
         // TODO: consider removing sensitive info from logs
         logger.LogInformation(

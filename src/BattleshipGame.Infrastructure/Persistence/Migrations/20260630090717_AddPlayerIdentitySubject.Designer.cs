@@ -3,6 +3,7 @@ using System;
 using BattleshipGame.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BattleshipGame.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(BattleshipGameDbContext))]
-    partial class BattleshipGameDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260630090717_AddPlayerIdentitySubject")]
+    partial class AddPlayerIdentitySubject
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

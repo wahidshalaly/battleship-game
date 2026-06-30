@@ -1,4 +1,5 @@
 using BattleshipGame.Application.Interfaces.Persistence;
+using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -18,13 +19,17 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
         return Task.CompletedTask;
     }
 
+    // Each player needs a unique identity subject (DB has a unique index on it).
+    private static Player NewPlayer(string username, GameId? activeGameId = null) =>
+        new(new PlayerId(Guid.NewGuid()), username, $"sub_{Guid.NewGuid():N}", activeGameId);
+
     #region GetByIdAsync Tests
 
     [Fact]
     public async Task GetByIdAsync_WhenPlayerExists_ShouldReturnPlayer()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), $"TestPlayer_{Guid.NewGuid():N}");
+        var player = NewPlayer($"TestPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -54,7 +59,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task GetByIdAsync_WithCancellationToken_ShouldRespectCancellation()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), $"TestPlayer_{Guid.NewGuid():N}");
+        var player = NewPlayer($"TestPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
         using var cts = new CancellationTokenSource();
@@ -73,7 +78,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task SaveAsync_WhenNewPlayer_ShouldSaveAndReturnPlayerId()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), $"TestPlayer_{Guid.NewGuid():N}");
+        var player = NewPlayer($"TestPlayer_{Guid.NewGuid():N}");
 
         // Act
         var result = await _subject.SaveAsync(player, _cancellationToken);
@@ -91,7 +96,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task SaveAsync_WhenUpdatingExistingPlayer_ShouldUpdateAndReturnPlayerId()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), "OriginalName");
+        var player = NewPlayer("OriginalName");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -110,7 +115,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task SaveAsync_WithCancellationToken_ShouldRespectCancellation()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), $"TestPlayer_{Guid.NewGuid():N}");
+        var player = NewPlayer($"TestPlayer_{Guid.NewGuid():N}");
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
@@ -127,10 +132,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
             .Range(0, 10)
             .Select(i =>
             {
-                var player = new Player(
-                    new PlayerId(Guid.NewGuid()),
-                    $"Player{i}_{Guid.NewGuid():N}"
-                );
+                var player = NewPlayer($"Player{i}_{Guid.NewGuid():N}");
                 return Task.Run(async () =>
                 {
                     await using var ctx = _postgres.CreateDbContext();
@@ -167,7 +169,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task GetByUsernameAsync_WhenUsernameExists_ShouldReturnPlayer()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), $"TestPlayer_{Guid.NewGuid():N}");
+        var player = NewPlayer($"TestPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -203,7 +205,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
         // Arrange
         var uniqueSuffix = Guid.NewGuid().ToString("N");
         var originalUsername = $"TestPlayer{uniqueSuffix}";
-        var player = new Player(new PlayerId(Guid.NewGuid()), originalUsername);
+        var player = NewPlayer(originalUsername);
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -251,7 +253,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task GetByUsernameAsync_WithCancellationToken_ShouldRespectCancellation()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), $"TestPlayer_{Guid.NewGuid():N}");
+        var player = NewPlayer($"TestPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
         using var cts = new CancellationTokenSource();
@@ -270,7 +272,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task UsernameExistsAsync_WhenUsernameExists_ShouldReturnTrue()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), $"ExistingPlayer_{Guid.NewGuid():N}");
+        var player = NewPlayer($"ExistingPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -306,7 +308,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
         // Arrange
         var uniqueSuffix = Guid.NewGuid().ToString("N");
         var originalUsername = $"TestPlayer{uniqueSuffix}";
-        var player = new Player(new PlayerId(Guid.NewGuid()), originalUsername);
+        var player = NewPlayer(originalUsername);
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -353,7 +355,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task UsernameExistsAsync_WithCancellationToken_ShouldRespectCancellation()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), $"TestPlayer_{Guid.NewGuid():N}");
+        var player = NewPlayer($"TestPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
         using var cts = new CancellationTokenSource();
@@ -368,10 +370,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task UsernameExistsAsync_ConcurrentOperations_ShouldBeThreadSafe()
     {
         // Arrange - commit the player before concurrent checks
-        var player = new Player(
-            new PlayerId(Guid.NewGuid()),
-            $"ConcurrentTestPlayer_{Guid.NewGuid():N}"
-        );
+        var player = NewPlayer($"ConcurrentTestPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -400,10 +399,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task Repository_ConcurrentSaveAndRead_ShouldMaintainConsistency()
     {
         // Arrange - persist the player first so concurrent saves are UPDATEs, not INSERTs
-        var player = new Player(
-            new PlayerId(Guid.NewGuid()),
-            $"ConcurrentPlayer_{Guid.NewGuid():N}"
-        );
+        var player = NewPlayer($"ConcurrentPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -446,10 +442,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task Repository_ConcurrentUsernameChecks_ShouldBeConsistent()
     {
         // Arrange - commit before concurrent checks
-        var player = new Player(
-            new PlayerId(Guid.NewGuid()),
-            $"ConcurrentUsername_{Guid.NewGuid():N}"
-        );
+        var player = NewPlayer($"ConcurrentUsername_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -478,10 +471,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
             .Range(0, 20)
             .Select(i =>
             {
-                var player = new Player(
-                    new PlayerId(Guid.NewGuid()),
-                    $"Player{i}_{Guid.NewGuid():N}"
-                );
+                var player = NewPlayer($"Player{i}_{Guid.NewGuid():N}");
                 return Task.Run<(PlayerId Id, string Username)>(async () =>
                 {
                     await using var ctx = _postgres.CreateDbContext();
@@ -512,7 +502,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     {
         // Arrange
         var originalUsername = $"TestPlayer123_{Guid.NewGuid():N}";
-        var player = new Player(new PlayerId(Guid.NewGuid()), originalUsername);
+        var player = NewPlayer(originalUsername);
 
         // Act
         await _subject.SaveAsync(player, _cancellationToken);
@@ -529,7 +519,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task Repository_AfterSaving_UsernameQueryShouldReturnSamePlayer()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), $"UniquePlayer_{Guid.NewGuid():N}");
+        var player = NewPlayer($"UniquePlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -551,10 +541,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task Repository_UsernameExistsAndGetByUsername_ShouldBeConsistent()
     {
         // Arrange
-        var player = new Player(
-            new PlayerId(Guid.NewGuid()),
-            $"ConsistencyTestPlayer_{Guid.NewGuid():N}"
-        );
+        var player = NewPlayer($"ConsistencyTestPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -588,7 +575,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     {
         // Append a unique suffix to prevent collisions across theory cases sharing the same DB
         var username = $"{baseUsername}_{Guid.NewGuid():N}";
-        var player = new Player(new PlayerId(Guid.NewGuid()), username);
+        var player = NewPlayer(username);
 
         // Act
         await _subject.SaveAsync(player, _cancellationToken);
@@ -611,7 +598,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
         // Arrange
         var players = Enumerable
             .Range(0, playerCount)
-            .Select(i => new Player(new PlayerId(Guid.NewGuid()), $"Player{i}_{Guid.NewGuid():N}"))
+            .Select(i => NewPlayer($"Player{i}_{Guid.NewGuid():N}"))
             .ToList();
 
         // Act
@@ -638,7 +625,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task Repository_WhenPlayerUpdated_ShouldReflectChangesInSubsequentReads()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), $"OriginalPlayer_{Guid.NewGuid():N}");
+        var player = NewPlayer($"OriginalPlayer_{Guid.NewGuid():N}");
         await _subject.SaveAsync(player, _cancellationToken);
         await CommitAsync();
 
@@ -662,7 +649,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     public async Task Repository_AddOrUpdateBehavior_ShouldOverwriteExistingEntries()
     {
         // Arrange
-        var player = new Player(new PlayerId(Guid.NewGuid()), $"FirstName_{Guid.NewGuid():N}");
+        var player = NewPlayer($"FirstName_{Guid.NewGuid():N}");
 
         // Act
         await _subject.SaveAsync(player, _cancellationToken);
@@ -683,10 +670,7 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
         // Arrange - persist first so all concurrent saves are UPDATEs, not INSERTs
         var players = Enumerable
             .Range(0, 10)
-            .Select(i => new Player(
-                new PlayerId(Guid.NewGuid()),
-                $"RaceConditionPlayer{i}_{Guid.NewGuid():N}"
-            ))
+            .Select(i => NewPlayer($"RaceConditionPlayer{i}_{Guid.NewGuid():N}"))
             .ToList();
 
         foreach (var player in players)

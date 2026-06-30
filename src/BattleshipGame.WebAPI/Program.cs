@@ -1,5 +1,6 @@
 using System.Reflection;
 using BattleshipGame.Application.Common.Extensions;
+using BattleshipGame.Application.Common.Security;
 using BattleshipGame.Infrastructure.Extensions;
 using BattleshipGame.Infrastructure.Resilience;
 using BattleshipGame.WebAPI.Authentication;
@@ -107,6 +108,10 @@ builder
 builder
     .Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+
+// Expose the authenticated caller's identity to the application layer.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 
 // Register application and infrastructure services
 builder.Services.AddApplicationServices();

@@ -82,7 +82,7 @@ public class PlayerJoinedGameEventTests
         var playerId = new PlayerId(Guid.NewGuid());
         var gameId = new GameId(Guid.NewGuid());
         const string username = "TestPlayer";
-        var player = new Player(playerId, username);
+        var player = new Player(playerId, username, "auth|subject");
 
         // Act
         player.JoinGame(gameId);
@@ -110,7 +110,7 @@ public class PlayerJoinedGameEventTests
         var gameId1 = new GameId(Guid.NewGuid());
         var gameId2 = new GameId(Guid.NewGuid());
         const string username = "TestPlayer";
-        var player = new Player(playerId, username);
+        var player = new Player(playerId, username, "auth|subject");
 
         // Act
         player.JoinGame(gameId1);
@@ -136,7 +136,7 @@ public class PlayerJoinedGameEventTests
         var gameId1 = new GameId(Guid.NewGuid());
         var gameId2 = new GameId(Guid.NewGuid());
         const string username = "TestPlayer";
-        var player = new Player(playerId, username);
+        var player = new Player(playerId, username, "auth|subject");
 
         // Act
         // Join first game

@@ -41,7 +41,7 @@ public class StartNewGameCommandHandlerTests
         var command = new StartNewGameCommand(playerId, boardSize);
         var ct = CancellationToken.None;
 
-        var player = new Player(playerId, "TestPlayer");
+        var player = new Player(playerId, "TestPlayer", "auth|subject");
         A.CallTo(() => _playerRepository.SaveAsync(A<Player>._, ct))
             .Invokes((Player p, CancellationToken _) => player = p)
             .Returns(playerId);
@@ -78,7 +78,7 @@ public class StartNewGameCommandHandlerTests
         var command = new StartNewGameCommand(playerId);
         var ct = CancellationToken.None;
 
-        var player = new Player(playerId, "TestPlayer");
+        var player = new Player(playerId, "TestPlayer", "auth|subject");
         A.CallTo(() => _playerRepository.SaveAsync(A<Player>._, ct))
             .Invokes((Player p, CancellationToken _) => player = p)
             .Returns(playerId);

@@ -1,4 +1,5 @@
-﻿using BattleshipGame.Application.Interfaces.Persistence;
+﻿using BattleshipGame.Application.Common.Exceptions;
+using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using MediatR;
 
@@ -8,7 +9,8 @@ namespace BattleshipGame.Application.Features.Players.Commands;
 /// Command to create a new player.
 /// </summary>
 /// <param name="Username">The player's username.</param>
-public record CreatePlayerCommand(string Username) : IRequest<Guid>;
+/// <param name="IdentitySubject">The authenticated caller's identity subject (token 'sub').</param>
+public record CreatePlayerCommand(string Username, string IdentitySubject) : IRequest<Guid>;
 
 /// <summary>
 /// Handler for creating a new player.
@@ -27,6 +29,22 @@ public class CreatePlayerCommandHandler(IPlayerRepository playerRepository)
             throw new ArgumentException("Username cannot be null or whitespace.", nameof(request));
         }
 
+        if (string.IsNullOrWhiteSpace(request.IdentitySubject))
+        {
+            throw new ForbiddenAccessException("Authentication is required to create a player.");
+        }
+
+        // A single player profile per authenticated identity.
+        if (
+            await playerRepository.GetByIdentitySubjectAsync(request.IdentitySubject, ct)
+            is not null
+        )
+        {
+            throw new InvalidOperationException(
+                "A player profile already exists for the current identity."
+            );
+        }
+
         // Validate username uniqueness
         if (await playerRepository.UsernameExistsAsync(request.Username, ct))
         {
@@ -37,7 +55,7 @@ public class CreatePlayerCommandHandler(IPlayerRepository playerRepository)
 
         // Create new player
         var playerId = new PlayerId(Guid.NewGuid());
-        var player = new Player(playerId, request.Username);
+        var player = new Player(playerId, request.Username, request.IdentitySubject);
 
         // Save player
         await playerRepository.SaveAsync(player, ct);

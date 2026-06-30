@@ -9,9 +9,13 @@ namespace BattleshipGame.Application.Services;
 public class PlayerService(IMediator mediator) : IPlayerService
 {
     /// <inheritdoc />
-    public async Task<PlayerId> CreateAsync(string username, CancellationToken ct)
+    public async Task<PlayerId> CreateAsync(
+        string username,
+        string identitySubject,
+        CancellationToken ct
+    )
     {
-        var guid = await mediator.Send(new CreatePlayerCommand(username), ct);
+        var guid = await mediator.Send(new CreatePlayerCommand(username, identitySubject), ct);
         return new PlayerId(guid);
     }
 

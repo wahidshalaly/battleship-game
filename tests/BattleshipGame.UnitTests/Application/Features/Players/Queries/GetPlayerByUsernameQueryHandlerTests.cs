@@ -330,7 +330,7 @@ public class GetPlayerByUsernameQueryHandlerTests
         int gameHistoryCount
     )
     {
-        var player = new Player(playerId, username, activeGameId);
+        var player = new Player(playerId, username, "auth|subject", activeGameId);
 
         // Use reflection to add games to history to simulate TotalGamesPlayed
         var gameHistoryField = typeof(Player).GetField(
