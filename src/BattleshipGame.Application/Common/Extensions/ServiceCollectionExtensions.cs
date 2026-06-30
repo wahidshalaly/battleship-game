@@ -32,7 +32,6 @@ public static class ServiceCollectionExtensions
         // Register application services
         services.AddScoped<IGameplayService, GameplayService>();
         services.AddScoped<IPlayerService, PlayerService>();
-        services.AddScoped<ICurrentPlayerService, CurrentPlayerService>();
         services.AddScoped<IGameAccessGuard, GameAccessGuard>();
 
         return services;

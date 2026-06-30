@@ -6,15 +6,13 @@ using BattleshipGame.Domain.Exceptions;
 namespace BattleshipGame.Application.Services;
 
 /// <inheritdoc />
-public sealed class GameAccessGuard(
-    ICurrentPlayerService currentPlayer,
-    IGameRepository gameRepository
-) : IGameAccessGuard
+public sealed class GameAccessGuard(IPlayerService playerService, IGameRepository gameRepository)
+    : IGameAccessGuard
 {
     /// <inheritdoc />
     public async Task EnsureOwnerAsync(GameId gameId, CancellationToken ct)
     {
-        var player = await currentPlayer.GetRequiredAsync(ct);
+        var player = await playerService.GetCurrentRequiredAsync(ct);
 
         var game =
             await gameRepository.GetByIdAsync(gameId, ct)
