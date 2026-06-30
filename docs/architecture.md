@@ -7,15 +7,17 @@ The Battleship Game is a web-based implementation of the classic naval strategy 
 ## Technology Stack
 
 ### Backend
-- **.NET 8.0**: Latest LTS version of .NET
+- **.NET 10**: Latest version of .NET
 - **ASP.NET Core**: Web API framework
-- **C# 12**: Modern C# features with nullable reference types
+- **C# 13**: Modern C# features with nullable reference types
+- **Keycloak 26**: OIDC identity provider (JWT issuance, token validation)
 - **Swagger/OpenAPI**: API documentation and testing
 
 ### Testing
 - **xUnit**: Primary testing framework
 - **FluentAssertions**: Readable test assertions
-- **FakeItEasy**: Mocking framework (planned)
+- **FakeItEasy**: Mocking framework
+- **Testcontainers**: Real Postgres and Keycloak containers in integration tests
 
 ### Development Tools
 - **CSharpier**: Code formatting
@@ -81,14 +83,16 @@ graph TB
 
 **Components**:
 - **Application Services**:
-  - `IGameplayService`, `GameplayService` - Orchestrates game lifecycle
-  - `IPlayerService`, `PlayerService` - Manages player operations
-- **Commands**: `CreateGameCommand`, `PlaceShipCommand`, `PlayerAttackCommand`, `OpponentAttackCommand` (handlers via MediatR)
-- **Queries**: `GetGameQuery`, `GetPlayerQuery`, `GetPlayerByUsernameQuery` (handlers via MediatR)
+  - `IGameplayService`, `GameplayService` — Orchestrates game lifecycle
+  - `IPlayerService`, `PlayerService` — Manages player operations and current-caller lookup (`GetCurrentAsync`, `GetCurrentRequiredAsync`, `CreateAsync`)
+- **Commands**: `CreateGameCommand`, `PlaceShipCommand`, `PlayerAttackCommand`, `OpponentAttackCommand`, `CreatePlayerCommand` (handlers via MediatR)
+- **Queries**: `GetGameQuery`, `GetPlayerQuery`, `GetPlayerByUsernameQuery`, `GetPlayerByIdentitySubjectQuery` (handlers via MediatR)
 - **DTOs**: Data transfer objects for inter-layer communication (`GetGameQueryResult`, `GetPlayerQueryResult`)
 - **Result Types**: Rich result objects from commands (`AttackResult`, `LastRoundResult`)
 - **Repository Contracts**: `IGameRepository`, `IPlayerRepository` (abstraction for persistence)
-- **Domain Event Dispatcher**: `IDomainEventDispatcher` - Publishes domain events through MediatR
+- **Identity Contracts**: `IIdentityProvider` — abstraction over the external IdP (Keycloak in production/tests)
+- **Domain Event Dispatcher**: `IDomainEventDispatcher` — Publishes domain events through MediatR
+- **Security Contracts**: `ICurrentUser` — resolves the authenticated caller's identity subject from the HTTP context
 
 **CQRS Command Pattern**:
 - Commands return rich result objects containing mutation outcomes (CQRS-compliant)
@@ -119,14 +123,17 @@ graph TB
   - `GameRepository`: Implements `IGameRepository` over `BattleshipGameDbContext`
   - `PlayerRepository`: Implements `IPlayerRepository` over `BattleshipGameDbContext`
   - See the **Persistence (EF Core + PostgreSQL)** section below for the data model
+- **Identity**:
+  - `KeycloakIdentityProvider`: Implements `IIdentityProvider` via Keycloak Admin REST API + ROPC token endpoint
+  - Handles `RegisterAsync` (create user without inline credentials → `/users/{id}/reset-password`), `SignInAsync` (ROPC grant), `RefreshAsync`, `SignOutAsync`
+  - `KeycloakOptions`: config binding for `Keycloak` section (`BaseUrl`, `Realm`, `ClientId`, `ClientSecret`, `AdminUsername`, `AdminPassword`)
 - **Opponent Strategies**:
   - `RandomAttackStrategy`: Random cell selection from available targets on Player's board
   - `SemanticKernelStrategy`: LLM-based strategic attack selection using Semantic Kernel
   - `OpponentStrategyFactory`: Factory resolving strategies via keyed DI services
   - `BattleshipPromptBuilder`: Constructs prompts for LLM-based strategies
 - **Data Access**: `BattleshipGameDbContext` (EF Core 10 + Npgsql) with entity configurations and migrations
-- **External Services**: Semantic Kernel integration for AI/LLM features
-- **Adapters**: Third-party integrations
+- **External Services**: Semantic Kernel integration for AI/LLM features; Keycloak Admin REST API for identity management
 
 **Repository Pattern Benefits**:
 - Abstracts data access details from application layer
@@ -140,10 +147,14 @@ graph TB
 **Purpose**: Handles HTTP requests and responses.
 
 **Components**:
-- **Controllers**: `GamesController` (REST API endpoints)
-- **DTOs**: Request/response models
-- **Middleware**: Error handling, logging, CORS
-- **Configuration**: Dependency injection, Swagger setup
+- **Controllers**:
+  - `AuthController` — identity façade: `POST /api/auth/register`, `POST /api/auth/signin`, `POST /api/auth/refresh`, `POST /api/auth/logout` (all `[AllowAnonymous]`)
+  - `PlayersController` — `GET /api/players/me` (caller's own profile)
+  - `GamesController` — game lifecycle endpoints + `GET /api/games/active`
+- **DTOs**: Request/response models (e.g., `RegisterRequest`, `SignInRequest`, `AuthTokenResponse`, `CreateGameRequest`)
+- **Middleware**: `ExceptionHandlingMiddleware` — maps domain/application exceptions to HTTP status codes (401 `InvalidCredentialsException`, 403 `ForbiddenAccessException`, 404 `NotFoundException`, 409 `IdentityConflictException`)
+- **Validation**: `FluentValidation` validators per request type
+- **Configuration**: DI wiring, Swagger, JWT bearer (`AddJwtBearer` pointed at `Authentication:Authority`), global `RequireAuthorization` fallback policy
 
 **Dependencies**: Application Layer, Infrastructure Layer
 
@@ -166,6 +177,7 @@ public interface IPlayerRepository
     Task<Player?> GetByIdAsync(PlayerId playerId, CancellationToken ct);
     Task<PlayerId> SaveAsync(Player player, CancellationToken ct);
     Task<Player?> GetByUsernameAsync(string username, CancellationToken ct);
+    Task<Player?> GetByIdentitySubjectAsync(string subject, CancellationToken ct);
     Task<bool> UsernameExistsAsync(string username, CancellationToken ct);
 }
 ```
@@ -347,20 +359,34 @@ DI wiring (`AddInfrastructureServices`) registers `AddDbContext<BattleshipGameDb
 
 ## Testing Strategy
 
-### Unit Testing
-- **Domain Layer**: Comprehensive coverage of business rules
-- **Application Layer**: Service behavior and integration testing
-- **API Layer**: Controller behavior and response validation
+### Unit Testing (`BattleshipGame.UnitTests`)
+- **Domain Layer**: Comprehensive coverage of business rules, value objects, domain events
+- **Application Layer**: Command/query handler behavior with FakeItEasy mocks
 
-### Integration Testing
-- Database integration tests
-- API endpoint testing
-- Cross-layer integration validation
+### Integration Testing (`BattleshipGame.IntegrationTests`)
+Two test collections run against real containers (Testcontainers):
+
+| Collection | Fixtures | Tests |
+|---|---|---|
+| `GameIntegration` | `PostgresFixture` (shared Postgres container) | `GameApiSimulationTests` — 71 game-mechanics tests using `TestAuthHandler` (fast; no Keycloak) |
+| `AuthIntegration` | `PostgresFixture` + `KeycloakFixture` | `AuthApiTests` — 4 e2e tests against real Keycloak 26.1 JWT |
+
+**`KeycloakFixture`** starts a Keycloak 26.1 container and configures the `battleship` realm programmatically via the Admin REST API (no file mounting):
+1. Obtain admin token (master realm).
+2. Create realm.
+3. Disable default required actions (so fresh users can sign in immediately).
+4. Create `battleship-api` confidential client with Direct Access Grants.
+5. Read back the auto-generated client secret.
+
+**`TestAuthHandler`** is a no-op bearer scheme for game-mechanics tests: any `X-Test-Sub` header value is accepted as the authenticated subject, avoiding the Keycloak round-trip cost.
+
+**DB-seed helper** in `GameApiSimulationTests` inserts `Player` rows directly via `DbContext` so the removed `POST /api/players` endpoint is not needed.
 
 ### Test Patterns
 - **Arrange-Act-Assert**: Clear test structure
-- **Test Data Builders**: Consistent test data creation
-- **Mock Dependencies**: Isolated unit testing
+- **FakeItEasy**: Mocking framework for unit tests
+- **FluentAssertions**: Readable, precise assertions
+- **Shared containers**: one Postgres / Keycloak container per test collection (not per test class)
 
 ## Performance Considerations
 
@@ -374,17 +400,62 @@ DI wiring (`AddInfrastructureServices`) registers `AddDbContext<BattleshipGameDb
 - Repository pattern for data access optimization
 - Caching strategies (future enhancement)
 
+## Authentication & Identity
+
+### Overview
+
+Authentication is provided by **Keycloak 26** (OIDC). The WebAPI acts as an **identity façade** — callers interact only with our own endpoints; Keycloak is an implementation detail.
+
+```
+Client ──► POST /api/auth/register ──► KeycloakIdentityProvider ──► Keycloak Admin API
+                                    └──► CreatePlayerCommand ──────► PlayerRepository
+        ◄── 201 { accessToken, refreshToken }
+
+Client ──► POST /api/auth/signin ──► ROPC token endpoint ──► { accessToken, refreshToken }
+Client ──► POST /api/auth/refresh ──► refresh_token grant ──► new token pair
+Client ──► POST /api/auth/logout ──► revoke endpoint ──► 204
+```
+
+### Token validation
+
+Every non-auth endpoint requires a valid Keycloak-issued JWT Bearer token. `AddJwtBearer` is configured with:
+- `Authority` = `{Keycloak base URL}/realms/{realm}` — used for OIDC discovery and public-key fetch
+- `Audience` validation against the configured client ID
+- A global `RequireAuthorization` fallback policy — no endpoint is accidentally public
+
+The `sub` claim in the access token is the Keycloak user ID, stored as `Player.IdentitySubject`.
+
+### Registration flow
+
+1. `POST /api/auth/register` calls `KeycloakIdentityProvider.RegisterAsync`:
+   a. Obtain admin token (master realm, `admin-cli`).
+   b. Create user **without** inline credentials; supply `firstName`/`lastName` = username to satisfy Keycloak 26's Declarative User Profile (omitting them auto-applies `UPDATE_PROFILE` and blocks ROPC).
+   c. Set password via `PUT /users/{id}/reset-password` with `temporary: false`.
+   d. Sign in immediately via ROPC to return tokens to the caller.
+2. `AuthController` then dispatches `CreatePlayerCommand(username, subject)` to create the game `Player`.
+3. Both Keycloak user and `Player` are created atomically from the caller's perspective (failure of either → error, no partial state surfaced).
+
+### Game ownership
+
+`GameAccessGuard` resolves the caller's `Player` via `IPlayerService.GetCurrentRequiredAsync`, then enforces:
+- 403 if the caller has no `Player` profile.
+- 403 if the caller is not the game's owner.
+- 401 (JWT middleware) if no valid token is present.
+
 ## Security Considerations
 
 ### API Security
-- Input validation at multiple layers
-- SQL injection prevention through parameterized queries
+- All endpoints require JWT bearer authentication (global `RequireAuthorization` fallback policy)
+- `AuthController` endpoints are explicitly `[AllowAnonymous]`
+- Input validation at multiple layers (FluentValidation + domain invariants)
+- SQL injection prevention via EF Core parameterized queries
 - CORS configuration for web clients
 
 ### Business Logic Security
 - Domain-driven validation rules
 - Aggregate boundaries prevent invalid state
 - Immutable value objects prevent tampering
+- Game ownership enforced at the application service layer (not just controller)
 
 ## Deployment Architecture
 
@@ -403,10 +474,10 @@ DI wiring (`AddInfrastructureServices`) registers `AddDbContext<BattleshipGameDb
 
 ### Technical Improvements
 - **MediatR**: CQRS pattern implementation ✅ Implemented
-- **FluentValidation**: Enhanced input validation
-- **Entity Framework Core**: Data persistence
+- **FluentValidation**: Enhanced input validation ✅ Implemented
+- **Entity Framework Core 10**: Data persistence ✅ Implemented
 - **Serilog**: Structured logging
-- **JWT Authentication**: User security
+- **JWT Authentication / Keycloak**: User security ✅ Implemented (identity façade over Keycloak 26)
 
 ### Feature Enhancements
 - **Multiplayer Support**: Real-time gameplay
