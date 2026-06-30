@@ -5,9 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BattleshipGame.IntegrationTests.Infrastructure.Persistence.Repositories;
 
-public class PlayerRepositoryTests(PostgresFixture postgres)
-    : BaseRepositoryTests(postgres),
-        IClassFixture<PostgresFixture>
+[Collection(PostgresCollection.Name)]
+public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTests(postgres)
 {
     private IPlayerRepository _subject = null!;
     private readonly CancellationToken _cancellationToken = CancellationToken.None;
