@@ -6,9 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BattleshipGame.IntegrationTests.Infrastructure.Persistence.Repositories;
 
-public class GameRepositoryTests(PostgresFixture postgres)
-    : BaseRepositoryTests(postgres),
-        IClassFixture<PostgresFixture>
+[Collection(PostgresCollection.Name)]
+public class GameRepositoryTests(PostgresFixture postgres) : BaseRepositoryTests(postgres)
 {
     private readonly GameFixture _fixture = new();
     private IGameRepository _subject = null!;

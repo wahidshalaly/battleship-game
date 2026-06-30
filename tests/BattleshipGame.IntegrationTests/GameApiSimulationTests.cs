@@ -8,9 +8,9 @@ using static BattleshipGame.Domain.Common.Constants;
 
 namespace BattleshipGame.IntegrationTests;
 
+[Collection(PostgresCollection.Name)]
 public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture postgres)
-    : IClassFixture<PostgresFixture>,
-        IAsyncLifetime
+    : IAsyncLifetime
 {
     private WebApplicationFactory<Program> _factory = null!;
     private HttpClient _client = null!;
