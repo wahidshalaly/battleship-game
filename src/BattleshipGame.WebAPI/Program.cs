@@ -2,9 +2,12 @@ using System.Reflection;
 using BattleshipGame.Application.Common.Extensions;
 using BattleshipGame.Infrastructure.Extensions;
 using BattleshipGame.Infrastructure.Resilience;
+using BattleshipGame.WebAPI.Authentication;
 using BattleshipGame.WebAPI.Filters;
 using BattleshipGame.WebAPI.Middleware;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 
@@ -85,6 +88,26 @@ builder
     .Bind(builder.Configuration.GetSection(AiOpponentResilienceOptions.ConfigurationSectionName))
     .ValidateDataAnnotations();
 
+// Authentication: validate JWT bearer tokens from the configured OIDC authority.
+var authSection = builder.Configuration.GetSection(JwtAuthenticationOptions.SectionName);
+builder.Services.AddOptions<JwtAuthenticationOptions>().Bind(authSection);
+var authOptions = authSection.Get<JwtAuthenticationOptions>() ?? new JwtAuthenticationOptions();
+
+builder
+    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = authOptions.Authority;
+        options.Audience = authOptions.Audience;
+        options.RequireHttpsMetadata = authOptions.RequireHttpsMetadata;
+    });
+
+// Require an authenticated user for every endpoint by default (no anonymous access),
+// even those without an explicit [Authorize] attribute.
+builder
+    .Services.AddAuthorizationBuilder()
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+
 // Register application and infrastructure services
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -106,6 +129,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapSwagger();

@@ -31,6 +31,8 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
             });
         });
         _client = _factory.CreateClient();
+        // Authenticate every request via the test auth scheme (see TestAuthHandler).
+        _client.DefaultRequestHeaders.Add(TestAuthHandler.SubjectHeader, Guid.NewGuid().ToString());
         // SK opponent makes live AI calls that can take minutes per round on a local model;
         // raise the default 100s timeout to accommodate slow inference.
         _client.Timeout = TimeSpan.FromMinutes(5);
@@ -41,6 +43,17 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     {
         _client.Dispose();
         return _factory.DisposeAsync().AsTask();
+    }
+
+    [Fact]
+    public async Task Request_WithoutAuthentication_IsRejectedWith401()
+    {
+        // A client that does not send the test subject header is treated as anonymous.
+        using var anonymous = _factory.CreateClient();
+
+        var response = await anonymous.GetAsync($"/api/games/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
     }
 
     [Theory]
