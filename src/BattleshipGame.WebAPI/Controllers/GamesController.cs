@@ -14,12 +14,16 @@ namespace BattleshipGame.WebAPI.Controllers;
 /// </summary>
 /// <param name="logger">The logger.</param>
 /// <param name="gameplayService">The gameplay application service.</param>
+/// <param name="playerService">Resolves the authenticated caller's player profile.</param>
+/// <param name="gameAccessGuard">Enforces that callers only access games they own.</param>
 /// <param name="mediator">The mediator.</param>
 [ApiController]
 [Route("api/[controller]")]
 public class GamesController(
     ILogger<GamesController> logger,
     IGameplayService gameplayService,
+    IPlayerService playerService,
+    IGameAccessGuard gameAccessGuard,
     IMediator mediator
 ) : ControllerBase
 {
@@ -35,9 +39,10 @@ public class GamesController(
         CancellationToken ct
     )
     {
-        var playerId = new PlayerId(request.PlayerId);
+        // The owner is the authenticated caller, not a client-supplied id.
+        var player = await playerService.GetCurrentRequiredAsync(ct);
         var gameId = await gameplayService.StartNewGameAsync(
-            playerId,
+            player.Id,
             request.BoardSize ?? 10,
             request.OpponentStrategy ?? OpponentStrategy.Random,
             ct
@@ -46,7 +51,7 @@ public class GamesController(
         logger.LogInformation(
             "New Game: {GameId} for Player: {PlayerId}",
             gameId.Value,
-            request.PlayerId
+            player.Id.Value
         );
 
         return CreatedAtAction(nameof(GetGame), new { id = gameId.Value }, gameId.Value);
@@ -69,10 +74,29 @@ public class GamesController(
     )
     {
         var gameId = new GameId(id);
+        await gameAccessGuard.EnsureOwnerAsync(gameId, ct);
         var query = new GetGameQuery(gameId);
         var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(gameId);
 
         return Ok(game);
+    }
+
+    /// <summary>
+    /// Returns the caller's active game, or 204 No Content when none is in progress.
+    /// </summary>
+    [HttpGet("active")]
+    [ProducesResponseType(typeof(GetGameQueryResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<GetGameQueryResult>> GetActiveGame(CancellationToken ct)
+    {
+        var player = await playerService.GetCurrentRequiredAsync(ct);
+        if (player.ActiveGameId is null)
+            return NoContent();
+
+        var query = new GetGameQuery(player.ActiveGameId);
+        var game = await mediator.Send(query, ct);
+        return game is null ? NoContent() : Ok(game);
     }
 
     /// <summary>
@@ -89,6 +113,7 @@ public class GamesController(
     )
     {
         var gameId = new GameId(id);
+        await gameAccessGuard.EnsureOwnerAsync(gameId, ct);
         var shipId = await gameplayService.PlaceShipAsync(
             gameId,
             request.Side,
@@ -115,6 +140,7 @@ public class GamesController(
     )
     {
         var gameId = new GameId(id);
+        await gameAccessGuard.EnsureOwnerAsync(gameId, ct);
         var result = await gameplayService.PlayerAttackThenCounterAttackAsync(
             gameId,
             request.Cell,
@@ -153,6 +179,7 @@ public class GamesController(
     )
     {
         var gameId = new GameId(id);
+        await gameAccessGuard.EnsureOwnerAsync(gameId, ct);
 
         try
         {
@@ -207,6 +234,7 @@ public class GamesController(
     )
     {
         var gameId = new GameId(id);
+        await gameAccessGuard.EnsureOwnerAsync(gameId, ct);
         var query = new GetGameQuery(gameId);
         var game = await mediator.Send(query, ct) ?? throw new GameNotFoundException(gameId);
 
@@ -214,11 +242,7 @@ public class GamesController(
     }
 }
 
-public record CreateGameRequest(
-    Guid PlayerId,
-    int? BoardSize = 10,
-    OpponentStrategy? OpponentStrategy = null
-);
+public record CreateGameRequest(int? BoardSize = 10, OpponentStrategy? OpponentStrategy = null);
 
 public record PlaceShipRequest(
     BoardSide Side,

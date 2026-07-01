@@ -1,50 +1,22 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { config, shipDefinitions, BoardSide } from "../config.js";
+import { authHeaders } from "./auth-helpers.js";
 
 /**
- * Creates a new player
- * @param {string} username - The username for the player
- * @returns {string|null} The player ID or null if failed
- */
-export function createPlayer(username) {
-  const payload = JSON.stringify({ username });
-  const params = {
-    headers: { "Content-Type": "application/json" },
-    tags: { api: "create_player" }
-  };
-
-  const res = http.post(`${config.baseUrl}/api/players`, payload, params);
-
-  const success = check(res, {
-    "player created": (r) => r.status === 201,
-    "has location header": (r) => r.headers["Location"] !== undefined
-  });
-
-  if (!success) {
-    console.error(`Failed to create player: ${res.status} ${res.body}`);
-    return null;
-  }
-
-  // Extract player ID from location header
-  const location = res.headers["Location"];
-  const playerId = location.split("/").pop();
-  return playerId;
-}
-
-/**
- * Creates a new game
- * @param {string} playerId - The player ID
+ * Creates a new game. The owner is derived from the authenticated caller (JWT subject),
+ * so no playerId is sent in the body.
+ * @param {string} token - The caller's JWT access token
  * @param {number} boardSize - The board size (default: 10)
  * @param {string} opponentStrategy - Opponent strategy: "Random" or "SemanticKernel" (default: undefined for API default)
  * @returns {string|null} The game ID or null if failed
  */
-export function createGame(playerId, boardSize = config.boardSize, opponentStrategy = undefined) {
-  const payload = opponentStrategy 
-    ? JSON.stringify({ playerId, boardSize, opponentStrategy })
-    : JSON.stringify({ playerId, boardSize });
+export function createGame(token, boardSize = config.boardSize, opponentStrategy = undefined) {
+  const payload = opponentStrategy
+    ? JSON.stringify({ boardSize, opponentStrategy })
+    : JSON.stringify({ boardSize });
   const params = {
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(token),
     tags: { api: "create_game" }
   };
 
@@ -67,6 +39,7 @@ export function createGame(playerId, boardSize = config.boardSize, opponentStrat
 
 /**
  * Places a ship on the board
+ * @param {string} token - The caller's JWT access token
  * @param {string} gameId - The game ID
  * @param {number} side - Board side (1 = Player, 2 = Opponent)
  * @param {number} shipKind - Ship kind (1-5)
@@ -74,10 +47,10 @@ export function createGame(playerId, boardSize = config.boardSize, opponentStrat
  * @param {string} bowCode - The bow position code (e.g., "A1")
  * @returns {boolean} Success status
  */
-export function placeShip(gameId, side, shipKind, orientation, bowCode) {
+export function placeShip(token, gameId, side, shipKind, orientation, bowCode) {
   const payload = JSON.stringify({ side, shipKind, orientation, bowCode });
   const params = {
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(token),
     tags: { api: "add_ship" }
   };
 
@@ -94,14 +67,15 @@ export function placeShip(gameId, side, shipKind, orientation, bowCode) {
 
 /**
  * Attacks a cell on the board
+ * @param {string} token - The caller's JWT access token
  * @param {string} gameId - The game ID
  * @param {string} cellCode - The cell code (e.g., "A1")
  * @returns {object|null} LastRoundResult or null if failed
  */
-export function attack(gameId, cellCode) {
+export function attack(token, gameId, cellCode) {
   const payload = JSON.stringify({ cell: cellCode });
   const params = {
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(token),
     tags: { api: "attack" }
   };
 
@@ -125,11 +99,13 @@ export function attack(gameId, cellCode) {
 
 /**
  * Gets game information
+ * @param {string} token - The caller's JWT access token
  * @param {string} gameId - The game ID
  * @returns {object|null} Game data or null if failed
  */
-export function getGame(gameId) {
+export function getGame(token, gameId) {
   const params = {
+    headers: authHeaders(token),
     tags: { api: "get_game" }
   };
 
@@ -144,11 +120,13 @@ export function getGame(gameId) {
 
 /**
  * Gets game state
+ * @param {string} token - The caller's JWT access token
  * @param {string} gameId - The game ID
  * @returns {object|null} Game state or null if failed
  */
-export function getGameState(gameId) {
+export function getGameState(token, gameId) {
   const params = {
+    headers: authHeaders(token),
     tags: { api: "get_game_state" }
   };
 
@@ -163,13 +141,14 @@ export function getGameState(gameId) {
 
 /**
  * Updates game state (transitions from Ready to Started)
+ * @param {string} token - The caller's JWT access token
  * @param {string} gameId - The game ID
  * @returns {boolean} Success status
  */
-export function updateGameState(gameId) {
+export function updateGameState(token, gameId) {
   const payload = JSON.stringify({ state: "Started" });
   const params = {
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(token),
     tags: { api: "update_game_state" }
   };
 
@@ -192,10 +171,11 @@ export function updateGameState(gameId) {
 
 /**
  * Places all ships for both players and opponent
+ * @param {string} token - The caller's JWT access token
  * @param {string} gameId - The game ID
  * @returns {boolean} Success status
  */
-export function placeAllShips(gameId) {
+export function placeAllShips(token, gameId) {
   const positions = [
     { bowCode: "A1", kind: 1, orientation: 2 }, // Destroyer
     { bowCode: "B2", kind: 3, orientation: 1 }, // Submarine
@@ -208,6 +188,7 @@ export function placeAllShips(gameId) {
     // Place for player
     if (
       !placeShip(
+        token,
         gameId,
         BoardSide.Player,
         ship.kind,
@@ -221,6 +202,7 @@ export function placeAllShips(gameId) {
     // Place for opponent
     if (
       !placeShip(
+        token,
         gameId,
         BoardSide.Opponent,
         ship.kind,

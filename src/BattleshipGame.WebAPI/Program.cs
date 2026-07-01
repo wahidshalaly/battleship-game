@@ -1,10 +1,14 @@
 using System.Reflection;
 using BattleshipGame.Application.Common.Extensions;
+using BattleshipGame.Application.Common.Security;
 using BattleshipGame.Infrastructure.Extensions;
 using BattleshipGame.Infrastructure.Resilience;
+using BattleshipGame.WebAPI.Authentication;
 using BattleshipGame.WebAPI.Filters;
 using BattleshipGame.WebAPI.Middleware;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 
@@ -67,6 +71,25 @@ builder.Services.AddSwaggerGen(c =>
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     c.IncludeXmlComments(xmlPath);
+
+    // Enable "Authorize" in Swagger UI so protected endpoints can be called with a JWT bearer token.
+    c.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description =
+                "Paste the access token from POST /api/auth/signin (no 'Bearer ' prefix).",
+        }
+    );
+    c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = [],
+    });
 });
 
 // Read Configuration
@@ -79,11 +102,40 @@ builder
     )
     .AddEnvironmentVariables();
 
-// TODO: Review options pattern usage across the solution for consistency
 builder
     .Services.AddOptions<AiOpponentResilienceOptions>()
     .Bind(builder.Configuration.GetSection(AiOpponentResilienceOptions.ConfigurationSectionName))
-    .ValidateDataAnnotations();
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+// Authentication: validate JWT bearer tokens from the configured OIDC authority.
+// Fail fast at startup if Authority/Audience are missing rather than on the first token.
+var authSection = builder.Configuration.GetSection(JwtAuthenticationOptions.SectionName);
+builder
+    .Services.AddOptions<JwtAuthenticationOptions>()
+    .Bind(authSection)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+var authOptions = authSection.Get<JwtAuthenticationOptions>() ?? new JwtAuthenticationOptions();
+
+builder
+    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = authOptions.Authority;
+        options.Audience = authOptions.Audience;
+        options.RequireHttpsMetadata = authOptions.RequireHttpsMetadata;
+    });
+
+// Require an authenticated user for every endpoint by default (no anonymous access),
+// even those without an explicit [Authorize] attribute.
+builder
+    .Services.AddAuthorizationBuilder()
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+
+// Expose the authenticated caller's identity to the application layer.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 
 // Register application and infrastructure services
 builder.Services.AddApplicationServices();
@@ -106,6 +158,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapSwagger();

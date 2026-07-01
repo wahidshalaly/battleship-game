@@ -8,8 +8,8 @@
 
 import { sleep } from "k6";
 import { config } from "../config.js";
+import { registerAndGetToken } from "../lib/auth-helpers.js";
 import {
-  createPlayer,
   createGame,
   placeAllShips,
   attack,
@@ -34,26 +34,26 @@ export const options = {
 
 export default function () {
   const username = generateUsername(__VU);
-  const playerId = createPlayer(username);
-  if (!playerId) {
+  const token = registerAndGetToken(username);
+  if (!token) {
     sleep(1);
     return;
   }
 
-  const gameId = createGame(playerId);
+  const gameId = createGame(token);
   if (!gameId) {
     sleep(1);
     return;
   }
 
   // Quick ship placement
-  placeAllShips(gameId);
+  placeAllShips(token, gameId);
 
   // Update game state to Started
-  updateGameState(gameId);
+  updateGameState(token, gameId);
 
   // Single attack
-  attack(gameId, "A1");
+  attack(token, gameId, "A1");
 
   sleep(0.5);
 }

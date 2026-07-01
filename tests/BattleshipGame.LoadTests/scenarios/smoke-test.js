@@ -8,8 +8,8 @@
 
 import { sleep } from "k6";
 import { config } from "../config.js";
+import { registerAndGetToken } from "../lib/auth-helpers.js";
 import {
-  createPlayer,
   createGame,
   placeAllShips,
   generateShipPositions,
@@ -26,33 +26,33 @@ export const options = {
 };
 
 export default function () {
-  // Create player
+  // Register a user (creates identity + game profile) and get a bearer token
   const username = generateUsername(__VU);
-  const playerId = createPlayer(username);
-  if (!playerId) {
+  const token = registerAndGetToken(username);
+  if (!token) {
     return;
   }
 
   // Create game
-  const gameId = createGame(playerId);
+  const gameId = createGame(token);
   if (!gameId) {
     return;
   }
 
   // Verify game was created
-  const game = getGame(gameId);
+  const game = getGame(token, gameId);
   if (!game) {
     return;
   }
 
   // Place all ships
-  if (!placeAllShips(gameId)) {
+  if (!placeAllShips(token, gameId)) {
     console.error("Failed to place ships");
     return;
   }
 
   // Update game state to Started
-  if (!updateGameState(gameId)) {
+  if (!updateGameState(token, gameId)) {
     console.error("Failed to update game state");
     return;
   }
@@ -62,7 +62,7 @@ export default function () {
   // Attack a few cells
   const positions = generateShipPositions();
   for (let i = 0; i < Math.min(5, positions.length); i++) {
-    attack(gameId, positions[i]);
+    attack(token, gameId, positions[i]);
     sleep(0.5);
   }
 

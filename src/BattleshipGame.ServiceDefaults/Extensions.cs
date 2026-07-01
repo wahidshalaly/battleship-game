@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
@@ -114,14 +115,17 @@ public static class Extensions
         // See https://aka.ms/dotnet/aspire/healthchecks for details before enabling these endpoints in non-development environments.
         if (app.Environment.IsDevelopment())
         {
-            // All health checks must pass for app to be considered ready to accept traffic after starting
-            app.MapHealthChecks("/health");
+            // All health checks must pass for app to be considered ready to accept traffic after starting.
+            // AllowAnonymous so the global fallback auth policy (RequireAuthenticatedUser) does not 401
+            // the Aspire health probe and other tooling.
+            app.MapHealthChecks("/health").AllowAnonymous();
 
             // Only health checks tagged with the "live" tag must pass for app to be considered alive
             app.MapHealthChecks(
-                "/alive",
-                new HealthCheckOptions { Predicate = r => r.Tags.Contains("live") }
-            );
+                    "/alive",
+                    new HealthCheckOptions { Predicate = r => r.Tags.Contains("live") }
+                )
+                .AllowAnonymous();
         }
 
         return app;

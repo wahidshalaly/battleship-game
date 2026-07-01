@@ -27,14 +27,23 @@ public sealed class Player : AggregateRoot<PlayerId>
     /// </summary>
     /// <param name="id">The unique identifier for the player.</param>
     /// <param name="username">The player's username.</param>
+    /// <param name="identitySubject">The external identity provider subject (the token 'sub')
+    /// that this player belongs to.</param>
     /// <param name="activeGameId">The currently active game identifier, if any.</param>
-    public Player(PlayerId id, string username, GameId? activeGameId = null)
+    public Player(PlayerId id, string username, string identitySubject, GameId? activeGameId = null)
         : base(id.Value)
     {
         if (string.IsNullOrWhiteSpace(username))
             throw new ArgumentException("Username cannot be null or whitespace.", nameof(username));
 
+        if (string.IsNullOrWhiteSpace(identitySubject))
+            throw new ArgumentException(
+                "Identity subject cannot be null or whitespace.",
+                nameof(identitySubject)
+            );
+
         Username = username;
+        IdentitySubject = identitySubject;
         ActiveGameId = activeGameId;
     }
 
@@ -42,6 +51,12 @@ public sealed class Player : AggregateRoot<PlayerId>
     /// Gets the player's username.
     /// </summary>
     public string Username { get; }
+
+    /// <summary>
+    /// Gets the external identity provider subject (the JWT 'sub' claim) this player belongs to.
+    /// Correlates the authenticated caller to their game-domain profile.
+    /// </summary>
+    public string IdentitySubject { get; }
 
     /// <summary>
     /// Gets the currently active game identifier, if any.

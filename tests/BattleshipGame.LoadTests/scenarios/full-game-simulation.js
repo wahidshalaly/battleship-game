@@ -8,8 +8,8 @@
 
 import { sleep, check } from "k6";
 import { config, GameState, CellState, OpponentStrategy } from "../config.js";
+import { registerAndGetToken } from "../lib/auth-helpers.js";
 import {
-  createPlayer,
   createGame,
   placeAllShips,
   generateShipPositions,
@@ -26,10 +26,10 @@ export const options = {
 };
 
 export default function () {
-  // 1. Create player
+  // 1. Register a user (creates identity + game profile) and get a bearer token
   const username = generateUsername(__VU);
-  const playerId = createPlayer(username);
-  if (!playerId) {
+  const token = registerAndGetToken(username);
+  if (!token) {
     return;
   }
 
@@ -37,11 +37,11 @@ export default function () {
   // Use environment variable to choose strategy: K6_OPPONENT_STRATEGY=SemanticKernel or Random
   // If not set, defaults to API's default (Random)
   const strategyEnv = __ENV.K6_OPPONENT_STRATEGY;
-  const strategy = strategyEnv === "SemanticKernel" ? OpponentStrategy.SemanticKernel : 
-                   strategyEnv === "Random" ? OpponentStrategy.Random : 
+  const strategy = strategyEnv === "SemanticKernel" ? OpponentStrategy.SemanticKernel :
+                   strategyEnv === "Random" ? OpponentStrategy.Random :
                    undefined; // Let API use default
-  
-  const gameId = createGame(playerId, config.boardSize, strategy);
+
+  const gameId = createGame(token, config.boardSize, strategy);
   if (!gameId) {
     return;
   }
@@ -49,7 +49,7 @@ export default function () {
   console.log(`Creating game with strategy: ${strategy || 'default (Random)'}`);
 
   // Verify initial game state
-  let game = getGame(gameId);
+  let game = getGame(token, gameId);
   if (game) {
     check(game, {
       "game is in New state": (g) => g.state === "New"
@@ -57,7 +57,7 @@ export default function () {
   }
 
   // 3. Place all ships for both sides
-  if (!placeAllShips(gameId)) {
+  if (!placeAllShips(token, gameId)) {
     console.error("Failed to place ships");
     return;
   }
@@ -65,7 +65,7 @@ export default function () {
   sleep(1);
 
   // Verify boards are ready
-  game = getGame(gameId);
+  game = getGame(token, gameId);
   if (game) {
     check(game, {
       "game is in Ready state": (g) =>
@@ -74,7 +74,7 @@ export default function () {
   }
 
   // 4. Transition game to Started state
-  if (!updateGameState(gameId)) {
+  if (!updateGameState(token, gameId)) {
     console.error("Failed to update game state");
     return;
   }
@@ -82,7 +82,7 @@ export default function () {
   sleep(0.5);
 
   // Verify game is started
-  game = getGame(gameId);
+  game = getGame(token, gameId);
   if (game) {
     check(game, {
       "game is in Started state": (g) => g.state === GameState.Started
@@ -94,7 +94,7 @@ export default function () {
   let hitCount = 0;
 
   for (const cellCode of positions) {
-    const result = attack(gameId, cellCode);
+    const result = attack(token, gameId, cellCode);
 
     if (result && result.playerAttackResult === "Hit") {
       hitCount++;
@@ -106,7 +106,7 @@ export default function () {
   console.log(`Game ${gameId}: Hit ${hitCount}/${positions.length} cells`);
 
   // 6. Verify game is over
-  game = getGame(gameId);
+  game = getGame(token, gameId);
   if (game) {
     check(game, {
       "game is in GameOver state": (g) => g.state === GameState.GameOver

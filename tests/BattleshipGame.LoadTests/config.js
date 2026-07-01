@@ -10,7 +10,7 @@ export const config = {
   defaultThresholds: {
     http_req_failed: ["rate<0.01"], // Less than 1% errors
     http_req_duration: ["p(95)<2000"], // 95% under 2s
-    "http_req_duration{api:create_player}": ["p(95)<500"],
+    "http_req_duration{api:register}": ["p(95)<500"],
     "http_req_duration{api:create_game}": ["p(95)<500"],
     "http_req_duration{api:add_ship}": ["p(95)<500"],
     "http_req_duration{api:attack}": ["p(95)<1000"],

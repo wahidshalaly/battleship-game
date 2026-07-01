@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using BattleshipGame.Application.Common.Exceptions;
 using BattleshipGame.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -42,6 +43,27 @@ public class ExceptionHandlingMiddleware(
                 Title = "Player Not Found",
                 Detail = pnfEx.Message,
                 Status = StatusCodes.Status404NotFound,
+                Instance = context.Request.Path,
+            },
+            ForbiddenAccessException faEx => new ProblemDetails
+            {
+                Title = "Forbidden",
+                Detail = faEx.Message,
+                Status = StatusCodes.Status403Forbidden,
+                Instance = context.Request.Path,
+            },
+            IdentityConflictException icEx => new ProblemDetails
+            {
+                Title = "Conflict",
+                Detail = icEx.Message,
+                Status = StatusCodes.Status409Conflict,
+                Instance = context.Request.Path,
+            },
+            InvalidCredentialsException => new ProblemDetails
+            {
+                Title = "Unauthorized",
+                Detail = "Invalid username or password.",
+                Status = StatusCodes.Status401Unauthorized,
                 Instance = context.Request.Path,
             },
             PlayerIsInActiveException piaEx => new ProblemDetails

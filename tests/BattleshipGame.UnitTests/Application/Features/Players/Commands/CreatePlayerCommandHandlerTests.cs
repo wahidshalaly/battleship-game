@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using BattleshipGame.Application.Common.Exceptions;
 using BattleshipGame.Application.Features.Players.Commands;
 using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
@@ -24,7 +25,7 @@ public class CreatePlayerCommandHandlerTests
     {
         // Arrange
         const string username = "TestPlayer";
-        var command = new CreatePlayerCommand(username);
+        var command = new CreatePlayerCommand(username, "auth|subject");
         var expectedPlayerId = new PlayerId(Guid.NewGuid());
 
         A.CallTo(() => _repository.UsernameExistsAsync(username, _cancellationToken))
@@ -54,7 +55,7 @@ public class CreatePlayerCommandHandlerTests
     {
         // Arrange
         const string username = "ExistingPlayer";
-        var command = new CreatePlayerCommand(username);
+        var command = new CreatePlayerCommand(username, "auth|subject");
 
         A.CallTo(() => _repository.UsernameExistsAsync(username, _cancellationToken)).Returns(true);
 
@@ -80,7 +81,7 @@ public class CreatePlayerCommandHandlerTests
     )
     {
         // Arrange
-        var command = new CreatePlayerCommand(username!);
+        var command = new CreatePlayerCommand(username!, "auth|subject");
 
         // Act
         var act = () => _handler.Handle(command, _cancellationToken);
@@ -97,6 +98,47 @@ public class CreatePlayerCommandHandlerTests
                     _cancellationToken
                 )
             )
+            .MustNotHaveHappened();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Handle_WhenNullOrEmptyIdentitySubject_ShouldThrowForbidden(string? subject)
+    {
+        // Arrange — a valid username but no authenticated identity.
+        var command = new CreatePlayerCommand("ValidName", subject!);
+
+        // Act
+        var act = () => _handler.Handle(command, _cancellationToken);
+
+        // Assert
+        await act.Should().ThrowAsync<ForbiddenAccessException>();
+        A.CallTo(() => _repository.SaveAsync(A<Player>._, _cancellationToken))
+            .MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task Handle_WhenIdentityAlreadyHasProfile_ShouldThrowInvalidOperationException()
+    {
+        // Arrange — a player already exists for this identity subject.
+        const string subject = "auth|existing";
+        var command = new CreatePlayerCommand("NewName", subject);
+
+        A.CallTo(() => _repository.GetByIdentitySubjectAsync(subject, _cancellationToken))
+            .Returns(new Player(new PlayerId(Guid.NewGuid()), "existing", subject));
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _handler.Handle(command, _cancellationToken)
+        );
+        exception.Message.Should().Contain("already exists for the current identity");
+
+        // The username check and save must be short-circuited.
+        A.CallTo(() => _repository.UsernameExistsAsync(A<string>._, _cancellationToken))
+            .MustNotHaveHappened();
+        A.CallTo(() => _repository.SaveAsync(A<Player>._, _cancellationToken))
             .MustNotHaveHappened();
     }
 }

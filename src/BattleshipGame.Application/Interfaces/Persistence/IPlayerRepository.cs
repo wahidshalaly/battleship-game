@@ -32,6 +32,14 @@ public interface IPlayerRepository
     Task<Player?> GetByUsernameAsync(string username, CancellationToken ct);
 
     /// <summary>
+    /// Finds a player by the external identity provider subject (the token 'sub') they belong to.
+    /// </summary>
+    /// <param name="identitySubject">The identity subject to search for.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The player if found, otherwise null.</returns>
+    Task<Player?> GetByIdentitySubjectAsync(string identitySubject, CancellationToken ct);
+
+    /// <summary>
     /// Checks if a username is already taken.
     /// </summary>
     /// <param name="username">The username to check.</param>

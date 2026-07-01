@@ -7,8 +7,7 @@ public sealed class CreateGameRequestValidator : AbstractValidator<CreateGameReq
 {
     public CreateGameRequestValidator()
     {
-        RuleFor(x => x.PlayerId).NotEmpty();
-
+        // The owner is derived from the authenticated token, not the request body.
         RuleFor(x => x.BoardSize).InclusiveBetween(10, 26).When(x => x.BoardSize.HasValue);
     }
 }

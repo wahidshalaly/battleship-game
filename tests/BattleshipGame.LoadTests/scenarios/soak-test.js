@@ -10,8 +10,8 @@
 
 import { sleep } from "k6";
 import { config } from "../config.js";
+import { registerAndGetToken } from "../lib/auth-helpers.js";
 import {
-  createPlayer,
   createGame,
   placeAllShips,
   generateShipPositions,
@@ -27,7 +27,7 @@ export const options = {
   thresholds: {
     http_req_failed: ["rate<0.01"],
     http_req_duration: ["p(95)<3000"],
-    "http_req_duration{api:create_player}": ["p(95)<500"],
+    "http_req_duration{api:register}": ["p(95)<500"],
     "http_req_duration{api:create_game}": ["p(95)<500"],
     "http_req_duration{api:add_ship}": ["p(95)<500"],
     "http_req_duration{api:attack}": ["p(95)<1000"]
@@ -36,32 +36,32 @@ export const options = {
 
 export default function () {
   const username = generateUsername(__VU);
-  const playerId = createPlayer(username);
-  if (!playerId) {
+  const token = registerAndGetToken(username);
+  if (!token) {
     sleep(2);
     return;
   }
 
-  const gameId = createGame(playerId);
+  const gameId = createGame(token);
   if (!gameId) {
     sleep(2);
     return;
   }
 
   // Verify game creation
-  const game = getGame(gameId);
+  const game = getGame(token, gameId);
   if (!game) {
     sleep(2);
     return;
   }
 
-  if (!placeAllShips(gameId)) {
+  if (!placeAllShips(token, gameId)) {
     sleep(2);
     return;
   }
 
   // Update game state to Started
-  if (!updateGameState(gameId)) {
+  if (!updateGameState(token, gameId)) {
     sleep(2);
     return;
   }
@@ -71,7 +71,7 @@ export default function () {
   const attackCount = Math.floor(Math.random() * positions.length);
 
   for (let i = 0; i < attackCount; i++) {
-    attack(gameId, positions[i]);
+    attack(token, gameId, positions[i]);
     sleep(1); // Simulate realistic user behavior
   }
 
