@@ -3,6 +3,118 @@ info:
   title: Battleship Game API
   version: '1.0'
 paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Registers a new user identity and creates their game profile in one step.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/auth/signin:
+    post:
+      tags:
+        - Auth
+      summary: Signs in an existing user and returns access and refresh tokens.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/SignInRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/SignInRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Exchanges a refresh token for a new token pair.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Invalidates the session and signs the user out.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '204':
+          description: No Content
   /api/games:
     post:
       tags:
@@ -85,6 +197,38 @@ paths:
                 $ref: '#/components/schemas/ProblemDetails'
         '500':
           description: Internal server error.
+  /api/games/active:
+    get:
+      tags:
+        - Games
+      summary: 'Returns the caller''s active game, or 204 No Content when none is in progress.'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/GetGameQueryResult'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetGameQueryResult'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/GetGameQueryResult'
+        '204':
+          description: No Content
+        '403':
+          description: Forbidden
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
   '/api/games/{id}/ships':
     post:
       tags:
@@ -213,7 +357,7 @@ paths:
       tags:
         - Games
       summary: 'Updates game state (e.g., transitions from Ready to Started).'
-      description: "This endpoint manages game state transitions. Currently supports transitioning from Ready to Started state.\n            \nUsage:\nPUT /api/games/{id}/state\n{ \"state\": \"started\" }\n            \nValid transitions:\n- \"started\": Transitions game from Ready state to Started state (allows attacks to begin)"
+      description: "This endpoint manages game state transitions. Currently supports transitioning from Ready to Started state.\r\n            \r\nUsage:\r\nPUT /api/games/{id}/state\r\n{ \"state\": \"started\" }\r\n            \r\nValid transitions:\r\n- \"started\": Transitions game from Ready state to Started state (allows attacks to begin)"
       parameters:
         - name: id
           in: path
@@ -317,34 +461,20 @@ paths:
             text/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-  /api/players:
-    post:
+  /api/players/me:
+    get:
       tags:
         - Players
-      summary: Creates a new player.
-      requestBody:
-        description: The player creation request.
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePlayerRequest'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/CreatePlayerRequest'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/CreatePlayerRequest'
+      summary: Returns the authenticated caller's own player profile.
       responses:
-        '201':
-          description: Created
-        '400':
-          description: Bad Request
+        '200':
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProblemDetails'
-        '409':
-          description: Conflict
+                $ref: '#/components/schemas/PlayerResponse'
+        '403':
+          description: Forbidden
           content:
             application/json:
               schema:
@@ -357,7 +487,6 @@ paths:
       parameters:
         - name: id
           in: path
-          description: The player ID.
           required: true
           schema:
             type: string
@@ -383,7 +512,6 @@ paths:
       parameters:
         - name: username
           in: path
-          description: The username.
           required: true
           schema:
             pattern: '^[A-Za-z]*$'
@@ -410,6 +538,19 @@ components:
           type: string
           nullable: true
       additionalProperties: false
+    AuthTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          nullable: true
+        refreshToken:
+          type: string
+          nullable: true
+        expiresInSeconds:
+          type: integer
+          format: int32
+      additionalProperties: false
     BoardSide:
       enum:
         - None
@@ -427,25 +568,13 @@ components:
     CreateGameRequest:
       type: object
       properties:
-        playerId:
-          type: string
-          format: uuid
         boardSize:
           type: integer
           format: int32
           nullable: true
         opponentStrategy:
-          $ref: '#/components/schemas/OpponentStrategyType'
+          $ref: '#/components/schemas/OpponentStrategy'
       additionalProperties: false
-    CreatePlayerRequest:
-      type: object
-      properties:
-        username:
-          type: string
-          description: The player's username.
-          nullable: true
-      additionalProperties: false
-      description: Request model for creating a new player.
     GameId:
       type: object
       properties:
@@ -486,12 +615,6 @@ components:
         winnerSide:
           $ref: '#/components/schemas/BoardSide'
       additionalProperties: false
-    OpponentStrategyType:
-      description: The AI opponent strategy type for the game.
-      enum:
-        - Random
-        - SemanticKernel
-      type: string
     LastRoundResult:
       type: object
       properties:
@@ -516,6 +639,12 @@ components:
         winnerSide:
           $ref: '#/components/schemas/BoardSide'
       additionalProperties: false
+    OpponentStrategy:
+      enum:
+        - None
+        - Random
+        - SemanticKernel
+      type: string
     PlaceShipRequest:
       type: object
       properties:
@@ -550,7 +679,6 @@ components:
           description: The total number of games played.
           format: int32
       additionalProperties: false
-      description: Response model for player information.
     ProblemDetails:
       type: object
       properties:
@@ -571,6 +699,26 @@ components:
           type: string
           nullable: true
       additionalProperties: { }
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          nullable: true
+      additionalProperties: false
+    RegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        password:
+          type: string
+          nullable: true
+      additionalProperties: false
     ShipKind:
       enum:
         - None
@@ -586,9 +734,31 @@ components:
         - Vertical
         - Horizontal
       type: string
+    SignInRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          nullable: true
+        password:
+          type: string
+          nullable: true
+      additionalProperties: false
     UpdateGameStateRequest:
       type: object
       properties:
         state:
           $ref: '#/components/schemas/GameState'
       additionalProperties: false
+  securitySchemes:
+    Bearer:
+      type: http
+      description: Paste the access token from POST /api/auth/signin (no 'Bearer ' prefix).
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - Bearer: [ ]
+tags:
+  - name: Auth
+  - name: Games
+  - name: Players

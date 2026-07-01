@@ -22,8 +22,11 @@ dotnet run --project src/BattleshipGame.AppHost
 This brings up the full local stack:
 
 - **PostgreSQL** (with pgAdmin) provisioned by Aspire.
+- **Keycloak** (identity provider) with the `battleship` realm imported on startup. Admin console
+  at http://localhost:8080 (`admin` / `admin`).
 - **MigrationRunner** (`src/BattleshipGame.MigrationRunner`) applies EF Core migrations and exits.
-- **Web API** starts only after migrations complete (`WaitForCompletion`).
+- **Web API** starts only after migrations complete (`WaitForCompletion`) and Keycloak is ready
+  (`WaitFor`).
 
 The Aspire dashboard URL is printed in the console at startup. Use it to view resource health,
 logs, and endpoints (including the Web API URL and Swagger UI).
@@ -88,6 +91,46 @@ npm run test:load
 
 ## Authentication
 
-JWT bearer authentication (Keycloak) is planned but not yet implemented — see
-[`specs/delivery-plan.md`](../specs/delivery-plan.md) Phase 3. This guide will be updated with the
-local auth flow once that work lands.
+The API is protected by JWT bearer authentication. Keycloak issues the tokens; the API exposes an
+**identity façade** under `/api/auth` so you never talk to Keycloak directly. Every endpoint except
+`/api/auth/*` and the health checks requires a valid bearer token (a global fallback policy).
+
+Keycloak runs as part of the AppHost stack (see [Quick Start](#quick-start)) with the `battleship`
+realm imported automatically. Architecture details are in
+[`architecture.md`](architecture.md#authentication--identity).
+
+### Auth flow
+
+1. **Register** — creates the Keycloak identity *and* the game profile in one call, and returns a
+   token pair:
+
+   ```bash
+   curl -X POST http://localhost:5000/api/auth/register \
+     -H "Content-Type: application/json" \
+     -d '{"username":"alice","email":"alice@example.com","password":"P@ssword123!"}'
+   # 201 Created -> { "accessToken": "...", "refreshToken": "...", "expiresInSeconds": 300 }
+   ```
+
+2. **Sign in** — for an existing user:
+
+   ```bash
+   curl -X POST http://localhost:5000/api/auth/signin \
+     -H "Content-Type: application/json" \
+     -d '{"username":"alice","password":"P@ssword123!"}'
+   ```
+
+3. **Call protected endpoints** — send the access token as a bearer header:
+
+   ```bash
+   curl http://localhost:5000/api/players/me \
+     -H "Authorization: Bearer <accessToken>"
+   ```
+
+4. **Refresh** the token pair with `POST /api/auth/refresh` (`{"refreshToken":"..."}`), and
+   **log out** with `POST /api/auth/logout` (`{"refreshToken":"..."}`).
+
+In **Swagger UI**, click **Authorize** and paste the `accessToken` (no `Bearer ` prefix) to call
+protected endpoints interactively.
+
+> Substitute the actual Web API base URL reported by the Aspire dashboard for
+> `http://localhost:5000`.

@@ -433,7 +433,13 @@ The `sub` claim in the access token is the Keycloak user ID, stored as `Player.I
    c. Set password via `PUT /users/{id}/reset-password` with `temporary: false`.
    d. Sign in immediately via ROPC to return tokens to the caller.
 2. `AuthController` then dispatches `CreatePlayerCommand(username, subject)` to create the game `Player`.
-3. Both Keycloak user and `Player` are created atomically from the caller's perspective (failure of either → error, no partial state surfaced).
+
+> **Known limitation — registration is not atomic.** The Keycloak identity is created before the
+> `Player`. If the `Player` insert fails (e.g. duplicate username in the game DB, transient DB
+> error) the Keycloak user is left orphaned: the caller can authenticate but gets 403 on game
+> endpoints, and a retry of `register` returns 409 from Keycloak. There is no compensating
+> rollback today. This is accepted for the learning-playground scope; a production build would add
+> a compensating delete, an outbox/saga, or a "complete registration" reconciliation step.
 
 ### Game ownership
 
