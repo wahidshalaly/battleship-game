@@ -11,7 +11,11 @@ var keycloak = builder
     .WithBindMount("./Realms", "/opt/keycloak/data/import", isReadOnly: true)
     .WithEnvironment("KEYCLOAK_ADMIN", "admin")
     .WithEnvironment("KEYCLOAK_ADMIN_PASSWORD", "admin")
-    .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "http");
+    .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "http")
+    // Gate readiness on the realm's OIDC discovery document: it returns 200 only once Keycloak
+    // is serving HTTP *and* the battleship realm has finished importing, so WaitFor(keycloak)
+    // below doesn't let the API start against a half-initialized Keycloak.
+    .WithHttpHealthCheck("/realms/battleship/.well-known/openid-configuration");
 
 var migrations = builder
     .AddProject<Projects.BattleshipGame_MigrationRunner>("migrations")
