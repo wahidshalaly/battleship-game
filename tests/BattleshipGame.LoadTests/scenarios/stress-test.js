@@ -8,8 +8,8 @@
 
 import { sleep } from "k6";
 import { config } from "../config.js";
+import { registerAndGetToken } from "../lib/auth-helpers.js";
 import {
-  createPlayer,
   createGame,
   placeAllShips,
   generateShipPositions,
@@ -29,32 +29,32 @@ export const options = {
   thresholds: {
     http_req_failed: ["rate<0.05"], // Allow up to 5% errors under stress
     http_req_duration: ["p(95)<5000"], // 95% under 5s (relaxed for stress)
-    "http_req_duration{api:create_player}": ["p(95)<1000"],
+    "http_req_duration{api:register}": ["p(95)<1000"],
     "http_req_duration{api:create_game}": ["p(95)<1000"]
   }
 };
 
 export default function () {
   const username = generateUsername(__VU);
-  const playerId = createPlayer(username);
-  if (!playerId) {
+  const token = registerAndGetToken(username);
+  if (!token) {
     sleep(1);
     return;
   }
 
-  const gameId = createGame(playerId);
+  const gameId = createGame(token);
   if (!gameId) {
     sleep(1);
     return;
   }
 
-  if (!placeAllShips(gameId)) {
+  if (!placeAllShips(token, gameId)) {
     sleep(1);
     return;
   }
 
   // Update game state to Started
-  if (!updateGameState(gameId)) {
+  if (!updateGameState(token, gameId)) {
     sleep(1);
     return;
   }
@@ -62,7 +62,7 @@ export default function () {
   // Quick attacks
   const positions = generateShipPositions();
   for (let i = 0; i < Math.min(3, positions.length); i++) {
-    attack(gameId, positions[i]);
+    attack(token, gameId, positions[i]);
   }
 
   sleep(0.5);
