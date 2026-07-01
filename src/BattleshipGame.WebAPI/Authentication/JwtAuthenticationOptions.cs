@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace BattleshipGame.WebAPI.Authentication;
 
 /// <summary>
@@ -13,11 +15,13 @@ public sealed class JwtAuthenticationOptions
     /// <summary>
     /// The OIDC authority (issuer) whose discovery document and signing keys validate tokens.
     /// </summary>
+    [Required]
     public string? Authority { get; set; }
 
     /// <summary>
     /// The expected <c>aud</c> claim value for tokens accepted by this API.
     /// </summary>
+    [Required]
     public string? Audience { get; set; }
 
     /// <summary>

@@ -71,6 +71,25 @@ builder.Services.AddSwaggerGen(c =>
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     c.IncludeXmlComments(xmlPath);
+
+    // Enable "Authorize" in Swagger UI so protected endpoints can be called with a JWT bearer token.
+    c.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description =
+                "Paste the access token from POST /api/auth/signin (no 'Bearer ' prefix).",
+        }
+    );
+    c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = [],
+    });
 });
 
 // Read Configuration
@@ -83,15 +102,20 @@ builder
     )
     .AddEnvironmentVariables();
 
-// TODO: Review options pattern usage across the solution for consistency
 builder
     .Services.AddOptions<AiOpponentResilienceOptions>()
     .Bind(builder.Configuration.GetSection(AiOpponentResilienceOptions.ConfigurationSectionName))
-    .ValidateDataAnnotations();
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 // Authentication: validate JWT bearer tokens from the configured OIDC authority.
+// Fail fast at startup if Authority/Audience are missing rather than on the first token.
 var authSection = builder.Configuration.GetSection(JwtAuthenticationOptions.SectionName);
-builder.Services.AddOptions<JwtAuthenticationOptions>().Bind(authSection);
+builder
+    .Services.AddOptions<JwtAuthenticationOptions>()
+    .Bind(authSection)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 var authOptions = authSection.Get<JwtAuthenticationOptions>() ?? new JwtAuthenticationOptions();
 
 builder

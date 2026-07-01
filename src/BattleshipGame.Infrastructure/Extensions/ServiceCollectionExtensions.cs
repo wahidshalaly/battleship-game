@@ -51,7 +51,13 @@ public static class ServiceCollectionExtensions
 
     private static void RegisterIdentity(IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<KeycloakOptions>(configuration.GetSection(KeycloakOptions.SectionName));
+        // Fail fast at startup if any Keycloak setting is missing rather than on the first
+        // register/sign-in call.
+        services
+            .AddOptions<KeycloakOptions>()
+            .Bind(configuration.GetSection(KeycloakOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
         services
             .AddHttpClient<IIdentityProvider, KeycloakIdentityProvider>()
             .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30));

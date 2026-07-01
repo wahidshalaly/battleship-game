@@ -35,6 +35,19 @@ internal sealed class BattleshipWebApplicationFactory(string connectionString)
                 );
         });
 
+        // The API now validates Authentication/Keycloak options at startup (ValidateOnStart).
+        // These game-mechanics tests use TestAuthHandler, so no live Keycloak is contacted — but
+        // the options must still be present and non-empty. Supply placeholder values.
+        builder.UseSetting("Authentication:Authority", "http://localhost/realms/test");
+        builder.UseSetting("Authentication:Audience", "account");
+        builder.UseSetting("Authentication:RequireHttpsMetadata", "false");
+        builder.UseSetting("Keycloak:BaseUrl", "http://localhost");
+        builder.UseSetting("Keycloak:Realm", "test");
+        builder.UseSetting("Keycloak:ClientId", "test-client");
+        builder.UseSetting("Keycloak:ClientSecret", "test-secret");
+        builder.UseSetting("Keycloak:AdminUsername", "admin");
+        builder.UseSetting("Keycloak:AdminPassword", "admin");
+
         builder.UseEnvironment("Test");
     }
 }
