@@ -36,6 +36,12 @@ export function usePlaceShip(gameId: string) {
   })
 }
 
+export function useAttack(gameId: string) {
+  return useMutation({
+    mutationFn: (cell: string) => gamesApi.attack(gameId, { cell }),
+  })
+}
+
 /**
  * Places the opponent's ships (the API requires the client to set up both boards), then
  * transitions the game to Started. The opponent placements are generated randomly by the

@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router'
 import { problemMessage } from '../../api/problemDetails'
 import { PageShell } from '../../components/PageShell'
+import { BattleScreen } from './battle/BattleScreen'
 import { useGame } from './gameQueries'
 import { PlacementScreen } from './ship-placement/PlacementScreen'
 
@@ -39,8 +40,9 @@ export function GamePage() {
       {(game.state === 'New' || game.state === 'Ready') && (
         <PlacementScreen gameId={game.gameId!} boardSize={game.boardSize ?? 10} />
       )}
-      {/* Phase 7 replaces this placeholder with the battle screen. */}
-      {game.state === 'Started' && <p className="text-slate-300">Battle — coming next.</p>}
+      {game.state === 'Started' && (
+        <BattleScreen gameId={game.gameId!} boardSize={game.boardSize ?? 10} />
+      )}
       {game.state === 'GameOver' && (
         <section className="rounded-xl bg-slate-800 p-8">
           <h2 className="mb-2 text-2xl font-semibold">

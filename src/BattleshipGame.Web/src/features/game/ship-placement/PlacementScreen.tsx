@@ -3,6 +3,7 @@ import { problemMessage } from '../../../api/problemDetails'
 import type { components } from '../../../api/schema'
 import { BoardGrid } from '../../../components/BoardGrid'
 import { usePlaceShip, useStartGame } from '../gameQueries'
+import { savePlayerShips } from '../playerShipsStorage'
 import { cellsForShip, fits, generateRandomPlacements } from './placementLogic'
 import { SHIP_KINDS, SHIP_LENGTHS, type PlaceableShipKind } from './shipLengths'
 
@@ -145,7 +146,10 @@ export function PlacementScreen({ gameId, boardSize }: PlacementScreenProps) {
         {allPlaced && (
           <button
             type="button"
-            onClick={() => startGame.mutate(generateRandomPlacements(boardSize))}
+            onClick={() => {
+              savePlayerShips(gameId, [...occupied])
+              startGame.mutate(generateRandomPlacements(boardSize))
+            }}
             disabled={startGame.isPending}
             className="mt-2 rounded-lg bg-emerald-600 px-5 py-2 font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
           >
