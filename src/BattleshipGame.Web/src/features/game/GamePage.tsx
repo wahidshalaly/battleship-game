@@ -2,6 +2,7 @@ import { useNavigate, useParams } from 'react-router'
 import { problemMessage } from '../../api/problemDetails'
 import { PageShell } from '../../components/PageShell'
 import { useGame } from './gameQueries'
+import { PlacementScreen } from './ship-placement/PlacementScreen'
 
 export function GamePage() {
   const { id } = useParams<{ id: string }>()
@@ -35,10 +36,10 @@ export function GamePage() {
 
   return (
     <PageShell>
-      {/* Phase 6/7 replace these placeholders with the placement and battle screens. */}
       {(game.state === 'New' || game.state === 'Ready') && (
-        <p className="text-slate-300">Ship placement — coming next.</p>
+        <PlacementScreen gameId={game.gameId!} boardSize={game.boardSize ?? 10} />
       )}
+      {/* Phase 7 replaces this placeholder with the battle screen. */}
       {game.state === 'Started' && <p className="text-slate-300">Battle — coming next.</p>}
       {game.state === 'GameOver' && (
         <section className="rounded-xl bg-slate-800 p-8">
