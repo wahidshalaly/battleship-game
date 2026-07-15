@@ -13,7 +13,7 @@ The Battleship Game is a web-based implementation of the classic naval strategy 
 - **Keycloak 26**: OIDC identity provider (JWT issuance, token validation)
 - **Swagger/OpenAPI**: API documentation and testing
 
-### Frontend (BattleshipGame.Web)
+### Frontend
 - **React 19 + TypeScript**: SPA framework
 - **Vite**: Dev server and build tool
 - **Tailwind CSS v4**: Styling
@@ -85,10 +85,12 @@ graph TB
 - **Business Rules**: Game logic, validation, and constraints
 
 **Domain Events Implemented**:
-- `CellAttackedEvent`: Raised when a cell is attacked
-- `GameOverEvent`: Raised when game concludes
+- `UnderAttackEvent`: Raised when a cell is attacked
 - `ShipSunkEvent`: Raised when a ship is destroyed
-- `BoardsReadyEvent`: Raised when both boards are ready for gameplay
+- `BoardReadyEvent`: Raised when one board has all ships placed
+- `GameReadyEvent`: Raised when both boards are ready for gameplay
+- `GameStartedEvent`: Raised when gameplay starts
+- `GameOverEvent`: Raised when game concludes
 - `PlayerJoinedGameEvent`: Raised when player joins game
 - `PlayerLeftGameEvent`: Raised when player leaves game
 

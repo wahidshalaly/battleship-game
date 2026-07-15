@@ -10,7 +10,7 @@ This a comprehensive documentation for the Battleship Game project, providing de
 
 ## Documentation Structure
 
-### 📋 [analysis.md](./analysis.md)
+### 📋 [analysis.md](./docs/analysis.md)
 **Domain Analysis & Business Requirements**
 
 Provides a comprehensive analysis of the Battleship game domain model, detailing the core entities, value objects, and business rules that govern the game logic. This document serves as the foundation for understanding the business requirements and domain complexity.
@@ -22,7 +22,7 @@ Provides a comprehensive analysis of the Battleship game domain model, detailing
 - Domain events pattern
 - Error handling strategy
 
-### � [bounded-context-analysis.md](./bounded-context-analysis.md)
+### 🧩 [bounded-context-analysis.md](./docs/bounded-context-analysis.md)
 **Bounded Context Alignment Assessment**
 
 Analyzes the Battleship Game Bounded Context diagram and compares it with the current codebase implementation. This document identifies alignment, gaps, and provides actionable recommendations for bringing the implementation in line with the domain design.
@@ -34,7 +34,7 @@ Analyzes the Battleship Game Bounded Context diagram and compares it with the cu
 - API endpoint coverage assessment
 - Implementation roadmap and priorities
 
-### �🏗️ [architecture.md](./architecture.md)
+### 🏗️ [architecture.md](./docs/architecture.md)
 **High-Level System Architecture**
 
 Offers an executive overview of the system architecture, technology stack, and architectural principles. This document is ideal for stakeholders, new team members, and architects who need to understand the overall system design.
@@ -47,7 +47,7 @@ Offers an executive overview of the system architecture, technology stack, and a
 - Performance and security considerations
 - Deployment strategy
 
-### 🎨 [design.md](./design.md)
+### 🎨 [design.md](./docs/design.md)
 **Detailed System Design**
 
 Contains detailed class diagrams, component relationships, and technical design specifications. This document is essential for developers who need to understand the implementation details and code structure.
@@ -58,7 +58,19 @@ Contains detailed class diagrams, component relationships, and technical design 
 - Web API layer structure
 - SOLID principles implementation
 - Configuration and constraints
-- Error handling patterns## How to Use This Documentation
+- Error handling patterns
+
+### 🕹️ [gameplay.md](./docs/gameplay.md)
+**How to Play (User Guide)**
+
+A player-facing guide to the web UI: creating an account, starting a game, placing ships, and
+playing a round to completion.
+
+### 🛠️ [local-dev.md](./docs/local-dev.md)
+**Local Development Guide**
+
+How to run the full stack locally with .NET Aspire, run the React frontend, apply migrations,
+and authenticate against the API.
 
 ## Architecture Principles
 
@@ -70,10 +82,32 @@ The system follows these key principles:
 
 ## Technology Stack
 
-- **.NET 8.0**: Modern C# with latest features
-- **ASP.NET Core**: Web API framework
-- **xUnit + FluentAssertions**: Testing framework
+**Backend**
+- **.NET 10 / ASP.NET Core**: Web API framework
+- **PostgreSQL + EF Core**: Persistence
+- **Keycloak**: OIDC identity provider (JWT)
+- **.NET Aspire**: Local orchestration
+- **xUnit + FluentAssertions + FakeItEasy**: Testing
 - **Swagger/OpenAPI**: API documentation
+
+**Frontend** ([`src/BattleshipGame.Web`](./src/BattleshipGame.Web))
+- **React 19 + TypeScript + Vite**: Single-page app
+- **Tailwind CSS**: Styling
+- **TanStack Query**: Server-state caching
+- **Vitest + React Testing Library**: Frontend tests
+
+## Running the Game
+
+Start the backend (Postgres, Keycloak, migrations, and the Web API) with .NET Aspire, then run
+the React frontend:
+
+```bash
+dotnet run --project src/BattleshipGame.AppHost      # backend
+cd src/BattleshipGame.Web && npm install && npm run dev   # http://localhost:5173
+```
+
+See [local-dev.md](./docs/local-dev.md) for details and [gameplay.md](./docs/gameplay.md) for how
+to play.
 
 ## Quick Reference
 
@@ -88,7 +122,7 @@ The system follows these key principles:
 - **GameState**: None, New, Ready, Started, GameOver
 - **BoardSide**: None, Player, Opponent
 - **CellState**: None, Clear, Occupied, Hit, Missed
-- **ShipKind**: None, Destroyer(2), Submarine(3), Cruiser(3), Battleship(4), Carrier(5) - ship sizes in parentheses
+- **ShipKind**: None, Destroyer(2), Cruiser(3), Submarine(3), Battleship(4), Carrier(5) - ship sizes in parentheses
 - **ShipOrientation**: None, Vertical, Horizontal
 
 ### Business Rules
@@ -135,8 +169,9 @@ docs/
 ├── analysis.md                     # Domain analysis and business rules
 ├── bounded-context-analysis.md     # Bounded context alignment assessment
 ├── design.md                       # Detailed technical design with diagrams
-├── openapi.yaml                    # OpenAPI specification for the Web API
-└── technical-debt-and-roadmap.md   # Technical debt analysis and future roadmap
+├── gameplay.md                     # How to play (user guide)
+├── local-dev.md                    # Local development guide
+└── openapi.yaml                    # OpenAPI specification for the Web API
 ```
 
 ### How to Generate OpenAPI Documentation
@@ -151,4 +186,4 @@ docs/
 
 **Generate the OpenAPI YAML document**
 
-`dotnet swagger tofile --output ./docs/openapi.yaml --yaml ./src/BattleshipGame.WebAPI/bin/Debug/net8.0/BattleshipGame.WebAPI.dll v1`
+`dotnet swagger tofile --output ./docs/openapi.yaml --yaml ./src/BattleshipGame.WebAPI/bin/Debug/net10.0/BattleshipGame.WebAPI.dll v1`
