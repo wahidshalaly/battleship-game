@@ -38,6 +38,12 @@ builder
     .WaitFor(keycloak)
     .WaitForCompletion(migrations);
 
+// The React + Vite frontend (BattleshipGame.Web) is run standalone with `npm run dev`
+// on port 5173, not as an Aspire resource. Aspire assigns dynamic ports and proxies
+// them, which conflicts with the API's static CORS allow-list; keeping the frontend
+// outside Aspire avoids that friction. Its VITE_API_BASE_URL points at the API's fixed
+// dev port (5298) via .env.development, and the API allows the 5173 origin via CORS.
+
 // Note: OpenAI-compatible API is managed externally.
 // For local development, you should have Ollama is installed and running.
 // For hosted environment, your should have a Cloud-based model provider.

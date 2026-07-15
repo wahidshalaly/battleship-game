@@ -133,6 +133,24 @@ builder
     .Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 
+// CORS for the browser-based frontend (BattleshipGame.Web). Allowed origins come from
+// config so the Vite dev server (and, via Aspire, its assigned endpoint) can be added
+// without a code change.
+const string WebCorsPolicy = "WebApp";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        WebCorsPolicy,
+        policy =>
+        {
+            var allowedOrigins =
+                builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+
+            policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+        }
+    );
+});
+
 // Expose the authenticated caller's identity to the application layer.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
@@ -158,6 +176,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors(WebCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 

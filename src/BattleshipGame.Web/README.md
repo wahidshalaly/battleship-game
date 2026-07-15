@@ -1,32 +1,45 @@
-# React + TypeScript + Vite
+# BattleshipGame.Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + TypeScript + Vite frontend for the Battleship game API.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Vite** + **React 19** + **TypeScript**
+- **Tailwind CSS v4** (via `@tailwindcss/vite`)
+- **TanStack Query** for server-state caching
+- **React Router** for navigation
+- **openapi-typescript** + **openapi-fetch** for a typed API client generated from
+  `../../docs/openapi.yaml`
+- **oxlint** for linting, **Prettier** for formatting
 
-## React Compiler
+## Running locally
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The frontend runs standalone against the API. Start the backend first (the API and its
+Keycloak/Postgres dependencies) via Aspire, then run the dev server:
 
-## Expanding the Oxlint configuration
+```bash
+# From the repo root — starts Postgres, Keycloak, migrations, and the Web API
+dotnet run --project src/BattleshipGame.AppHost
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+# In this folder — starts the Vite dev server on http://localhost:5173
+npm install   # first time only
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The dev server calls the API at `VITE_API_BASE_URL` (see `.env.development`, defaults to
+`http://localhost:5298`). The API allows the `http://localhost:5173` origin via CORS
+(`Cors:AllowedOrigins` in the API's `appsettings.Development.json`).
+
+## Scripts
+
+| Script                       | Description                                               |
+| ---------------------------- | --------------------------------------------------------- |
+| `npm run dev`                | Start the Vite dev server (port 5173)                     |
+| `npm run build`              | Type-check and build for production                       |
+| `npm run lint`               | Run oxlint                                                |
+| `npm run format`             | Format with Prettier                                      |
+| `npm run format:check`       | Check formatting without writing                          |
+| `npm run generate:api-types` | Regenerate `src/api/schema.d.ts` from `docs/openapi.yaml` |
+
+Regenerate the API types whenever `docs/openapi.yaml` changes (same cadence as the
+backend's `dotnet swagger tofile` step).
