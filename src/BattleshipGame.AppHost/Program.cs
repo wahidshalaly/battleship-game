@@ -23,7 +23,7 @@ var migrations = builder
     .WaitFor(postgres);
 
 // Battleship Web API
-builder
+var webapi = builder
     .AddProject<Projects.BattleshipGame_WebAPI>("webapi")
     .WithReference(db)
     .WithEnvironment("Authentication__Authority", "http://localhost:8080/realms/battleship")
@@ -38,11 +38,15 @@ builder
     .WaitFor(keycloak)
     .WaitForCompletion(migrations);
 
-// The React + Vite frontend (BattleshipGame.Web) is run standalone with `npm run dev`
-// on port 5173, not as an Aspire resource. Aspire assigns dynamic ports and proxies
-// them, which conflicts with the API's static CORS allow-list; keeping the frontend
-// outside Aspire avoids that friction. Its VITE_API_BASE_URL points at the API's fixed
-// dev port (5298) via .env.development, and the API allows the 5173 origin via CORS.
+// The React + Vite frontend (BattleshipGame.Web). AddViteApp defaults to a dynamic,
+// proxied port, which would break the API's static CORS allow-list — so the endpoint
+// is pinned to the fixed dev port (5173) and unproxied, matching the origin the API
+// already allows via Cors:AllowedOrigins.
+builder
+    .AddViteApp("web", "../BattleshipGame.Web")
+    .WithEndpoint("http", e => (e.Port, e.TargetPort, e.IsProxied) = (5173, 5173, false))
+    .WithEnvironment("VITE_API_BASE_URL", "http://localhost:5298")
+    .WaitFor(webapi);
 
 // Note: OpenAI-compatible API is managed externally.
 // For local development, you should have Ollama is installed and running.
