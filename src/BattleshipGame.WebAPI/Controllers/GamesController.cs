@@ -32,7 +32,7 @@ public class GamesController(
     /// </summary>
     /// <response code="201">Game successfully created.</response>
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> StartNewGame(
         [FromBody] CreateGameRequest request,

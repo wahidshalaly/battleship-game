@@ -13,6 +13,20 @@ The Battleship Game is a web-based implementation of the classic naval strategy 
 - **Keycloak 26**: OIDC identity provider (JWT issuance, token validation)
 - **Swagger/OpenAPI**: API documentation and testing
 
+### Frontend
+- **React 19 + TypeScript**: SPA framework
+- **Vite**: Dev server and build tool
+- **Tailwind CSS v4**: Styling
+- **TanStack Query**: Server-state caching
+- **openapi-typescript + openapi-fetch**: Typed API client generated from `docs/openapi.yaml`
+- **Vitest + React Testing Library**: Frontend tests
+
+The SPA runs standalone (`npm run dev` on port 5173) against the Web API, which allows its
+origin via CORS. It authenticates through the API's `AuthController` façade — the browser
+never contacts Keycloak directly (client → API `/api/auth/*` → Keycloak). Access/refresh
+tokens are held in `localStorage`, sent as `Authorization: Bearer` on each request, with a
+single automatic refresh-and-retry on a 401.
+
 ### Testing
 - **xUnit**: Primary testing framework
 - **FluentAssertions**: Readable test assertions
@@ -31,11 +45,13 @@ The system follows Uncle Bob's Clean Architecture pattern with clear separation 
 
 ```mermaid
 graph TB
+    Web[React SPA] --> UI[Web API Layer]
     UI[Web API Layer] --> App[Application Layer]
     App --> Domain[Domain Layer]
     App --> Infra[Infrastructure Layer]
     Infra --> Domain
 
+    Web -.-> |"HTTP + JWT bearer"| Web
     UI -.-> |"DTOs, Controllers"| UI
     App -.-> |"Services, Use Cases"| App
     Domain -.-> |"Entities, Value Objects, Business Rules"| Domain
@@ -69,10 +85,12 @@ graph TB
 - **Business Rules**: Game logic, validation, and constraints
 
 **Domain Events Implemented**:
-- `CellAttackedEvent`: Raised when a cell is attacked
-- `GameOverEvent`: Raised when game concludes
+- `UnderAttackEvent`: Raised when a cell is attacked
 - `ShipSunkEvent`: Raised when a ship is destroyed
-- `BoardsReadyEvent`: Raised when both boards are ready for gameplay
+- `BoardReadyEvent`: Raised when one board has all ships placed
+- `GameReadyEvent`: Raised when both boards are ready for gameplay
+- `GameStartedEvent`: Raised when gameplay starts
+- `GameOverEvent`: Raised when game concludes
 - `PlayerJoinedGameEvent`: Raised when player joins game
 - `PlayerLeftGameEvent`: Raised when player leaves game
 

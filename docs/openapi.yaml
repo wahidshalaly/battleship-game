@@ -134,6 +134,19 @@ paths:
       responses:
         '201':
           description: Game successfully created.
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: uuid
+            application/json:
+              schema:
+                type: string
+                format: uuid
+            text/json:
+              schema:
+                type: string
+                format: uuid
         '400':
           description: Bad Request
           content:

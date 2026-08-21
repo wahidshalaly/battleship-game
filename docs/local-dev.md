@@ -36,6 +36,24 @@ The Web API, PostgreSQL connection, and migration ordering are wired in
 resource is named `battleship`; the same connection-string name is used by the Web API and the
 MigrationRunner.
 
+## Frontend (BattleshipGame.Web)
+
+The React + Vite SPA runs **standalone**, not as an Aspire resource (Aspire's dynamic ports
+conflict with the API's static CORS allow-list). Start the backend with the AppHost above, then:
+
+```bash
+cd src/BattleshipGame.Web
+npm install    # first time only
+npm run dev    # http://localhost:5173
+```
+
+It calls the API at `VITE_API_BASE_URL` (default `http://localhost:5298`, see `.env.development`),
+which allows the `http://localhost:5173` origin via `Cors:AllowedOrigins`. From the SPA you can
+register/sign in, place your ships, and play a full game to completion.
+
+> **Follow-up:** end-to-end browser tests (e.g. Playwright) against the full stack are a natural
+> next step and are not yet included.
+
 ## AI Opponent (optional)
 
 The SemanticKernel opponent talks to an OpenAI-compatible endpoint. For local development, run

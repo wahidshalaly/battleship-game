@@ -431,3 +431,11 @@ $RECYCLE.BIN/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+##
+## Node / Vite (BattleshipGame.Web)
+##
+dist/
+dist-ssr/
+.vite/
+*.local
