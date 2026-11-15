@@ -36,7 +36,7 @@ dotnet tool restore
 
 # Generate OpenAPI docs
 dotnet build ./src/BattleshipGame.WebAPI/BattleshipGame.WebAPI.csproj
-dotnet swagger tofile --output ./docs/openapi.yaml --yaml ./src/BattleshipGame.WebAPI/bin/Debug/net10.0/BattleshipGame.WebAPI.dll v1
+dotnet swagger tofile --output ./docs/openapi.yaml --yaml ./src/BattleshipGame.WebAPI/bin/Debug/net11.0/BattleshipGame.WebAPI.dll v1
 ```
 
 ### Load Tests (K6 via Docker)

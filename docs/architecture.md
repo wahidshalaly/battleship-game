@@ -7,7 +7,7 @@ The Battleship Game is a web-based implementation of the classic naval strategy 
 ## Technology Stack
 
 ### Backend
-- **.NET 10**: Latest version of .NET
+- **.NET 11**: Latest version of .NET
 - **ASP.NET Core**: Web API framework
 - **C# 13**: Modern C# features with nullable reference types
 - **Keycloak 26**: OIDC identity provider (JWT issuance, token validation)

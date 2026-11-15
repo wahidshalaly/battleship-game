@@ -6,7 +6,7 @@ starts the Web API for you. There is no Docker Compose flow and no in-memory per
 
 ## Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [.NET 11 SDK](https://dotnet.microsoft.com/download/dotnet/11.0)
 - A container runtime (Docker Desktop or Podman) — Aspire uses it to run the PostgreSQL and
   pgAdmin containers, and the integration tests use Testcontainers.
 - (Optional) [Ollama](https://ollama.ai/) for the SemanticKernel AI opponent.
