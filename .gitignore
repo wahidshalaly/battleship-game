@@ -439,3 +439,6 @@ dist/
 dist-ssr/
 .vite/
 *.local
+
+# CPM conversion evidence (local only)
+cpm-conversion/
