@@ -8,7 +8,7 @@ namespace BattleshipGame.IntegrationTests;
 
 internal sealed class BattleshipWebApplicationFactory(
     string connectionString,
-    FakeChatCompletionService? chatCompletion = null
+    FakeLlmChat? llmChat = null
 ) : WebApplicationFactory<Program>
 {
     // Runs before the first factory instance boots the API, which reads OPENAI_* at startup.
@@ -39,8 +39,8 @@ internal sealed class BattleshipWebApplicationFactory(
                     _ => { }
                 );
 
-            // Never reach a real LLM: the SemanticKernel opponent talks to a scripted fake.
-            (chatCompletion ?? new FakeChatCompletionService()).Register(services);
+            // Never reach a real LLM: the LLM opponent talks to a scripted fake.
+            (llmChat ?? new FakeLlmChat()).Register(services);
         });
 
         // The API now validates Authentication/Keycloak options at startup (ValidateOnStart).

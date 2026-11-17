@@ -128,8 +128,8 @@ graph TB
 **Opponent Contracts**:
 - `IComputerOpponent`: Strategy interface for AI attack selection (always targets Player's board)
 - `IComputerOpponentFactory`: Factory for per-game strategy resolution
-- `IPromptBuilder`: LLM prompt construction for SemanticKernel strategy
-- `GameStateContext`: Read-only projection for AI decision-making (built by strategy internally)
+- `IPromptBuilder`: LLM prompt construction for the LLM (SemanticKernel) strategy
+- `GameSnapshot`: Read-only projection for AI decision-making (built by the opponent internally)
 
 **Dependencies**: Domain Layer only
 
@@ -146,12 +146,14 @@ graph TB
   - Handles `RegisterAsync` (create user without inline credentials → `/users/{id}/reset-password`), `SignInAsync` (ROPC grant), `RefreshAsync`, `SignOutAsync`
   - `KeycloakOptions`: config binding for `Keycloak` section (`BaseUrl`, `Realm`, `ClientId`, `ClientSecret`, `AdminUsername`, `AdminPassword`)
 - **Opponent Strategies**:
-  - `RandomAttackStrategy`: Random cell selection from available targets on Player's board
-  - `SemanticKernelStrategy`: LLM-based strategic attack selection using Semantic Kernel
-  - `OpponentStrategyFactory`: Factory resolving strategies via keyed DI services
+  - `RandomAttackOpponent`: Random cell selection from available targets on Player's board
+  - `LlmOpponent`: LLM-based strategic attack selection; builds the prompts, calls the model through `ILlmChat` and validates the reply
+  - `ILlmChat` / `SemanticKernelChat`: the model call behind a project-owned interface; `SemanticKernelChat` is the only class that uses Semantic Kernel
+  - `ResilientComputerOpponentDecorator`: wraps `LlmOpponent` with Polly retry + circuit breaker, falling back to `RandomAttackOpponent`
+  - `ComputerOpponentFactory`: Factory resolving strategies via keyed DI services
   - `BattleshipPromptBuilder`: Constructs prompts for LLM-based strategies
 - **Data Access**: `BattleshipGameDbContext` (EF Core 10 + Npgsql) with entity configurations and migrations
-- **External Services**: Semantic Kernel integration for AI/LLM features; Keycloak Admin REST API for identity management
+- **External Services**: Semantic Kernel (behind `ILlmChat`) for AI/LLM features; Keycloak Admin REST API for identity management
 
 **Repository Pattern Benefits**:
 - Abstracts data access details from application layer
@@ -517,12 +519,14 @@ The AI opponent system follows Clean Architecture principles:
 - `IComputerOpponent`: Defines strategy interface with `SelectNextAttackAsync(Game, CancellationToken)` - always attacks Player's board
 - `IComputerOpponentFactory`: Factory pattern for per-game strategy resolution
 - `IPromptBuilder`: Abstracts LLM prompt construction
-- `GameStateContext`: Simplified read-only record with essential game state (built internally by strategy)
+- `GameSnapshot`: Simplified read-only record with essential game state (built internally by the opponent)
 
 **Infrastructure Implementations**:
-- `RandomAttackStrategy`: Simple random cell selection from Player's board
-- `SemanticKernelStrategy`: LLM-powered strategic reasoning using Microsoft Semantic Kernel
-- `OpponentStrategyFactory`: Uses .NET 8 keyed DI services for strategy resolution
+- `RandomAttackOpponent`: Simple random cell selection from Player's board
+- `LlmOpponent`: LLM-powered strategic reasoning; depends only on `ILlmChat`, so it has no AI SDK dependency
+- `SemanticKernelChat`: `ILlmChat` implementation using Microsoft Semantic Kernel (OpenAI-compatible endpoint); integration tests replace `ILlmChat` with a scripted fake
+- `ResilientComputerOpponentDecorator`: Polly retry + circuit breaker around `LlmOpponent`, with `RandomAttackOpponent` as fallback
+- `ComputerOpponentFactory`: Uses .NET keyed DI services for strategy resolution
 - `BattleshipPromptBuilder`: Constructs strategic prompts for LLM
 
 **Per-Game Strategy Selection**:

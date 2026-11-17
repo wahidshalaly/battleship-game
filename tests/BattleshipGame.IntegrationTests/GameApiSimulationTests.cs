@@ -18,7 +18,7 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     private WebApplicationFactory<Program> _factory = null!;
     private HttpClient _client = null!;
     private string _clientSubject = null!;
-    private readonly FakeChatCompletionService _chat = new();
+    private readonly FakeLlmChat _chat = new();
 
     private const int BoardSize = DefaultBoardSize;
 
@@ -43,10 +43,13 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         return Task.CompletedTask;
     }
 
-    public Task DisposeAsync()
+    public async Task DisposeAsync()
     {
         _client.Dispose();
-        return _factory.DisposeAsync().AsTask();
+        await _factory.DisposeAsync();
+
+        // A missing script would otherwise pass silently via the Random fallback.
+        _chat.VerifyAllCallsScripted();
     }
 
     [Fact]

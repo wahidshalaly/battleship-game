@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,38 +7,27 @@ using BattleshipGame.Application.Interfaces.ComputerOpponent;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Infrastructure.ComputerOpponent;
 using BattleshipGame.UnitTests.Domain.DomainModel;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace BattleshipGame.UnitTests.Infrastructure.ComputerOpponent;
 
-public class SemanticKernelOpponentTests
+public class LlmOpponentTests
 {
     private const string SystemPrompt = "system prompt";
     private const string StrategicPrompt = "strategic prompt";
 
     private readonly GameFixture _fixture = new();
-    private readonly IChatCompletionService _chatService = A.Fake<IChatCompletionService>();
-    private readonly SemanticKernelOpponent _opponent;
-    private ChatHistory? _sentHistory;
+    private readonly ILlmChat _llmChat = A.Fake<ILlmChat>();
+    private readonly LlmOpponent _opponent;
 
-    public SemanticKernelOpponentTests()
+    public LlmOpponentTests()
     {
         var promptBuilder = A.Fake<IPromptBuilder>();
         A.CallTo(() => promptBuilder.BuildSystemPrompt()).Returns(SystemPrompt);
         A.CallTo(() => promptBuilder.BuildStrategicPrompt(A<GameSnapshot>._))
             .Returns(StrategicPrompt);
 
-        var kernelBuilder = Kernel.CreateBuilder();
-        kernelBuilder.Services.AddSingleton(_chatService);
-
-        _opponent = new SemanticKernelOpponent(
-            promptBuilder,
-            kernelBuilder.Build(),
-            A.Fake<ILogger<SemanticKernelOpponent>>()
-        );
+        _opponent = new LlmOpponent(promptBuilder, _llmChat, A.Fake<ILogger<LlmOpponent>>());
     }
 
     [Fact]
@@ -62,17 +49,15 @@ public class SemanticKernelOpponentTests
     {
         // Arrange
         var game = _fixture.CreateGameInStateStarted();
+        using var cts = new CancellationTokenSource();
         LlmReplies("""{"cell":"C4","reasoning":"r"}""");
 
         // Act
-        await _opponent.SelectNextAttackAsync(game, CancellationToken.None);
+        await _opponent.SelectNextAttackAsync(game, cts.Token);
 
         // Assert
-        _sentHistory.Should().NotBeNull();
-        _sentHistory!
-            .Select(m => (m.Role, m.Content))
-            .Should()
-            .Equal((AuthorRole.System, SystemPrompt), (AuthorRole.User, StrategicPrompt));
+        A.CallTo(() => _llmChat.CompleteAsync(SystemPrompt, StrategicPrompt, cts.Token))
+            .MustHaveHappenedOnceExactly();
     }
 
     [Theory]
@@ -167,18 +152,11 @@ public class SemanticKernelOpponentTests
     }
 
     [Fact]
-    public async Task SelectNextAttackAsync_WhenChatServiceFails_ShouldPropagateException()
+    public async Task SelectNextAttackAsync_WhenLlmCallFails_ShouldPropagateException()
     {
         // Arrange: transport errors are left to the resilience decorator to retry or fall back.
         var game = _fixture.CreateGameInStateStarted();
-        A.CallTo(() =>
-                _chatService.GetChatMessageContentsAsync(
-                    A<ChatHistory>._,
-                    A<PromptExecutionSettings>._,
-                    A<Kernel>._,
-                    A<CancellationToken>._
-                )
-            )
+        A.CallTo(() => _llmChat.CompleteAsync(A<string>._, A<string>._, A<CancellationToken>._))
             .ThrowsAsync(new HttpRequestException("boom"));
 
         // Act
@@ -188,24 +166,7 @@ public class SemanticKernelOpponentTests
         await act.Should().ThrowAsync<HttpRequestException>();
     }
 
-    private void LlmReplies(string content)
-    {
-        A.CallTo(() =>
-                _chatService.GetChatMessageContentsAsync(
-                    A<ChatHistory>._,
-                    A<PromptExecutionSettings>._,
-                    A<Kernel>._,
-                    A<CancellationToken>._
-                )
-            )
-            .Invokes(
-                (ChatHistory history, PromptExecutionSettings? _, Kernel? _, CancellationToken _) =>
-                    _sentHistory = history
-            )
-            .Returns(
-                Task.FromResult<IReadOnlyList<ChatMessageContent>>([
-                    new ChatMessageContent(AuthorRole.Assistant, content),
-                ])
-            );
-    }
+    private void LlmReplies(string content) =>
+        A.CallTo(() => _llmChat.CompleteAsync(A<string>._, A<string>._, A<CancellationToken>._))
+            .Returns(content);
 }

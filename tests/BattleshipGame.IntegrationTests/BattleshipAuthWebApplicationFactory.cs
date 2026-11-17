@@ -18,7 +18,7 @@ internal sealed class BattleshipAuthWebApplicationFactory(
     string keycloakClientSecret,
     string keycloakAdminUsername,
     string keycloakAdminPassword,
-    FakeChatCompletionService? chatCompletion = null
+    FakeLlmChat? llmChat = null
 ) : WebApplicationFactory<Program>
 {
     // Runs before the first factory instance boots the API, which reads OPENAI_* at startup.
@@ -38,8 +38,8 @@ internal sealed class BattleshipAuthWebApplicationFactory(
                 options.UseNpgsql(connectionString)
             );
 
-            // Never reach a real LLM: the SemanticKernel opponent talks to a scripted fake.
-            (chatCompletion ?? new FakeChatCompletionService()).Register(services);
+            // Never reach a real LLM: the LLM opponent talks to a scripted fake.
+            (llmChat ?? new FakeLlmChat()).Register(services);
         });
 
         // Point auth and Keycloak config at the test containers.
