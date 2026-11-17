@@ -17,7 +17,8 @@ internal sealed class BattleshipAuthWebApplicationFactory(
     string keycloakClientId,
     string keycloakClientSecret,
     string keycloakAdminUsername,
-    string keycloakAdminPassword
+    string keycloakAdminPassword,
+    FakeChatCompletionService? chatCompletion = null
 ) : WebApplicationFactory<Program>
 {
     // Runs before the first factory instance boots the API, which reads OPENAI_* at startup.
@@ -36,6 +37,9 @@ internal sealed class BattleshipAuthWebApplicationFactory(
             services.AddDbContext<BattleshipGameDbContext>(options =>
                 options.UseNpgsql(connectionString)
             );
+
+            // Never reach a real LLM: the SemanticKernel opponent talks to a scripted fake.
+            (chatCompletion ?? new FakeChatCompletionService()).Register(services);
         });
 
         // Point auth and Keycloak config at the test containers.
@@ -48,6 +52,10 @@ internal sealed class BattleshipAuthWebApplicationFactory(
         builder.UseSetting("Keycloak:ClientSecret", keycloakClientSecret);
         builder.UseSetting("Keycloak:AdminUsername", keycloakAdminUsername);
         builder.UseSetting("Keycloak:AdminPassword", keycloakAdminPassword);
+
+        // A failing AI opponent is retried with real (2s+) backoff before falling back; one retry
+        // keeps those tests fast while still exercising the retry path.
+        builder.UseSetting("Resilience:AiOpponent:MaxRetryAttempts", "1");
 
         builder.UseEnvironment("Test");
     }

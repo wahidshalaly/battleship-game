@@ -6,8 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BattleshipGame.IntegrationTests;
 
-internal sealed class BattleshipWebApplicationFactory(string connectionString)
-    : WebApplicationFactory<Program>
+internal sealed class BattleshipWebApplicationFactory(
+    string connectionString,
+    FakeChatCompletionService? chatCompletion = null
+) : WebApplicationFactory<Program>
 {
     // Runs before the first factory instance boots the API, which reads OPENAI_* at startup.
     static BattleshipWebApplicationFactory() => TestOpenAiSettings.EnsureEnvironment();
@@ -36,6 +38,9 @@ internal sealed class BattleshipWebApplicationFactory(string connectionString)
                     TestAuthHandler.SchemeName,
                     _ => { }
                 );
+
+            // Never reach a real LLM: the SemanticKernel opponent talks to a scripted fake.
+            (chatCompletion ?? new FakeChatCompletionService()).Register(services);
         });
 
         // The API now validates Authentication/Keycloak options at startup (ValidateOnStart).
@@ -50,6 +55,10 @@ internal sealed class BattleshipWebApplicationFactory(string connectionString)
         builder.UseSetting("Keycloak:ClientSecret", "test-secret");
         builder.UseSetting("Keycloak:AdminUsername", "admin");
         builder.UseSetting("Keycloak:AdminPassword", "admin");
+
+        // A failing AI opponent is retried with real (2s+) backoff before falling back; one retry
+        // keeps those tests fast while still exercising the retry path.
+        builder.UseSetting("Resilience:AiOpponent:MaxRetryAttempts", "1");
 
         builder.UseEnvironment("Test");
     }
