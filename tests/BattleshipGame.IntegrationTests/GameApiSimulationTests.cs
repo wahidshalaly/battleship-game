@@ -1,3 +1,4 @@
+using System.Net;
 using BattleshipGame.Application.Features.Games.Queries;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
@@ -17,13 +18,15 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     private WebApplicationFactory<Program> _factory = null!;
     private HttpClient _client = null!;
     private string _clientSubject = null!;
+    private readonly FakeLlmChat _chat = new();
 
     private const int BoardSize = DefaultBoardSize;
 
     public Task InitializeAsync()
     {
         _factory = new BattleshipWebApplicationFactory(
-            postgres.ConnectionString
+            postgres.ConnectionString,
+            _chat
         ).WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logging =>
@@ -37,16 +40,16 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         // Authenticate every request via the test auth scheme (see TestAuthHandler).
         _clientSubject = Guid.NewGuid().ToString();
         _client.DefaultRequestHeaders.Add(TestAuthHandler.SubjectHeader, _clientSubject);
-        // SK opponent makes live AI calls that can take minutes per round on a local model;
-        // raise the default 100s timeout to accommodate slow inference.
-        _client.Timeout = TimeSpan.FromMinutes(5);
         return Task.CompletedTask;
     }
 
-    public Task DisposeAsync()
+    public async Task DisposeAsync()
     {
         _client.Dispose();
-        return _factory.DisposeAsync().AsTask();
+        await _factory.DisposeAsync();
+
+        // A missing script would otherwise pass silently via the Random fallback.
+        _chat.VerifyAllCallsScripted();
     }
 
     [Fact]
@@ -97,17 +100,11 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     [InlineData(OpponentStrategy.SemanticKernel)]
     public async Task Simulate_Full_Game_Playthrough_Via_Api(OpponentStrategy strategy)
     {
-        // SemanticKernel requires a live AI endpoint. Skip when OPENAI_API_KEY is absent,
-        // or under GitHub Actions where the app boots with placeholder OpenAI config (so it
-        // can start) but no real LLM is reachable.
-        if (
-            strategy == OpponentStrategy.SemanticKernel
-            && (
-                string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENAI_API_KEY"))
-                || Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true"
-            )
-        )
-            return;
+        // The SemanticKernel opponent plays a scripted sequence of distinct cells, so its moves
+        // are predictable. Any fallback to Random would break the sequence.
+        var scriptedOpponentCells = AllCells(BoardSize);
+        if (strategy == OpponentStrategy.SemanticKernel)
+            _chat.ReplyWithCells(scriptedOpponentCells);
 
         // Username must be 3-32 chars, letters/digits/underscore only.
         var playerUsername = $"u_{strategy.ToString().ToLower()}_{Guid.NewGuid():N}"[..32];
@@ -131,58 +128,106 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         await StartGameplay(gameId);
         await VerifyGameState(gameId, GameState.Started);
 
-        // 6. Attack all Opponent ship positions — proves SK called Ollama once per round
-        await AttackShips(gameId, opponentPlacements);
+        // 6. Attack all Opponent ship positions until the game ends
+        var opponentCells = await AttackShips(gameId, opponentPlacements);
         await VerifyGameState(gameId, GameState.GameOver);
+
+        // 7. Every SemanticKernel move came from the (fake) model, in order: no fallbacks.
+        if (strategy == OpponentStrategy.SemanticKernel)
+        {
+            opponentCells.Should().Equal(scriptedOpponentCells.Take(opponentCells.Count));
+            _chat.CallCount.Should().Be(opponentCells.Count);
+        }
+        else
+        {
+            _chat.CallCount.Should().Be(0);
+        }
     }
 
     [Fact]
-    public async Task PlayerAttack_WhenAiOpponentFails_ShouldFallbackToRandomStrategy()
+    public async Task PlayerAttack_WhenAiReplyIsNotValidJson_RetriesThenFallsBackToRandom()
     {
-        var playerUsername = $"resilience_test_{Guid.NewGuid():N}"[..32];
+        _chat.ReplyRaw("I think B7 looks promising!");
 
-        // 1. Seed the caller's player profile and create a SemanticKernel game
-        await SeedPlayer(_clientSubject, playerUsername);
+        var (_, roundResult) = await PlayFirstRoundAgainstSemanticKernel();
+
+        AssertOpponentStillPlayed(roundResult);
+        // One attempt plus one retry (Resilience:AiOpponent:MaxRetryAttempts = 1 in tests).
+        _chat.CallCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task PlayerAttack_WhenAiIsRateLimited_RetriesThenFallsBackToRandom()
+    {
+        _chat.Throw(
+            new HttpRequestException("Too many requests", null, HttpStatusCode.TooManyRequests)
+        );
+
+        var (_, roundResult) = await PlayFirstRoundAgainstSemanticKernel();
+
+        AssertOpponentStillPlayed(roundResult);
+        _chat.CallCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task PlayerAttack_WhenAiFailsUnexpectedly_FallsBackToRandomWithoutRetry()
+    {
+        _chat.Throw(
+            new HttpRequestException("Server error", null, HttpStatusCode.InternalServerError)
+        );
+
+        var (gameId, roundResult) = await PlayFirstRoundAgainstSemanticKernel();
+
+        AssertOpponentStillPlayed(roundResult);
+        _chat.CallCount.Should().Be(1);
+
+        // The game stays playable after a fallback.
+        var secondResponse = await _client.PostAsJsonAsync(
+            $"/api/games/{gameId}/attacks",
+            new AttackRequest("A2")
+        );
+        secondResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    // Sets up a started SemanticKernel game and plays the first round (player attacks A1).
+    private async Task<(Guid GameId, LastRoundResult Round)> PlayFirstRoundAgainstSemanticKernel()
+    {
+        await SeedPlayer(_clientSubject, $"resilience_test_{Guid.NewGuid():N}"[..32]);
         var gameId = await CreateGame(BoardSize, OpponentStrategy.SemanticKernel);
-
-        // 2. Setup game
         var shipPlacements = GenerateRandomShipPlacements(BoardSize);
         await PlaceShips(gameId, shipPlacements, shipPlacements);
         await StartGameplay(gameId);
 
-        // 3. Execute player attack
-        // Even if SemanticKernel AI fails (rate limit, etc.), the decorator falls back to Random
         var response = await _client.PostAsJsonAsync(
             $"/api/games/{gameId}/attacks",
             new AttackRequest("A1")
         );
 
-        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
-
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
         var roundResult = await response.Content.ReadFromJsonAsync<LastRoundResult>();
         roundResult.Should().NotBeNull();
         roundResult!.PlayerTargetCell.Should().Be("A1");
+        return (gameId, roundResult);
+    }
 
+    private static void AssertOpponentStillPlayed(LastRoundResult roundResult)
+    {
         roundResult
             .OpponentTargetCell.Should()
-            .NotBeNullOrWhiteSpace("Opponent should never forfeit turn");
-        roundResult
-            .OpponentAttackResult.Should()
-            .NotBeNull("Opponent should always execute attack");
+            .NotBeNullOrWhiteSpace("the opponent should never forfeit its turn");
+        roundResult.OpponentAttackResult.Should().NotBeNull();
         roundResult.GameState.Should().Be(GameState.Started);
-
-        // 4. Verify game state is consistent - turn switches back to player
-        var game = await GetGame(gameId);
-        game.State.Should().Be(GameState.Started);
-
-        // 5. Verify subsequent attacks work
-        var secondResponse = await _client.PostAsJsonAsync(
-            $"/api/games/{gameId}/attacks",
-            new AttackRequest("A2")
-        );
-
-        secondResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
     }
+
+    // Every cell on the board in a fixed order (A1, B1, ... then A2, ...); never repeats.
+    private static List<string> AllCells(int boardSize) =>
+        [
+            .. Enumerable
+                .Range(1, boardSize)
+                .SelectMany(row =>
+                    Enumerable.Range(0, boardSize).Select(column => $"{(char)('A' + column)}{row}")
+                ),
+        ];
 
     // Inserts a Player row directly into the DB so the test auth subject has an owner profile.
     // This replaces the removed POST /api/players endpoint (registration is now POST /api/auth/register).
@@ -282,7 +327,8 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         response.EnsureSuccessStatusCode();
     }
 
-    private async Task AttackShips(
+    // Attacks the given ship cells until the game ends; returns the opponent's counter-attacks.
+    private async Task<List<string>> AttackShips(
         Guid gameId,
         (
             string BowCode,
@@ -292,6 +338,7 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         )[] shipPlacements
     )
     {
+        var opponentCells = new List<string>();
         foreach (var (_, _, _, position) in shipPlacements)
         {
             foreach (var cellCode in position)
@@ -303,10 +350,14 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
                 response.EnsureSuccessStatusCode();
                 var roundResult = await response.Content.ReadFromJsonAsync<LastRoundResult>();
                 output.WriteLine("Attacked {0}. Outcome: {1}", cellCode, roundResult);
+                if (roundResult?.OpponentTargetCell is { } opponentCell)
+                    opponentCells.Add(opponentCell);
                 if (roundResult?.GameState == GameState.GameOver)
-                    return;
+                    return opponentCells;
             }
         }
+
+        return opponentCells;
     }
 
     private async Task<Guid> CreateGame(int boardSize, OpponentStrategy opponentStrategy)

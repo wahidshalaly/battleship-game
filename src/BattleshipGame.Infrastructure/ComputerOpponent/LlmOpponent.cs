@@ -3,21 +3,19 @@ using BattleshipGame.Application.Common;
 using BattleshipGame.Application.Interfaces.ComputerOpponent;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using Microsoft.Extensions.Logging;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace BattleshipGame.Infrastructure.ComputerOpponent;
 
 /// <summary>
-/// A computer opponent uses Semantic Kernel and OpenAI-based LLM (Ollama or Azure OpenAI).
+/// A computer opponent that asks an LLM (through <see cref="ILlmChat"/>) for its next shot.
+/// Builds the prompts and validates the reply; the model call itself sits behind the interface.
 /// Provides explainable move selection with reasoning visible to players.
 /// This is an Opponent, it only attacks the Player's board.
 /// </summary>
-public sealed class SemanticKernelOpponent(
+public sealed class LlmOpponent(
     IPromptBuilder promptBuilder,
-    Kernel kernel,
-    ILogger<SemanticKernelOpponent> logger
+    ILlmChat llmChat,
+    ILogger<LlmOpponent> logger
 ) : IComputerOpponent
 {
     private readonly JsonSerializerOptions jsonSerializerOptions = new()
@@ -38,25 +36,7 @@ public sealed class SemanticKernelOpponent(
         var strategicPrompt = promptBuilder.BuildStrategicPrompt(gameSnapshot);
         logger.LogDebug("Opponent: Prompt built. Strategic Prompt: {Prompt}", strategicPrompt);
 
-        var chatService = kernel.GetRequiredService<IChatCompletionService>();
-        var messages = new ChatHistory();
-        messages.AddSystemMessage(systemPrompt);
-        messages.AddUserMessage(strategicPrompt);
-
-        var executionSettings = new OpenAIPromptExecutionSettings
-        {
-            MaxTokens = 100, // Short JSON response only
-            Temperature = 0.3, // More deterministic
-        };
-
-        var response = await chatService.GetChatMessageContentAsync(
-            messages,
-            executionSettings,
-            kernel,
-            ct
-        );
-
-        var responseContent = response.Content ?? string.Empty;
+        var responseContent = await llmChat.CompleteAsync(systemPrompt, strategicPrompt, ct);
         logger.LogDebug("Opponent: LLM response: {Response}", responseContent);
         var availableTargets = gameSnapshot.AvailableTargets;
         var selectedCell = ParseCellFromResponse(responseContent, availableTargets);

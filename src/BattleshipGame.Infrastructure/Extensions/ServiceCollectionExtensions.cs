@@ -15,7 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Polly;
 
 namespace BattleshipGame.Infrastructure.Extensions;
@@ -37,7 +37,7 @@ public static class ServiceCollectionExtensions
     )
     {
         RegisterIdentity(services, configuration);
-        RegisterSemanticKernel(services);
+        RegisterLlmChat(services);
         RegisterOpponentStrategies(services);
         RegisterResiliencePolicies(services, configuration);
         RegisterPersistence(services, configuration);
@@ -63,7 +63,7 @@ public static class ServiceCollectionExtensions
             .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30));
     }
 
-    private static void RegisterSemanticKernel(IServiceCollection services)
+    private static void RegisterLlmChat(IServiceCollection services)
     {
         var modelId = Environment.GetEnvironmentVariable("OPENAI_MODEL_ID");
         var endpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
@@ -82,19 +82,16 @@ public static class ServiceCollectionExtensions
         }
 
 #pragma warning disable SKEXP0010
-        var kernel = Kernel
-            .CreateBuilder()
-            .AddOpenAIChatCompletion(
-                modelId,
-                endpoint: new Uri(endpoint),
-                apiKey,
-                httpClient: new HttpClient { Timeout = TimeSpan.FromMinutes(5) }
-            )
-            .Build();
+        var chatCompletion = new OpenAIChatCompletionService(
+            modelId,
+            new Uri(endpoint),
+            apiKey,
+            httpClient: new HttpClient { Timeout = TimeSpan.FromMinutes(5) }
+        );
 #pragma warning restore SKEXP0010
 
-        // Register Semantic Kernel instance
-        services.AddSingleton(kernel);
+        // The opponent depends on ILlmChat; Semantic Kernel stays behind this adapter.
+        services.AddSingleton<ILlmChat>(new SemanticKernelChat(chatCompletion));
     }
 
     private static void RegisterOpponentStrategies(IServiceCollection services)
@@ -105,15 +102,15 @@ public static class ServiceCollectionExtensions
         // Register Basic Opponent (Random strategy)
         services.AddKeyedScoped<IComputerOpponent, RandomAttackOpponent>(OpponentStrategy.Random);
 
-        // Register base SemanticKernelOpponent (needed for decorator)
-        services.AddScoped<SemanticKernelOpponent>();
+        // Register base LlmOpponent (needed for decorator)
+        services.AddScoped<LlmOpponent>();
 
         // Register AI Opponent (LLM-based strategy) with resilience decorator
         services.AddKeyedScoped<IComputerOpponent>(
             OpponentStrategy.SemanticKernel,
             (provider, key) =>
             {
-                var baseOpponent = provider.GetRequiredService<SemanticKernelOpponent>();
+                var baseOpponent = provider.GetRequiredService<LlmOpponent>();
                 var pipeline = provider.GetRequiredService<ResiliencePipeline<string>>();
                 // Get fallback opponent directly to avoid circular dependency with factory
                 var fallbackOpponent = provider.GetRequiredKeyedService<IComputerOpponent>(

@@ -83,7 +83,7 @@ The system follows these key principles:
 ## Technology Stack
 
 **Backend**
-- **.NET 10 / ASP.NET Core**: Web API framework
+- **.NET 11 / ASP.NET Core**: Web API framework
 - **PostgreSQL + EF Core**: Persistence
 - **Keycloak**: OIDC identity provider (JWT)
 - **.NET Aspire**: Local orchestration
@@ -186,4 +186,4 @@ docs/
 
 **Generate the OpenAPI YAML document**
 
-`dotnet swagger tofile --output ./docs/openapi.yaml --yaml ./src/BattleshipGame.WebAPI/bin/Debug/net10.0/BattleshipGame.WebAPI.dll v1`
+`dotnet swagger tofile --output ./docs/openapi.yaml --yaml ./src/BattleshipGame.WebAPI/bin/Debug/net11.0/BattleshipGame.WebAPI.dll v1`

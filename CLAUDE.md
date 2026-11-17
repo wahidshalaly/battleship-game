@@ -36,7 +36,7 @@ dotnet tool restore
 
 # Generate OpenAPI docs
 dotnet build ./src/BattleshipGame.WebAPI/BattleshipGame.WebAPI.csproj
-dotnet swagger tofile --output ./docs/openapi.yaml --yaml ./src/BattleshipGame.WebAPI/bin/Debug/net10.0/BattleshipGame.WebAPI.dll v1
+dotnet swagger tofile --output ./docs/openapi.yaml --yaml ./src/BattleshipGame.WebAPI/bin/Debug/net11.0/BattleshipGame.WebAPI.dll v1
 ```
 
 ### Load Tests (K6 via Docker)
@@ -94,7 +94,7 @@ tests/
 
 **Attack flow**: `POST /api/games/{id}/attacks` → `GameplayService.PlayerAttackThenCounterAttackAsync` → `PlayerAttackCommand` → `Game.Attack(BoardSide.Opponent)` → if game not over → `OpponentAttackCommand` → `Game.Attack(BoardSide.Player)` → returns `LastRoundResult` containing both attack outcomes.
 
-**AI opponent selection**: `OpponentStrategy` enum is stored on `Game` at creation time. `OpponentStrategyFactory` uses .NET keyed DI to resolve either `RandomAttackOpponent` or `SemanticKernelOpponent`. The `ResilientComputerOpponentDecorator` wraps the SK strategy with Polly retry + circuit breaker for HTTP 429 and general `AiOpponentException`.
+**AI opponent selection**: `OpponentStrategy` enum is stored on `Game` at creation time. `ComputerOpponentFactory` uses .NET keyed DI to resolve either `RandomAttackOpponent` or `LlmOpponent`. `LlmOpponent` builds the prompts and parses the reply; it calls the model through `ILlmChat`, implemented by `SemanticKernelChat` (the only class that uses Semantic Kernel), which integration tests replace with a scripted fake. The `ResilientComputerOpponentDecorator` wraps the LLM strategy with Polly retry + circuit breaker for HTTP 429 and general `AiOpponentException`.
 
 **Domain events**: Aggregates call `AddDomainEvent(...)`, then the application layer calls `IDomainEventDispatcher.DispatchEventsAsync(aggregate)`, which publishes each event through MediatR to registered `INotificationHandler<T>` handlers.
 
@@ -107,7 +107,7 @@ tests/
 
 ### AI Opponent Configuration
 
-The `OpenAi` section in `appsettings.json` (or user secrets) configures the LLM endpoint. For local development, Ollama is expected at the configured URL. The default dev model is `llama-3.3-70b-versatile`. The SK strategy builds prompts via `BattleshipPromptBuilder` using `GameStateContext` (a read-only game state projection).
+The `OpenAi` section in `appsettings.json` (or user secrets) configures the LLM endpoint. For local development, Ollama is expected at the configured URL. The default dev model is `llama-3.3-70b-versatile`. The SK strategy builds prompts via `BattleshipPromptBuilder` using `GameSnapshot` (a read-only game state projection).
 
 ## Conventions
 
