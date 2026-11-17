@@ -103,7 +103,7 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         if (
             strategy == OpponentStrategy.SemanticKernel
             && (
-                string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENAI_API_KEY"))
+                !TestOpenAiSettings.HasConfiguredApiKey
                 || Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true"
             )
         )

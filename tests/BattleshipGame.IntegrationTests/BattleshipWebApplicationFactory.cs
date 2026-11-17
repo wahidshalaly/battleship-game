@@ -9,6 +9,9 @@ namespace BattleshipGame.IntegrationTests;
 internal sealed class BattleshipWebApplicationFactory(string connectionString)
     : WebApplicationFactory<Program>
 {
+    // Runs before the first factory instance boots the API, which reads OPENAI_* at startup.
+    static BattleshipWebApplicationFactory() => TestOpenAiSettings.EnsureEnvironment();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>

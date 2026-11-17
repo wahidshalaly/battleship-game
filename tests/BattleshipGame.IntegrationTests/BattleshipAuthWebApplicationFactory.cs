@@ -20,6 +20,9 @@ internal sealed class BattleshipAuthWebApplicationFactory(
     string keycloakAdminPassword
 ) : WebApplicationFactory<Program>
 {
+    // Runs before the first factory instance boots the API, which reads OPENAI_* at startup.
+    static BattleshipAuthWebApplicationFactory() => TestOpenAiSettings.EnsureEnvironment();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
