@@ -8,7 +8,7 @@ namespace BattleshipGame.WebAPI.Filters;
 /// <summary>
 /// Validates each action argument against its registered FluentValidation
 /// <see cref="IValidator{T}"/> (if any) before the action executes. Failures are added to
-/// <see cref="ModelStateDictionary"/> and, when invalid, the configured
+/// <see cref="Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary"/> and, when invalid, the configured
 /// <see cref="ApiBehaviorOptions.InvalidModelStateResponseFactory"/> produces the response.
 /// </summary>
 public sealed class FluentValidationActionFilter(

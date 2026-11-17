@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsAspireHost>true</IsAspireHost>
+    <!-- Run the AppHost with DCP/dashboard from NuGet (Aspire's default, AspireUseCliBundle=false)
+         rather than requiring the Aspire CLI bundle; ASPIRE010 only flags that default. -->
+    <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
     <UserSecretsId>1c399e78-1efe-4813-a97e-26aa78ae9f95</UserSecretsId>
   </PropertyGroup>
 
