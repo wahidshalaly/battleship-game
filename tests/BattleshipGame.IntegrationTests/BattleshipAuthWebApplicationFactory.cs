@@ -60,7 +60,7 @@ internal sealed class BattleshipAuthWebApplicationFactory(
         // validates them at startup.
         builder.ConfigureAppConfiguration(
             (_, config) =>
-                config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.Test.json"))
+                config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.json"))
         );
     }
 }
