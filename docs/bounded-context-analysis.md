@@ -14,9 +14,9 @@ Provide a concise analysis of the Battleship Game bounded contexts, their respon
   - External contract: Games API — create, place ship, attack (returns `LastRoundResult`), get/update state
 
 - **Player Context**
-  - Responsibility: Player identity and game history
-  - Core model: `Player` aggregate (`ActiveGameId`, `GameHistory`)
-  - Events (reactive): updates on game lifecycle (e.g., record history on `GameOver`)
+  - Responsibility: Player identity
+  - Core model: `Player` aggregate (`Username`, `IdentitySubject`)
+  - A player's active game and history are derived from the Game Context (games reference their owner by `PlayerId`); the player stores no copy, so there is nothing to keep in sync on `GameOver`
   - External contract: Players API — create, get by ID, get by username (history endpoint pending)
 
 - **Shared Kernel**
@@ -28,11 +28,11 @@ Provide a concise analysis of the Battleship Game bounded contexts, their respon
 
 - **Ownership**
   - Game Context owns board/ship state, attack rules, and game state transitions
-  - Player Context owns player identity, active game pointer, and history
+  - Player Context owns player identity only; which game is active (not over) is decided by the Game Context
 
 - **Integration**
   - Domain events are the integration mechanism between contexts
-  - Example: `ShipSunk`/`GameOver` raised in Game → Player reacts to update history/statistics
+  - Aggregates reference each other by ID in one direction only (`Game` → `Player`), so no event is needed to keep a back-reference in sync
 
 ## Contracts (External APIs)
 
@@ -57,13 +57,12 @@ Provide a concise analysis of the Battleship Game bounded contexts, their respon
   - Board constraints: no overlaps, valid placement, 5 ships limit
 
 - **Player Context**
-  - At most one `ActiveGameId`
-  - Completed games appended to `GameHistory`
+  - At most one active game (not `GameOver`) per player: checked by `StartNewGame` and enforced by a filtered unique index on `games.player_id`
 
 ## Interactions
 
 - Commands in Game Context produce domain events; rich results (`AttackResult`, `LastRoundResult`) returned to clients
-- Player Context should subscribe to game lifecycle events to maintain history/statistics
+- Player-facing views (active game, games played) are queries over games
 
 ## Observations (Alignment)
 
@@ -74,7 +73,7 @@ Provide a concise analysis of the Battleship Game bounded contexts, their respon
 
 ## Next Steps (Context-Focused)
 
-- Expose player game history endpoint to complete Player Context contract
-- Add cross-context event handlers (Player reacts to `GameOver`) to keep history/statistics in sync
+- Player statistics (games won, win rate, leaderboard) are queries over finished games, not state copied onto the player
+- Player-owned facts that cannot be derived from games (achievements, points ledger, rating) would be new aggregates keyed by `PlayerId`, recorded by handlers reacting to `GameOver`
 
 This analysis focuses on bounded contexts, responsibilities, and contracts. Detailed implementation priorities and tasks live in `technical-debt-and-roadmap.md`.

@@ -6,6 +6,8 @@ using BattleshipGame.Application.Features.Games.Commands;
 using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using BattleshipGame.Domain.Exceptions;
+using BattleshipGame.UnitTests.Domain.DomainModel;
 using Microsoft.Extensions.Logging;
 using static BattleshipGame.Domain.Common.Constants;
 
@@ -41,11 +43,7 @@ public class StartNewGameCommandHandlerTests
         var command = new StartNewGameCommand(playerId, boardSize);
         var ct = CancellationToken.None;
 
-        var player = new Player(playerId, "TestPlayer", "auth|subject");
-        A.CallTo(() => _playerRepository.SaveAsync(A<Player>._, ct))
-            .Invokes((Player p, CancellationToken _) => player = p)
-            .Returns(playerId);
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).Returns(player);
+        ArrangePlayerWithoutActiveGame(playerId);
 
         Game game = null!;
         A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, ct))
@@ -78,11 +76,7 @@ public class StartNewGameCommandHandlerTests
         var command = new StartNewGameCommand(playerId);
         var ct = CancellationToken.None;
 
-        var player = new Player(playerId, "TestPlayer", "auth|subject");
-        A.CallTo(() => _playerRepository.SaveAsync(A<Player>._, ct))
-            .Invokes((Player p, CancellationToken _) => player = p)
-            .Returns(playerId);
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).Returns(player);
+        ArrangePlayerWithoutActiveGame(playerId);
         A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, ct))
             .Returns(Task.FromResult(new GameId(Guid.NewGuid())));
 
@@ -99,5 +93,56 @@ public class StartNewGameCommandHandlerTests
                 )
             )
             .MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task Handle_WhenPlayerHasActiveGame_ShouldThrowPlayerHasActiveGameException()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        var ct = CancellationToken.None;
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+            .Returns(new Player(playerId, "TestPlayer", "auth|subject"));
+        var activeGame = new GameFixture().CreateGameInStateStarted(playerId);
+        A.CallTo(() => _gameRepository.GetActiveGameByPlayerIdAsync(playerId, ct))
+            .Returns(activeGame);
+
+        // Act
+        var act = () => _handler.Handle(new StartNewGameCommand(playerId), ct);
+
+        // Assert
+        (await act.Should().ThrowAsync<PlayerHasActiveGameException>())
+            .Which.ActiveGameId.Should()
+            .Be(activeGame.Id.Value);
+        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, A<CancellationToken>._))
+            .MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task Handle_WhenPlayerDoesNotExist_ShouldThrowPlayerNotFoundException()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        var ct = CancellationToken.None;
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+            .Returns(Task.FromResult<Player?>(null));
+
+        // Act
+        var act = () => _handler.Handle(new StartNewGameCommand(playerId), ct);
+
+        // Assert
+        await act.Should().ThrowAsync<PlayerNotFoundException>();
+        A.CallTo(() => _gameRepository.SaveAsync(A<Game>._, A<CancellationToken>._))
+            .MustNotHaveHappened();
+    }
+
+    private void ArrangePlayerWithoutActiveGame(PlayerId playerId)
+    {
+        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, A<CancellationToken>._))
+            .Returns(new Player(playerId, "TestPlayer", "auth|subject"));
+        A.CallTo(() =>
+                _gameRepository.GetActiveGameByPlayerIdAsync(playerId, A<CancellationToken>._)
+            )
+            .Returns(Task.FromResult<Game?>(null));
     }
 }

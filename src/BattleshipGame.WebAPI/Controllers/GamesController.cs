@@ -34,6 +34,7 @@ public class GamesController(
     [HttpPost]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> StartNewGame(
         [FromBody] CreateGameRequest request,
         CancellationToken ct
@@ -91,11 +92,7 @@ public class GamesController(
     public async Task<ActionResult<GetGameQueryResult>> GetActiveGame(CancellationToken ct)
     {
         var player = await playerService.GetCurrentRequiredAsync(ct);
-        if (player.ActiveGameId is null)
-            return NoContent();
-
-        var query = new GetGameQuery(player.ActiveGameId);
-        var game = await mediator.Send(query, ct);
+        var game = await mediator.Send(new GetActiveGameQuery(player.Id), ct);
         return game is null ? NoContent() : Ok(game);
     }
 

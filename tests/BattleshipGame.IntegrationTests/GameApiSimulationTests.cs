@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using BattleshipGame.Application.Features.Games.Queries;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
@@ -145,6 +146,44 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     }
 
     [Fact]
+    public async Task FinishedGame_IsNoLongerActive_AndPlayerCanStartAnotherGame()
+    {
+        await SeedPlayer(_clientSubject, $"u_done_{Guid.NewGuid():N}"[..32]);
+        var finishedGameId = await PlayRandomGameToGameOver();
+
+        var activeResponse = await _client.GetAsync("/api/games/active");
+        activeResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var me = await GetMe();
+        me.ActiveGameId.Should().BeNull();
+        me.TotalGamesPlayed.Should().Be(1);
+
+        var newGameId = await CreateGame(BoardSize, OpponentStrategy.Random);
+        newGameId.Should().NotBe(finishedGameId);
+        var active = await _client.GetFromJsonAsync<GetGameQueryResult>("/api/games/active");
+        active!.GameId.Should().Be(newGameId);
+        (await GetMe()).TotalGamesPlayed.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task CreateGame_WhilePlayerHasActiveGame_IsRejectedWithConflict()
+    {
+        await SeedPlayer(_clientSubject, $"u_busy_{Guid.NewGuid():N}"[..32]);
+        var activeGameId = await CreateGame(BoardSize, OpponentStrategy.Random);
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/games",
+            new { BoardSize, OpponentStrategy = OpponentStrategy.Random }
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        problem.GetProperty("activeGameId").GetGuid().Should().Be(activeGameId);
+        var active = await _client.GetFromJsonAsync<GetGameQueryResult>("/api/games/active");
+        active!.GameId.Should().Be(activeGameId);
+        (await GetMe()).TotalGamesPlayed.Should().Be(1);
+    }
+
+    [Fact]
     public async Task PlayerAttack_WhenAiReplyIsNotValidJson_RetriesThenFallsBackToRandom()
     {
         _chat.ReplyRaw("I think B7 looks promising!");
@@ -231,6 +270,24 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
 
     // Inserts a Player row directly into the DB so the test auth subject has an owner profile.
     // This replaces the removed POST /api/players endpoint (registration is now POST /api/auth/register).
+    private async Task<Guid> PlayRandomGameToGameOver()
+    {
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.Random);
+        var opponentPlacements = GenerateRandomShipPlacements(BoardSize);
+        await PlaceShips(gameId, GenerateRandomShipPlacements(BoardSize), opponentPlacements);
+        await StartGameplay(gameId);
+        await AttackShips(gameId, opponentPlacements);
+        await VerifyGameState(gameId, GameState.GameOver);
+        return gameId;
+    }
+
+    private async Task<PlayerResponse> GetMe()
+    {
+        var me = await _client.GetFromJsonAsync<PlayerResponse>("/api/players/me");
+        me.Should().NotBeNull();
+        return me;
+    }
+
     private async Task SeedPlayer(string subject, string username)
     {
         await using var db = postgres.CreateDbContext();

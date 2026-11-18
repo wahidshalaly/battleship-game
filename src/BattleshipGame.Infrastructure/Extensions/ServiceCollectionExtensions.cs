@@ -42,9 +42,10 @@ public static class ServiceCollectionExtensions
         RegisterResiliencePolicies(services, configuration);
         RegisterPersistence(services, configuration);
 
-        // Register repositories (singleton for in-memory, will change when using EF Core)
         services.AddSingleton<IBroadcastor, Broadcaster>();
-        services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
+
+        // Scoped so event handlers resolve from the request scope and share its DbContext.
+        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
         return services;
     }

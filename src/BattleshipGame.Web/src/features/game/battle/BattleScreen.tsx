@@ -43,6 +43,7 @@ export function BattleScreen({ gameId, boardSize }: BattleScreenProps) {
         setGameOver(true)
         // Refresh the game so GamePage swaps to the result view.
         void queryClient.invalidateQueries({ queryKey: ['game', gameId] })
+        void queryClient.invalidateQueries({ queryKey: ['game', 'active'] })
       }
     } catch (err) {
       setError(problemMessage(err, 'That attack was rejected.'))

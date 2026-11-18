@@ -1,3 +1,4 @@
+using BattleshipGame.Application.Features.Players.Queries;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.Exceptions;
@@ -25,7 +26,10 @@ public class PlayersController(ILogger<PlayersController> logger, IPlayerService
     {
         var player = await playerService.GetCurrentRequiredAsync(ct);
         logger.LogDebug("GET /me resolved player {PlayerId}", player.Id.Value);
-        return Ok(ToResponse(player));
+        var result =
+            await playerService.GetByIdAsync(player.Id, ct)
+            ?? throw new PlayerNotFoundException(player.Id);
+        return Ok(ToResponse(result));
     }
 
     /// <summary>
@@ -39,14 +43,7 @@ public class PlayersController(ILogger<PlayersController> logger, IPlayerService
         var result =
             await playerService.GetByIdAsync(new PlayerId(id), ct)
             ?? throw new PlayerNotFoundException(id);
-        return Ok(
-            new PlayerResponse(
-                result.PlayerId.Value,
-                result.Username,
-                result.ActiveGameId,
-                result.TotalGamesPlayed
-            )
-        );
+        return Ok(ToResponse(result));
     }
 
     /// <summary>
@@ -63,18 +60,11 @@ public class PlayersController(ILogger<PlayersController> logger, IPlayerService
         var result =
             await playerService.GetByUsernameAsync(username, ct)
             ?? throw new PlayerNotFoundException(username);
-        return Ok(
-            new PlayerResponse(
-                result.PlayerId.Value,
-                result.Username,
-                result.ActiveGameId,
-                result.TotalGamesPlayed
-            )
-        );
+        return Ok(ToResponse(result));
     }
 
-    private static PlayerResponse ToResponse(Player player) =>
-        new(player.Id.Value, player.Username, player.ActiveGameId?.Value, player.TotalGamesPlayed);
+    private static PlayerResponse ToResponse(GetPlayerQueryResult result) =>
+        new(result.PlayerId.Value, result.Username, result.ActiveGameId, result.TotalGamesPlayed);
 }
 
 /// <param name="Id">The player's unique identifier.</param>

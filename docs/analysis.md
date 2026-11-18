@@ -66,8 +66,9 @@ Represents individual ships on the board:
 #### Player Aggregate Root
 Represents a game participant:
 - **PlayerId**: Strongly-typed identifier
-- **ActiveGameId**: Current game reference
-- **GameHistory**: Collection of previous games
+- **Username** and **IdentitySubject**: the player's identity
+
+A player's active game (at most one, not over) and game history (games that are over) are derived from the games that reference the player; they are not stored on the player.
 
 ### Value Objects
 

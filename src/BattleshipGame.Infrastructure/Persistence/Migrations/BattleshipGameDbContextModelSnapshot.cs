@@ -17,7 +17,7 @@ namespace BattleshipGame.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -69,6 +69,11 @@ namespace BattleshipGame.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PlayerId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_games_player_id_active")
+                        .HasFilter("state <> 4");
+
                     b.ToTable("games", (string)null);
                 });
 
@@ -78,10 +83,6 @@ namespace BattleshipGame.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    b.Property<Guid?>("ActiveGameId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("active_game_id");
 
                     b.Property<string>("IdentitySubject")
                         .IsRequired()
@@ -101,10 +102,6 @@ namespace BattleshipGame.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ActiveGameId")
-                        .IsUnique()
-                        .HasFilter("active_game_id IS NOT NULL");
-
                     b.HasIndex("IdentitySubject")
                         .IsUnique();
 
@@ -112,21 +109,6 @@ namespace BattleshipGame.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("players", (string)null);
-                });
-
-            modelBuilder.Entity("BattleshipGame.Infrastructure.Persistence.Entities.PlayerGameHistoryEntry", b =>
-                {
-                    b.Property<Guid>("PlayerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("player_id");
-
-                    b.Property<Guid>("GameId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("game_id");
-
-                    b.HasKey("PlayerId", "GameId");
-
-                    b.ToTable("player_game_history", (string)null);
                 });
 
             modelBuilder.Entity("BattleshipGame.Infrastructure.Persistence.Entities.GameEntity", b =>
@@ -274,22 +256,6 @@ namespace BattleshipGame.Infrastructure.Persistence.Migrations
 
                     b.Navigation("OwnBoard")
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("BattleshipGame.Infrastructure.Persistence.Entities.PlayerGameHistoryEntry", b =>
-                {
-                    b.HasOne("BattleshipGame.Infrastructure.Persistence.Entities.PlayerEntity", "Player")
-                        .WithMany("GameHistory")
-                        .HasForeignKey("PlayerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Player");
-                });
-
-            modelBuilder.Entity("BattleshipGame.Infrastructure.Persistence.Entities.PlayerEntity", b =>
-                {
-                    b.Navigation("GameHistory");
                 });
 #pragma warning restore 612, 618
         }

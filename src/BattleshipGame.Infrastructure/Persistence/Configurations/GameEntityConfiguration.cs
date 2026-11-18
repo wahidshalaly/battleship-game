@@ -1,3 +1,4 @@
+using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -22,6 +23,12 @@ internal class GameEntityConfiguration : IEntityTypeConfiguration<GameEntity>
         builder.Property(g => g.LastUpdatedAt).HasColumnName("last_updated_at").IsRequired();
 
         builder.Property<uint>("xmin").HasColumnType("xid").IsRowVersion();
+
+        builder
+            .HasIndex(g => g.PlayerId)
+            .IsUnique()
+            .HasFilter($"state <> {(int)GameState.GameOver}")
+            .HasDatabaseName("IX_games_player_id_active");
 
         builder.OwnsOne(
             g => g.OwnBoard,

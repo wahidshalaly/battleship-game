@@ -5,270 +5,130 @@ using BattleshipGame.Application.Features.Players.Queries;
 using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
+using BattleshipGame.UnitTests.Domain.DomainModel;
 
 namespace BattleshipGame.UnitTests.Application.Features.Players.Queries;
 
 public class GetPlayerQueryHandlerTests
 {
-    private readonly IPlayerRepository _playerRepository;
+    private readonly IPlayerRepository _playerRepository = A.Fake<IPlayerRepository>();
+    private readonly IGameRepository _gameRepository = A.Fake<IGameRepository>();
     private readonly GetPlayerByIdHandler _handler;
 
-    public GetPlayerQueryHandlerTests()
-    {
-        _playerRepository = A.Fake<IPlayerRepository>();
-        _handler = new GetPlayerByIdHandler(_playerRepository);
-    }
+    private readonly PlayerId _playerId = new(Guid.NewGuid());
+    private readonly CancellationToken _ct = CancellationToken.None;
+
+    public GetPlayerQueryHandlerTests() =>
+        _handler = new GetPlayerByIdHandler(_playerRepository, _gameRepository);
 
     [Fact]
-    public async Task Handle_WhenPlayerExists_ShouldReturnPlayerResult()
+    public async Task Handle_WhenPlayerHasNoGames_ShouldReturnPlayerWithoutActiveGame()
     {
         // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerByIdQuery(playerId);
-        var ct = CancellationToken.None;
-
-        var player = CreatePlayer(playerId, "TestPlayer", null, 0);
-
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).Returns(player);
+        ArrangePlayer("TestPlayer");
+        ArrangeGames(activeGame: null, totalGames: 0);
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(new GetPlayerByIdQuery(_playerId), _ct);
 
         // Assert
         result.Should().NotBeNull();
-        result.PlayerId.Should().Be(playerId);
+        result.PlayerId.Should().Be(_playerId);
         result.Username.Should().Be("TestPlayer");
         result.ActiveGameId.Should().BeNull();
         result.TotalGamesPlayed.Should().Be(0);
-
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]
-    public async Task Handle_WhenPlayerDoesNotExist_ShouldReturnNull()
+    public async Task Handle_WhenPlayerHasActiveGame_ShouldReturnItsId()
     {
         // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerByIdQuery(playerId);
-        var ct = CancellationToken.None;
+        var activeGame = new GameFixture().CreateGameInStateStarted(_playerId);
+        ArrangePlayer("ActivePlayer");
+        ArrangeGames(activeGame, totalGames: 3);
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct))
+        // Act
+        var result = await _handler.Handle(new GetPlayerByIdQuery(_playerId), _ct);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.ActiveGameId.Should().Be(activeGame.Id.Value);
+        result.TotalGamesPlayed.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task Handle_WhenPlayerHasOnlyFinishedGames_ShouldReturnNoActiveGameAndTheirCount()
+    {
+        // Arrange
+        ArrangePlayer("ExperiencedPlayer");
+        ArrangeGames(activeGame: null, totalGames: 5);
+
+        // Act
+        var result = await _handler.Handle(new GetPlayerByIdQuery(_playerId), _ct);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.ActiveGameId.Should().BeNull();
+        result.TotalGamesPlayed.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task Handle_WhenPlayerDoesNotExist_ShouldReturnNullWithoutReadingGames()
+    {
+        // Arrange
+        A.CallTo(() => _playerRepository.GetByIdAsync(_playerId, _ct))
             .Returns(Task.FromResult<Player?>(null));
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(new GetPlayerByIdQuery(_playerId), _ct);
 
         // Assert
         result.Should().BeNull();
-
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).MustHaveHappenedOnceExactly();
+        A.CallTo(_gameRepository).MustNotHaveHappened();
     }
 
     [Fact]
     public async Task Handle_WhenRepositoryThrowsException_ShouldPropagateException()
     {
         // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerByIdQuery(playerId);
-        var ct = CancellationToken.None;
         var expectedException = new InvalidOperationException("Database connection failed");
+        A.CallTo(() => _playerRepository.GetByIdAsync(_playerId, _ct)).Throws(expectedException);
 
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).Throws(expectedException);
+        // Act
+        var act = () => _handler.Handle(new GetPlayerByIdQuery(_playerId), _ct);
 
-        // Act & Assert
-        var actualException = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _handler.Handle(query, ct)
-        );
-
-        actualException.Should().BeSameAs(expectedException);
+        // Assert
+        (await act.Should().ThrowAsync<InvalidOperationException>())
+            .Which.Should()
+            .BeSameAs(expectedException);
     }
 
     [Fact]
-    public async Task Handle_WhenPlayerHasActiveGame_ShouldReturnActiveGameId()
+    public async Task Handle_ShouldPassCancellationTokenToRepositories()
     {
         // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var activeGameId = new GameId(Guid.NewGuid());
-        var query = new GetPlayerByIdQuery(playerId);
-        var ct = CancellationToken.None;
-
-        var player = CreatePlayer(playerId, "PlayerWithGame", activeGameId, 0);
-
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).Returns(player);
+        using var cts = new CancellationTokenSource();
+        A.CallTo(() => _playerRepository.GetByIdAsync(_playerId, cts.Token))
+            .Returns(new Player(_playerId, "TestPlayer", "auth|subject"));
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        await _handler.Handle(new GetPlayerByIdQuery(_playerId), cts.Token);
 
         // Assert
-        result.Should().NotBeNull();
-        result.ActiveGameId.Should().Be(activeGameId.Value);
-        result.TotalGamesPlayed.Should().Be(1); // Active game counts as 1
+        A.CallTo(() => _gameRepository.GetActiveGameByPlayerIdAsync(_playerId, cts.Token))
+            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _gameRepository.CountByPlayerIdAsync(_playerId, cts.Token))
+            .MustHaveHappenedOnceExactly();
     }
 
-    [Fact]
-    public async Task Handle_WhenPlayerHasNoActiveGameButHasHistory_ShouldReturnCorrectTotalGames()
+    private void ArrangePlayer(string username) =>
+        A.CallTo(() => _playerRepository.GetByIdAsync(_playerId, _ct))
+            .Returns(new Player(_playerId, username, "auth|subject"));
+
+    private void ArrangeGames(Game? activeGame, int totalGames)
     {
-        // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerByIdQuery(playerId);
-        var ct = CancellationToken.None;
-
-        var player = CreatePlayer(playerId, "ExperiencedPlayer", null, 3);
-
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).Returns(player);
-
-        // Act
-        var result = await _handler.Handle(query, ct);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.ActiveGameId.Should().BeNull();
-        result.TotalGamesPlayed.Should().Be(3);
-    }
-
-    [Fact]
-    public async Task Handle_WhenPlayerHasActiveGameAndHistory_ShouldReturnCorrectTotalGames()
-    {
-        // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var activeGameId = new GameId(Guid.NewGuid());
-        var query = new GetPlayerByIdQuery(playerId);
-        var ct = CancellationToken.None;
-
-        var player = CreatePlayer(playerId, "ActivePlayer", activeGameId, 5);
-
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).Returns(player);
-
-        // Act
-        var result = await _handler.Handle(query, ct);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.ActiveGameId.Should().Be(activeGameId.Value);
-        result.TotalGamesPlayed.Should().Be(6); // 5 from history + 1 active
-    }
-
-    [Theory]
-    [InlineData("TestUser")]
-    [InlineData("Player123")]
-    [InlineData("AnotherPlayer")]
-    [InlineData("user_with_underscores")]
-    public async Task Handle_WithDifferentUsernames_ShouldReturnCorrectUsername(string username)
-    {
-        // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerByIdQuery(playerId);
-        var ct = CancellationToken.None;
-
-        var player = CreatePlayer(playerId, username, null, 0);
-
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).Returns(player);
-
-        // Act
-        var result = await _handler.Handle(query, ct);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Username.Should().Be(username);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldRespectCancellationToken()
-    {
-        // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerByIdQuery(playerId);
-        var cts = new CancellationTokenSource();
-        await cts.CancelAsync();
-
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, cts.Token))
-            .Throws(new OperationCanceledException());
-
-        // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            _handler.Handle(query, cts.Token)
-        );
-    }
-
-    [Fact]
-    public async Task Handle_ShouldMapAllPlayerPropertiesCorrectly()
-    {
-        // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var activeGameId = new GameId(Guid.NewGuid());
-        var query = new GetPlayerByIdQuery(playerId);
-        var ct = CancellationToken.None;
-        const string expectedUsername = "CompleteTestPlayer";
-        const int expectedHistoryCount = 7;
-
-        var player = CreatePlayer(playerId, expectedUsername, activeGameId, expectedHistoryCount);
-
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).Returns(player);
-
-        // Act
-        var result = await _handler.Handle(query, ct);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.PlayerId.Should().Be(playerId);
-        result.PlayerId.Value.Should().Be(playerId.Value);
-        result.Username.Should().Be(expectedUsername);
-        result.ActiveGameId.Should().Be(activeGameId.Value);
-        result.TotalGamesPlayed.Should().Be(expectedHistoryCount + 1); // History + active game
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(5)]
-    [InlineData(10)]
-    [InlineData(100)]
-    public async Task Handle_WithDifferentGameHistoryCounts_ShouldReturnCorrectTotalGames(
-        int historyCount
-    )
-    {
-        // Arrange
-        var playerId = new PlayerId(Guid.NewGuid());
-        var query = new GetPlayerByIdQuery(playerId);
-        var ct = CancellationToken.None;
-
-        var player = CreatePlayer(playerId, "TestPlayer", null, historyCount);
-
-        A.CallTo(() => _playerRepository.GetByIdAsync(playerId, ct)).Returns(player);
-
-        // Act
-        var result = await _handler.Handle(query, ct);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.TotalGamesPlayed.Should().Be(historyCount);
-    }
-
-    private static Player CreatePlayer(
-        PlayerId playerId,
-        string username,
-        GameId? activeGameId,
-        int gameHistoryCount
-    )
-    {
-        var player = new Player(playerId, username, "auth|subject", activeGameId);
-
-        // Use reflection to add games to history to simulate TotalGamesPlayed
-        var gameHistoryField = typeof(Player).GetField(
-            "_gameHistory",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-        );
-
-        if (gameHistoryField != null)
-        {
-            var gameHistory = (System.Collections.Generic.List<GameId>)
-                gameHistoryField.GetValue(player)!;
-            for (int i = 0; i < gameHistoryCount; i++)
-            {
-                gameHistory.Add(new GameId(Guid.NewGuid()));
-            }
-        }
-
-        return player;
+        A.CallTo(() => _gameRepository.GetActiveGameByPlayerIdAsync(_playerId, _ct))
+            .Returns(activeGame);
+        A.CallTo(() => _gameRepository.CountByPlayerIdAsync(_playerId, _ct)).Returns(totalGames);
     }
 }

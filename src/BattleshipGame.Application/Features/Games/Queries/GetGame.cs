@@ -24,7 +24,11 @@ public record GetGameQueryResult(
     int BoardSize,
     GameState State,
     BoardSide WinnerSide
-);
+)
+{
+    internal static GetGameQueryResult From(Game game) =>
+        new(game.Id.Value, game.PlayerId.Value, game.BoardSize, game.State, game.WinnerSide);
+}
 
 /// <summary>
 /// Handler for getting a game by ID.
@@ -38,14 +42,6 @@ internal class GetGameHandler(IGameRepository gameRepository)
     {
         var game = await gameRepository.GetByIdAsync(request.GameId, ct);
 
-        return game is null
-            ? null
-            : new GetGameQueryResult(
-                game.Id.Value,
-                game.PlayerId.Value,
-                game.BoardSize,
-                game.State,
-                game.WinnerSide
-            );
+        return game is null ? null : GetGameQueryResult.From(game);
     }
 }

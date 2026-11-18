@@ -38,8 +38,8 @@ classDiagram
     class Player {
         <<AggregateRoot>>
         +PlayerId Id
-        +GameId ActiveGameId
-        +List GameHistory
+        +string Username
+        +string IdentitySubject
     }
 
     class Board {
