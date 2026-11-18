@@ -134,10 +134,15 @@ The API reads the LLM settings from the `OPENAI_MODEL_ID`, `OPENAI_ENDPOINT` and
 ## Conventions
 
 ### C# Style
+- Idiomatic C# following the Microsoft .NET coding conventions; prioritise readability, testability and SOLID
+- Naming: PascalCase for types, methods and properties; camelCase for locals and parameters; `_camelCase` for private fields; `I` prefix for interfaces
+- Nullable reference types are enabled in every project; async/await end to end
+- Named methods instead of anonymous lambdas in business logic (short LINQ and EF predicates are fine)
+- `using` declarations for `IDisposable` objects
 - Primary constructor syntax for DI: `public class Foo(IBar bar) { ... }`
-- `record` types for immutable data (DTOs, value objects, strongly-typed IDs)
+- `record` types for immutable data (DTOs, query results, strongly-typed IDs); domain value objects derive from `ValueObject`
 - `var` when type is obvious; explicit type otherwise
-- `Async` suffix on all async methods
+- `Async` suffix on async methods, except where the framework fixes the name (MediatR `Handle`, controller actions)
 - `nameof()` in exceptions and logging
 - `switch` expressions for concise conditionals; pattern matching for type checks
 - `??`, `?.` and throw expressions for null handling
@@ -151,10 +156,14 @@ The API reads the LLM settings from the `OPENAI_MODEL_ID`, `OPENAI_ENDPOINT` and
 - Tests keep the `// Arrange` / `// Act` / `// Assert` markers
 
 ### Architecture Rules
+- Clean Architecture: dependencies point inward (WebAPI, Infrastructure → Application → Domain)
+- Dependency injection for services and repositories, registered per layer in `ServiceCollectionExtensions`
 - No logic in controllers — delegate to `IGameplayService` or MediatR commands
 - No static state or service locators
 - Config via `appsettings.json` and `IOptions<T>`, never hardcoded
-- Never expose domain entities directly in API responses — use DTOs
+- Never expose domain entities directly in API responses — use DTOs, mapped by hand (static `From` factories, `ToResponse`); no AutoMapper
+- Avoid fat controllers and God classes
+- Structured logging with `ILogger<T>`
 - Domain layer has zero dependencies on other layers or NuGet packages beyond the BCL
 - Aggregates reference each other by ID, in one direction only (`Game → Player`)
 - Derive state from its owning aggregate instead of copying it into another; a copy needs syncing and drifts
@@ -201,4 +210,4 @@ For SDK and library documentation, use Context7.
 
 ## Formatting
 
-CSharpier is the formatter with `printWidth: 100` and no Prettier-style trailing commas. Run `dotnet csharpier format .` before committing (a Claude Code hook in `.claude/settings.json` also runs it after every edit).
+CSharpier is the formatter with `printWidth: 100` and no Prettier-style trailing commas. Use CSharpier, not `dotnet format`. Run `dotnet csharpier format .` before committing (a Claude Code hook in `.claude/settings.json` also runs it after every edit).
