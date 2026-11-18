@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using BattleshipGame.Domain.Common;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
@@ -212,6 +213,54 @@ public class GameTests
         game.State.Should().Be(GameState.Ready);
     }
 
+    [Theory]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
+    public void IsShipSunk_WhenShipNotAttacked_ShouldBeFalse(BoardSide boardSide)
+    {
+        var game = _fixture.CreateGameInStateStarted(_playerId);
+
+        game.GetShips(boardSide).Should().OnlyContain(id => !game.IsShipSunk(boardSide, id));
+    }
+
+    [Fact]
+    public void IsShipSunk_WhenShipPartiallyHit_ShouldBeFalse()
+    {
+        var game = _fixture.CreateGameInStateStarted(_playerId);
+        var battleship = GetShipOfKind(game, BoardSide.Opponent, ShipKind.Battleship);
+
+        game.Attack(
+            BoardSide.Opponent,
+            game.GetShipPosition(BoardSide.Opponent, battleship).First()
+        );
+
+        game.IsShipSunk(BoardSide.Opponent, battleship).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(BoardSide.Player)]
+    [InlineData(BoardSide.Opponent)]
+    public void IsShipSunk_WhenAllShipCellsHit_ShouldBeTrue(BoardSide boardSide)
+    {
+        var game = _fixture.CreateGameInStateStarted(_playerId);
+        var destroyer = GetShipOfKind(game, boardSide, ShipKind.Destroyer);
+
+        _fixture.AttackShip(game, boardSide, destroyer);
+
+        game.IsShipSunk(boardSide, destroyer).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsShipSunk_WhenShipNotOnBoard_ThrowsException()
+    {
+        var game = _fixture.CreateGameInStateStarted(_playerId);
+        var unknownShip = new ShipId(Guid.NewGuid());
+
+        var act = () => game.IsShipSunk(BoardSide.Player, unknownShip);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     [Fact]
     public void StartGameplay_WhenGameIsNotReady_ThrowsException()
     {
@@ -400,4 +449,7 @@ public class GameTests
 
         game.LastUpdatedAt.Should().BeCloseTo(initialLastUpdated, TimestampTolerance);
     }
+
+    private static ShipId GetShipOfKind(Game game, BoardSide boardSide, ShipKind kind) =>
+        game.GetShips(boardSide).Single(id => game.GetShipKind(boardSide, id) == kind);
 }
