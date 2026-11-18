@@ -129,7 +129,7 @@ tests/
 
 ### AI Opponent Configuration
 
-The API binds the LLM settings to `OpenAiOptions` (section `OpenAi`: `ModelId`, `Endpoint`, `ApiKey`) and refuses to start without them. For local development, run Ollama: `appsettings.Development.json` holds the endpoint (`http://localhost:11434/v1`) and model (`gemma4`), and the API key goes in user secrets (`dotnet user-secrets set "OpenAi:ApiKey" ollama --project src/BattleshipGame.WebAPI`; any value works); see `docs/local-dev.md`. Hosted environments can use `OpenAi__*` environment variables. `BattleshipPromptBuilder` builds the prompts from `GameSnapshot` (a read-only game state projection).
+The API binds the LLM settings to `OpenAiOptions` (section `OpenAi`: `ModelId`, `Endpoint`, `ApiKey`) and refuses to start without them. For local development, `appsettings.Development.json` points at Ollama (endpoint `http://localhost:11434/v1`, model `gemma4`, any API key) and integration tests use placeholders from `appsettings.Test.json`; see `docs/local-dev.md`. Hosted environments can use `OpenAi__*` environment variables. `BattleshipPromptBuilder` builds the prompts from `GameSnapshot` (a read-only game state projection).
 
 ## Conventions
 

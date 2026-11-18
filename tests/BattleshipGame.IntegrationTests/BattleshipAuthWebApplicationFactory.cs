@@ -50,15 +50,17 @@ internal sealed class BattleshipAuthWebApplicationFactory(
         builder.UseSetting("Keycloak:AdminUsername", keycloakAdminUsername);
         builder.UseSetting("Keycloak:AdminPassword", keycloakAdminPassword);
 
-        // Never contacted (the LLM is faked above), but the API validates these at startup.
-        builder.UseSetting("OpenAi:ModelId", "test-model");
-        builder.UseSetting("OpenAi:Endpoint", "http://127.0.0.1:9/v1");
-        builder.UseSetting("OpenAi:ApiKey", "test-placeholder-not-a-real-key");
-
         // A failing AI opponent is retried with real (2s+) backoff before falling back; one retry
         // keeps those tests fast while still exercising the retry path.
         builder.UseSetting("Resilience:AiOpponent:MaxRetryAttempts", "1");
 
         builder.UseEnvironment("Test");
+
+        // Placeholder OpenAi settings: never contacted (the LLM is faked above), but the API
+        // validates them at startup.
+        builder.ConfigureAppConfiguration(
+            (_, config) =>
+                config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.Test.json"))
+        );
     }
 }
