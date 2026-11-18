@@ -49,7 +49,7 @@ builder
     .WaitFor(webapi);
 
 // The OpenAI-compatible model is managed externally (Ollama locally, a cloud provider when
-// hosted). The Web API reads it from its own OpenAi settings: appsettings.Development.json and
-// user secrets locally, see docs/local-dev.md.
+// hosted). The Web API reads it from its own OpenAi settings (appsettings.Development.json
+// locally), see docs/local-dev.md.
 
 builder.Build().Run();

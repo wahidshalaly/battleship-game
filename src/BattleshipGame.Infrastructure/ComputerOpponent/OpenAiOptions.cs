@@ -5,8 +5,7 @@ namespace BattleshipGame.Infrastructure.ComputerOpponent;
 /// <summary>
 /// Settings for the OpenAI-compatible chat endpoint the LLM opponent talks to (Ollama locally,
 /// a cloud provider when hosted). Bound from the <see cref="SectionName"/> configuration section,
-/// so they can come from <c>appsettings.json</c>, user secrets or <c>OpenAi__*</c> environment
-/// variables.
+/// so they can come from <c>appsettings.*.json</c> or <c>OpenAi__*</c> environment variables.
 /// </summary>
 public sealed class OpenAiOptions
 {
@@ -29,8 +28,8 @@ public sealed class OpenAiOptions
     public string Endpoint { get; set; } = string.Empty;
 
     /// <summary>
-    /// The API key sent to the endpoint. Keep it out of the repository (user secrets or the
-    /// host's secret store); Ollama accepts any value.
+    /// The API key sent to the endpoint. Ollama accepts any value; a hosted provider's real key
+    /// belongs in the host's environment or secret store, not in the repository.
     /// </summary>
     [Required]
     public string ApiKey { get; set; } = string.Empty;

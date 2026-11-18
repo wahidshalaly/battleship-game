@@ -60,17 +60,17 @@ The SemanticKernel opponent talks to an OpenAI-compatible endpoint, configured b
 section (`ModelId`, `Endpoint`, `ApiKey`). The API validates all three at startup and won't start
 if any is missing, even if you only play against the `Random` opponent.
 
-For local development, run Ollama. `appsettings.Development.json` already points at it (endpoint
-`http://localhost:11434/v1`, model `gemma4`); the API key stays out of the repository, in user
-secrets. Ollama accepts any value:
+For local development, `appsettings.Development.json` already points at Ollama (endpoint
+`http://localhost:11434/v1`, model `gemma4`, API key `ollama`; Ollama accepts any key), so the
+API starts with no extra setup. To play against the AI opponent, run Ollama and pull the model:
 
 ```bash
-dotnet user-secrets set "OpenAi:ApiKey" "ollama" --project src/BattleshipGame.WebAPI
+ollama pull gemma4
 ```
 
-To use another model or endpoint locally, override `OpenAi:ModelId` / `OpenAi:Endpoint` the same
-way. Hosted environments can use a settings file or the standard environment variables
-`OpenAi__ModelId`, `OpenAi__Endpoint` and `OpenAi__ApiKey`.
+To try another model or endpoint, change `OpenAi:ModelId` / `OpenAi:Endpoint` there. Hosted
+environments can use a settings file or the standard environment variables `OpenAi__ModelId`,
+`OpenAi__Endpoint` and `OpenAi__ApiKey`; keep a real provider's key out of the repository.
 
 ## Database Migrations
 
