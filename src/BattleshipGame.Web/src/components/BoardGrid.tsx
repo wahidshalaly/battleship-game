@@ -27,7 +27,7 @@ export function BoardGrid({
   const digits = Array.from({ length: boardSize }, (_, i) => i + 1)
 
   return (
-    <div>
+    <div role="group" aria-label={label}>
       {label && <p className="mb-2 text-center text-sm font-medium text-slate-300">{label}</p>}
       <div
         className="inline-grid gap-0.5"
@@ -53,6 +53,7 @@ export function BoardGrid({
                 <button
                   key={code}
                   type="button"
+                  aria-label={code}
                   disabled={disabled}
                   onClick={() => onCellClick?.(code)}
                   onMouseEnter={() => onCellHover?.(code)}
