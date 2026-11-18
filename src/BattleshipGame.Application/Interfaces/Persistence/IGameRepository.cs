@@ -48,5 +48,11 @@ public interface IGameRepository
     /// <returns>The active game if found, otherwise null.</returns>
     Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
 
+    /// <summary>
+    /// Counts all games of a specific player, finished or not.
+    /// </summary>
+    /// <param name="playerId">The player identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The number of games.</returns>
     Task<int> CountByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
 }

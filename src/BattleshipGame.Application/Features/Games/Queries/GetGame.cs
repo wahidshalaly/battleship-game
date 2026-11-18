@@ -26,6 +26,11 @@ public record GetGameQueryResult(
     BoardSide WinnerSide
 )
 {
+    /// <summary>
+    /// Creates the result for a game.
+    /// </summary>
+    /// <param name="game">The game.</param>
+    /// <returns>The game result.</returns>
     internal static GetGameQueryResult From(Game game) =>
         new(game.Id.Value, game.PlayerId.Value, game.BoardSize, game.State, game.WinnerSide);
 }

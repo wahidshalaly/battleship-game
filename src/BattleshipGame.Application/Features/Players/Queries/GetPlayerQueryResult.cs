@@ -17,6 +17,13 @@ public record GetPlayerQueryResult(
     int TotalGamesPlayed
 )
 {
+    /// <summary>
+    /// Creates the result for a player, reading their active game and game count from games.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <param name="gameRepository">The game repository.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The player result.</returns>
     internal static async Task<GetPlayerQueryResult> FromAsync(
         Player player,
         IGameRepository gameRepository,
