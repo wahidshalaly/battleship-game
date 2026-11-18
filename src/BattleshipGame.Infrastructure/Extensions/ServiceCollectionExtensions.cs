@@ -38,7 +38,7 @@ public static class ServiceCollectionExtensions
     )
     {
         RegisterIdentity(services, configuration);
-        RegisterLlmChat(services);
+        RegisterLlmChat(services, configuration);
         RegisterOpponentStrategies(services);
         RegisterResiliencePolicies(services, configuration);
         RegisterPersistence(services, configuration);
@@ -65,35 +65,33 @@ public static class ServiceCollectionExtensions
             .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30));
     }
 
-    private static void RegisterLlmChat(IServiceCollection services)
+    private static void RegisterLlmChat(IServiceCollection services, IConfiguration configuration)
     {
-        var modelId = Environment.GetEnvironmentVariable("OPENAI_MODEL_ID");
-        var endpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
-        var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        // Fail fast at startup if any LLM setting is missing rather than on the first AI move.
+        services
+            .AddOptions<OpenAiOptions>()
+            .Bind(configuration.GetSection(OpenAiOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
-        // Validate OpenAI configuration
-        if (
-            string.IsNullOrEmpty(modelId)
-            || string.IsNullOrEmpty(endpoint)
-            || string.IsNullOrEmpty(apiKey)
-        )
-        {
-            throw new InvalidOperationException(
-                "OpenAI configuration incomplete. Set environment variables: OPENAI_MODEL_ID, OPENAI_ENDPOINT, and OPENAI_API_KEY."
-            );
-        }
+        // The opponent depends on ILlmChat; Semantic Kernel stays behind this adapter.
+        services.AddSingleton<ILlmChat>(CreateLlmChat);
+    }
+
+    private static SemanticKernelChat CreateLlmChat(IServiceProvider provider)
+    {
+        var options = provider.GetRequiredService<IOptions<OpenAiOptions>>().Value;
 
 #pragma warning disable SKEXP0010
         var chatCompletion = new OpenAIChatCompletionService(
-            modelId,
-            new Uri(endpoint),
-            apiKey,
+            options.ModelId,
+            new Uri(options.Endpoint),
+            options.ApiKey,
             httpClient: new HttpClient { Timeout = TimeSpan.FromMinutes(5) }
         );
 #pragma warning restore SKEXP0010
 
-        // The opponent depends on ILlmChat; Semantic Kernel stays behind this adapter.
-        services.AddSingleton<ILlmChat>(new SemanticKernelChat(chatCompletion));
+        return new SemanticKernelChat(chatCompletion);
     }
 
     private static void RegisterOpponentStrategies(IServiceCollection services)

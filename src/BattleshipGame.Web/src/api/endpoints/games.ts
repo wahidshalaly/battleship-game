@@ -2,6 +2,7 @@ import { client, unwrap } from '../client'
 import type { components } from '../schema'
 
 type GetGameQueryResult = components['schemas']['GetGameQueryResult']
+type GetGameBoardsQueryResult = components['schemas']['GetGameBoardsQueryResult']
 type LastRoundResult = components['schemas']['LastRoundResult']
 type GameStateResponse = components['schemas']['GameStateResponse']
 
@@ -11,6 +12,10 @@ export function createGame(body: components['schemas']['CreateGameRequest']): Pr
 
 export function getGame(id: string): Promise<GetGameQueryResult> {
   return unwrap(client.GET('/api/games/{id}', { params: { path: { id } } }))
+}
+
+export function getGameBoards(id: string): Promise<GetGameBoardsQueryResult> {
+  return unwrap(client.GET('/api/games/{id}/boards', { params: { path: { id } } }))
 }
 
 export async function getActiveGame(): Promise<GetGameQueryResult | null> {

@@ -341,6 +341,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/games/{id}/boards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Retrieves the caller's view of both boards of a game.
+         * @description The own board has every ship, and the opponent's hits and misses. The opponent board has
+         *     the caller's hits and misses, and only the ships the caller has sunk.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Returns both boards. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GetGameBoardsQueryResult"];
+                        "application/json": components["schemas"]["GetGameBoardsQueryResult"];
+                        "text/json": components["schemas"]["GetGameBoardsQueryResult"];
+                    };
+                };
+                /** @description The caller does not own the game. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Game not found. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/games/active": {
         parameters: {
             query?: never;
@@ -863,6 +929,11 @@ export interface components {
         };
         /** @enum {string} */
         BoardSide: "None" | "Player" | "Opponent";
+        BoardView: {
+            ships?: components["schemas"]["ShipView"][] | null;
+            hits?: string[] | null;
+            misses?: string[] | null;
+        };
         /** @enum {string} */
         CellState: "None" | "Clear" | "Occupied" | "Hit" | "Missed";
         CreateGameRequest: {
@@ -879,6 +950,12 @@ export interface components {
         GameStateResponse: {
             state?: components["schemas"]["GameState"];
             winner?: components["schemas"]["BoardSide"];
+        };
+        GetGameBoardsQueryResult: {
+            /** Format: uuid */
+            gameId?: string;
+            ownBoard?: components["schemas"]["BoardView"];
+            opponentBoard?: components["schemas"]["BoardView"];
         };
         GetGameQueryResult: {
             /** Format: uuid */
@@ -1010,6 +1087,11 @@ export interface components {
         ShipKind: "None" | "Destroyer" | "Cruiser" | "Submarine" | "Battleship" | "Carrier";
         /** @enum {string} */
         ShipOrientation: "None" | "Vertical" | "Horizontal";
+        ShipView: {
+            kind?: components["schemas"]["ShipKind"];
+            position?: string[] | null;
+            sunk?: boolean;
+        };
         SignInRequest: {
             username?: string | null;
             password?: string | null;

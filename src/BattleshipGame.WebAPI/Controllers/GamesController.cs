@@ -83,6 +83,34 @@ public class GamesController(
     }
 
     /// <summary>
+    /// Retrieves the caller's view of both boards of a game.
+    /// </summary>
+    /// <remarks>
+    /// The own board has every ship, and the opponent's hits and misses. The opponent board has
+    /// the caller's hits and misses, and only the ships the caller has sunk.
+    /// </remarks>
+    /// <response code="200">Returns both boards.</response>
+    /// <response code="403">The caller does not own the game.</response>
+    /// <response code="404">Game not found.</response>
+    [HttpGet("{id:guid}/boards")]
+    [ProducesResponseType(typeof(GetGameBoardsQueryResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<GetGameBoardsQueryResult>> GetGameBoards(
+        [FromRoute] Guid id,
+        CancellationToken ct
+    )
+    {
+        var gameId = new GameId(id);
+        await gameAccessGuard.EnsureOwnerAsync(gameId, ct);
+        var boards =
+            await mediator.Send(new GetGameBoardsQuery(gameId), ct)
+            ?? throw new GameNotFoundException(gameId);
+
+        return Ok(boards);
+    }
+
+    /// <summary>
     /// Returns the caller's active game, or 204 No Content when none is in progress.
     /// </summary>
     [HttpGet("active")]

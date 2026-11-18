@@ -21,9 +21,6 @@ internal sealed class BattleshipAuthWebApplicationFactory(
     FakeLlmChat? llmChat = null
 ) : WebApplicationFactory<Program>
 {
-    // Runs before the first factory instance boots the API, which reads OPENAI_* at startup.
-    static BattleshipAuthWebApplicationFactory() => TestOpenAiSettings.EnsureEnvironment();
-
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
@@ -58,5 +55,12 @@ internal sealed class BattleshipAuthWebApplicationFactory(
         builder.UseSetting("Resilience:AiOpponent:MaxRetryAttempts", "1");
 
         builder.UseEnvironment("Test");
+
+        // Placeholder OpenAi settings: never contacted (the LLM is faked above), but the API
+        // validates them at startup.
+        builder.ConfigureAppConfiguration(
+            (_, config) =>
+                config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.json"))
+        );
     }
 }

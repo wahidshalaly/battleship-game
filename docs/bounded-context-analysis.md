@@ -39,6 +39,7 @@ Provide a concise analysis of the Battleship Game bounded contexts, their respon
 - **Games API** (type-safe enums)
   - `POST /api/games` — create game
   - `GET /api/games/{id}` — retrieve game (includes `GameState`, `WinnerSide`)
+  - `GET /api/games/{id}/boards` — the player's view of both boards (own ships, shots on each board, sunk opponent ships only)
   - `POST /api/games/{id}/ships` — place ship (`BoardSide`, `ShipKind`, `ShipOrientation`)
   - `POST /api/games/{id}/attacks` — player attack + counter-attack → returns `LastRoundResult`
   - `PUT /api/games/{id}/state`, `GET /api/games/{id}/state` — update/get state

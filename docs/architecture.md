@@ -102,8 +102,8 @@ graph TB
   - `IGameplayService`, `GameplayService` — Orchestrates game lifecycle
   - `IPlayerService`, `PlayerService` — Manages player operations, current-caller lookup (`GetCurrentAsync`, `GetCurrentRequiredAsync`, `CreateAsync`) and the leaderboard (`GetLeaderboardAsync`)
 - **Commands**: `CreateGameCommand`, `PlaceShipCommand`, `PlayerAttackCommand`, `OpponentAttackCommand`, `CreatePlayerCommand` (handlers via MediatR)
-- **Queries**: `GetGameQuery`, `GetPlayerQuery`, `GetPlayerByUsernameQuery`, `GetPlayerByIdentitySubjectQuery`, `GetLeaderboardQuery` (handlers via MediatR)
-- **DTOs**: Data transfer objects for inter-layer communication (`GetGameQueryResult`, `GetPlayerQueryResult`, `GetLeaderboardQueryResult`, `GameResults`, `PlayerStanding`)
+- **Queries**: `GetGameQuery`, `GetGameBoardsQuery` (the player's view of both boards: own ships in full, only sunk opponent ships), `GetPlayerQuery`, `GetPlayerByUsernameQuery`, `GetPlayerByIdentitySubjectQuery`, `GetLeaderboardQuery` (handlers via MediatR)
+- **DTOs**: Data transfer objects for inter-layer communication (`GetGameQueryResult`, `GetGameBoardsQueryResult`, `GetPlayerQueryResult`, `GetLeaderboardQueryResult`, `GameResults`, `PlayerStanding`)
 - **Result Types**: Rich result objects from commands (`AttackResult`, `LastRoundResult`)
 - **Repository Contracts**: `IGameRepository`, `IPlayerRepository` (abstraction for persistence)
 - **Read-side Query Contracts**: `ILeaderboardReader` — player standings computed from finished games; it reads across the Game and Player aggregates, so it is not part of either repository
@@ -150,6 +150,7 @@ graph TB
   - `RandomAttackOpponent`: Random cell selection from available targets on Player's board
   - `LlmOpponent`: LLM-based strategic attack selection; builds the prompts, calls the model through `ILlmChat` and validates the reply
   - `ILlmChat` / `SemanticKernelChat`: the model call behind a project-owned interface; `SemanticKernelChat` is the only class that uses Semantic Kernel
+  - `OpenAiOptions`: config binding for `OpenAi` section (`ModelId`, `Endpoint`, `ApiKey`), validated at startup
   - `ResilientComputerOpponentDecorator`: wraps `LlmOpponent` with Polly retry + circuit breaker, falling back to `RandomAttackOpponent`
   - `ComputerOpponentFactory`: Factory resolving strategies via keyed DI services
   - `BattleshipPromptBuilder`: Constructs prompts for LLM-based strategies
@@ -171,7 +172,7 @@ graph TB
 - **Controllers**:
   - `AuthController` — identity façade: `POST /api/auth/register`, `POST /api/auth/signin`, `POST /api/auth/refresh`, `POST /api/auth/logout` (all `[AllowAnonymous]`)
   - `PlayersController` — `GET /api/players/me` (caller's own profile, with games won, games lost and win rate), `GET /api/players/{id}`, `GET /api/players/{username}`, `GET /api/players/leaderboard?top=10` (top players, 1–100)
-  - `GamesController` — game lifecycle endpoints + `GET /api/games/active`
+  - `GamesController` — game lifecycle endpoints + `GET /api/games/active` + `GET /api/games/{id}/boards` (the caller's view of both boards, so a client can resume a game)
 - **DTOs**: Request/response models (e.g., `RegisterRequest`, `SignInRequest`, `AuthTokenResponse`, `CreateGameRequest`)
 - **Middleware**: `ExceptionHandlingMiddleware` — maps domain/application exceptions to HTTP status codes (401 `InvalidCredentialsException`, 403 `ForbiddenAccessException`, 404 `NotFoundException`, 409 `IdentityConflictException`)
 - **Validation**: `FluentValidation` validators per request type

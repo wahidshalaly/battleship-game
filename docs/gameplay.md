@@ -73,10 +73,11 @@ Each time you fire, the round resolves immediately: your shot lands, then the op
 back once. Cells are colored by result:
 
 - 🔴 **Red** — a hit.
+- 🟤 **Dark red** — a sunk ship (on either grid).
 - ⚫ **Grey** — a miss.
 
 When a ship is destroyed, a message tells you which one ("You sank the opponent's Cruiser!" or
-"Your Destroyer was sunk!"). You can't fire at the same cell twice.
+"Your Destroyer was sunk!"), and its cells turn dark red. You can't fire at the same cell twice.
 
 ## 6. Winning
 
@@ -96,6 +97,6 @@ harder than beating Random), then to the one with more wins.
 ## Resuming a game
 
 If you leave mid-game, signing back in (or returning to the lobby) lets you **Resume** it — the
-game state lives on the server. Note that your own ship layout is remembered in the browser tab
-you placed them in; if you resume in a different browser or tab, your fleet outline may not be
-drawn, but incoming hits and misses are still tracked and the game plays normally.
+game state lives on the server. Both grids are restored as you left them, in any browser or tab:
+your fleet, every shot fired on each side, and the opponent ships you have sunk. The same goes
+for a game you left during placement: the ships you already placed are still on the board.

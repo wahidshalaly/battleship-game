@@ -38,7 +38,11 @@ export function GamePage() {
   return (
     <PageShell>
       {(game.state === 'New' || game.state === 'Ready') && (
-        <PlacementScreen gameId={game.gameId!} boardSize={game.boardSize ?? 10} />
+        <PlacementScreen
+          gameId={game.gameId!}
+          boardSize={game.boardSize ?? 10}
+          gameState={game.state}
+        />
       )}
       {game.state === 'Started' && (
         <BattleScreen gameId={game.gameId!} boardSize={game.boardSize ?? 10} />

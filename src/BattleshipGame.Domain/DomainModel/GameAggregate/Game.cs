@@ -247,6 +247,15 @@ public sealed class Game : AggregateRoot<GameId>
         BoardSelector(boardSide).Ships.First(s => s.Id == shipId).Kind;
 
     /// <summary>
+    /// Checks if the specified ship on the specified boardSide has been sunk
+    /// </summary>
+    /// <param name="boardSide">The boardSide whose ship to check</param>
+    /// <param name="shipId">The identifier of the ship to check</param>
+    /// <returns>True if every cell of the ship has been hit, false otherwise</returns>
+    public bool IsShipSunk(BoardSide boardSide, ShipId shipId) =>
+        BoardSelector(boardSide).Ships.First(s => s.Id == shipId).Sunk;
+
+    /// <summary>
     /// Gets all cells that were hit on the specified boardSide.
     /// </summary>
     /// <param name="boardSide">The boardSide to get hit cells from</param>
