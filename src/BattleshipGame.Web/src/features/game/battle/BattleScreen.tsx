@@ -51,6 +51,9 @@ export function BattleScreen({ gameId, boardSize }: BattleScreenProps) {
         // Refresh the game so GamePage swaps to the result view.
         void queryClient.invalidateQueries({ queryKey: ['game', gameId] })
         void queryClient.invalidateQueries({ queryKey: ['game', 'active'] })
+        // The finished game changes the player's record and may move them on the leaderboard.
+        void queryClient.invalidateQueries({ queryKey: ['player', 'me'] })
+        void queryClient.invalidateQueries({ queryKey: ['leaderboard'] })
       }
     } catch (err) {
       setError(problemMessage(err, 'That attack was rejected.'))

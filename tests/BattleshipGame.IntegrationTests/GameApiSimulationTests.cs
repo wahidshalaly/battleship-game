@@ -304,6 +304,52 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     }
 
     [Fact]
+    public async Task PlayerProfile_CountsWinsAndLosses_ButNotTheUnfinishedGame()
+    {
+        await SeedPlayer(_clientSubject, $"u_stats_{Guid.NewGuid():N}"[..32]);
+        await PlayRandomGameToGameOver();
+        await PlayAiGameToDefeat();
+        await CreateGame(BoardSize, OpponentStrategy.Random);
+
+        var me = await GetMe();
+
+        me.TotalGamesPlayed.Should().Be(3);
+        me.GamesWon.Should().Be(1);
+        me.GamesLost.Should().Be(1);
+        me.WinRate.Should().Be(0.5);
+    }
+
+    // The database is shared with other tests; at most 100 players there have finished a game.
+    [Fact]
+    public async Task Leaderboard_ListsPlayerOnlyOnceTheyHaveFinishedAGame()
+    {
+        var username = $"u_board_{Guid.NewGuid():N}"[..32];
+        await SeedPlayer(_clientSubject, username);
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.Random);
+        (await GetLeaderboard(top: 100)).Entries.Should().NotContain(e => e.Username == username);
+
+        await FinishRandomGame(gameId);
+
+        var leaderboard = await GetLeaderboard(top: 100);
+        var entry = leaderboard.Entries.Should().ContainSingle(e => e.Username == username).Subject;
+        entry.GamesFinished.Should().Be(1);
+        entry.GamesWon.Should().Be(1);
+        entry.WinRate.Should().Be(1);
+        entry.IsProvisional.Should().BeTrue();
+        leaderboard.MinimumFinishedGamesToRank.Should().BePositive();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(101)]
+    public async Task Leaderboard_WithTopOutOfRange_IsRejectedWithBadRequest(int top)
+    {
+        var response = await _client.GetAsync($"/api/players/leaderboard?top={top}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task CreateGame_WhilePlayerHasActiveGame_IsRejectedWithConflict()
     {
         await SeedPlayer(_clientSubject, $"u_busy_{Guid.NewGuid():N}"[..32]);
@@ -422,11 +468,34 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     private async Task<Guid> PlayRandomGameToGameOver()
     {
         var gameId = await CreateGame(BoardSize, OpponentStrategy.Random);
+        await FinishRandomGame(gameId);
+        return gameId;
+    }
+
+    // Sets up a new game against Random and sinks every opponent ship, so the player wins.
+    private async Task FinishRandomGame(Guid gameId)
+    {
         var opponentPlacements = GenerateRandomShipPlacements(BoardSize);
         await PlaceShips(gameId, GenerateRandomShipPlacements(BoardSize), opponentPlacements);
         await StartGameplay(gameId);
         await AttackShips(gameId, opponentPlacements);
         await VerifyGameState(gameId, GameState.GameOver);
+    }
+
+    // The scripted AI opponent fires only at the player's ships while the player only misses.
+    private async Task<Guid> PlayAiGameToDefeat()
+    {
+        var playerPlacements = GenerateRandomShipPlacements(BoardSize);
+        var opponentPlacements = GenerateRandomShipPlacements(BoardSize);
+        _chat.ReplyWithCells(playerPlacements.SelectMany(p => p.Position));
+
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.SemanticKernel);
+        await PlaceShips(gameId, playerPlacements, opponentPlacements);
+        await StartGameplay(gameId);
+        var opponentShipCells = opponentPlacements.SelectMany(p => p.Position).ToHashSet();
+        await AttackCells(gameId, AllCells(BoardSize).Where(c => !opponentShipCells.Contains(c)));
+
+        (await GetGame(gameId)).WinnerSide.Should().Be(BoardSide.Opponent);
         return gameId;
     }
 
@@ -435,6 +504,15 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         var me = await _client.GetFromJsonAsync<PlayerResponse>("/api/players/me");
         me.Should().NotBeNull();
         return me;
+    }
+
+    private async Task<LeaderboardResponse> GetLeaderboard(int top)
+    {
+        var leaderboard = await _client.GetFromJsonAsync<LeaderboardResponse>(
+            $"/api/players/leaderboard?top={top}"
+        );
+        leaderboard.Should().NotBeNull();
+        return leaderboard;
     }
 
     private async Task SeedPlayer(string subject, string username)
@@ -555,7 +633,7 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     }
 
     // Attacks the given ship cells until the game ends; returns the opponent's counter-attacks.
-    private async Task<List<string>> AttackShips(
+    private Task<List<string>> AttackShips(
         Guid gameId,
         (
             string BowCode,
@@ -563,25 +641,25 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
             ShipOrientation Orientation,
             string[] Position
         )[] shipPlacements
-    )
+    ) => AttackCells(gameId, shipPlacements.SelectMany(p => p.Position));
+
+    // Attacks the given cells until the game ends; returns the opponent's counter-attacks.
+    private async Task<List<string>> AttackCells(Guid gameId, IEnumerable<string> cellCodes)
     {
         var opponentCells = new List<string>();
-        foreach (var (_, _, _, position) in shipPlacements)
+        foreach (var cellCode in cellCodes)
         {
-            foreach (var cellCode in position)
-            {
-                var response = await _client.PostAsJsonAsync(
-                    $"/api/games/{gameId}/attacks",
-                    new AttackRequest(cellCode)
-                );
-                response.EnsureSuccessStatusCode();
-                var roundResult = await response.Content.ReadFromJsonAsync<LastRoundResult>();
-                output.WriteLine("Attacked {0}. Outcome: {1}", cellCode, roundResult);
-                if (roundResult?.OpponentTargetCell is { } opponentCell)
-                    opponentCells.Add(opponentCell);
-                if (roundResult?.GameState == GameState.GameOver)
-                    return opponentCells;
-            }
+            var response = await _client.PostAsJsonAsync(
+                $"/api/games/{gameId}/attacks",
+                new AttackRequest(cellCode)
+            );
+            response.EnsureSuccessStatusCode();
+            var roundResult = await response.Content.ReadFromJsonAsync<LastRoundResult>();
+            output.WriteLine("Attacked {0}. Outcome: {1}", cellCode, roundResult);
+            if (roundResult?.OpponentTargetCell is { } opponentCell)
+                opponentCells.Add(opponentCell);
+            if (roundResult?.GameState == GameState.GameOver)
+                return opponentCells;
         }
 
         return opponentCells;

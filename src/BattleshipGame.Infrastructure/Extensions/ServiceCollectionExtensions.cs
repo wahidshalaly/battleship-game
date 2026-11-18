@@ -8,6 +8,7 @@ using BattleshipGame.Infrastructure.Broadcasting;
 using BattleshipGame.Infrastructure.ComputerOpponent;
 using BattleshipGame.Infrastructure.Identity;
 using BattleshipGame.Infrastructure.Persistence;
+using BattleshipGame.Infrastructure.Persistence.Queries;
 using BattleshipGame.Infrastructure.Persistence.Repositories;
 using BattleshipGame.Infrastructure.Resilience;
 using Microsoft.EntityFrameworkCore;
@@ -168,6 +169,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IGameRepository, GameRepository>();
         services.AddScoped<IPlayerRepository, PlayerRepository>();
+        services.AddScoped<ILeaderboardReader, LeaderboardReader>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
     }
 }

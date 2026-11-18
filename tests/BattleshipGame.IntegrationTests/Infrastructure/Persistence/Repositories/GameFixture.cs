@@ -6,17 +6,25 @@ namespace BattleshipGame.IntegrationTests.Infrastructure.Persistence.Repositorie
 
 public class GameFixture
 {
-    public Game CreateGameInStateNew(PlayerId? playerId = null, int boardSize = DefaultBoardSize)
+    public Game CreateGameInStateNew(
+        PlayerId? playerId = null,
+        int boardSize = DefaultBoardSize,
+        OpponentStrategy strategy = OpponentStrategy.Random
+    )
     {
         playerId ??= new PlayerId(Guid.NewGuid());
-        var game = new Game(playerId, boardSize);
+        var game = new Game(playerId, boardSize, strategy);
         return game;
     }
 
-    public Game CreateGameInStateReady(PlayerId? playerId = null, int boardSize = DefaultBoardSize)
+    public Game CreateGameInStateReady(
+        PlayerId? playerId = null,
+        int boardSize = DefaultBoardSize,
+        OpponentStrategy strategy = OpponentStrategy.Random
+    )
     {
         playerId ??= new PlayerId(Guid.NewGuid());
-        var game = CreateGameInStateNew(playerId, boardSize);
+        var game = CreateGameInStateNew(playerId, boardSize, strategy);
         PlaceShipsOnBoard(game, BoardSide.Player);
         PlaceShipsOnBoard(game, BoardSide.Opponent);
         return game;
@@ -24,19 +32,24 @@ public class GameFixture
 
     public Game CreateGameInStateStarted(
         PlayerId? playerId = null,
-        int boardSize = DefaultBoardSize
+        int boardSize = DefaultBoardSize,
+        OpponentStrategy strategy = OpponentStrategy.Random
     )
     {
         playerId ??= new PlayerId(Guid.NewGuid());
-        var game = CreateGameInStateReady(playerId, boardSize);
+        var game = CreateGameInStateReady(playerId, boardSize, strategy);
         game.StartGameplay();
         return game;
     }
 
-    public Game CreateGameInStateGameOver(PlayerId? playerId, BoardSide winnerSide)
+    public Game CreateGameInStateGameOver(
+        PlayerId? playerId,
+        BoardSide winnerSide,
+        OpponentStrategy strategy = OpponentStrategy.Random
+    )
     {
         playerId ??= new PlayerId(Guid.NewGuid());
-        var game = CreateGameInStateStarted(playerId);
+        var game = CreateGameInStateStarted(playerId, strategy: strategy);
         var defeatedSide = winnerSide.OppositeSide();
 
         // Collect target cells on the defeated side - all are confirmed hits

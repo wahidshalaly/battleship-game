@@ -70,6 +70,18 @@ Represents a game participant:
 
 A player's active game (at most one, not over) and game history (games that are over) are derived from the games that reference the player; they are not stored on the player.
 
+#### Player Statistics and Leaderboard
+Statistics are queries over a player's finished games, never state stored on the player:
+- **Games won / lost**: finished games whose `WinnerSide` is `Player` / `Opponent`; unfinished games count as neither
+- **Win rate**: games won ÷ finished games (0 when none is finished)
+
+**Leaderboard ranking rules** (players with no finished game don't appear):
+1. Ranked players (at least `Leaderboard:MinimumFinishedGamesToRank` finished games, default 5) come before provisional ones, so a single lucky win doesn't top the board
+2. Win rate, highest first
+3. Wins against the AI opponent (`SemanticKernel`), most first — beating it is harder than beating `Random`
+4. Games won, most first
+5. Username, so the order is stable
+
 ### Value Objects
 
 #### Cell Value Object

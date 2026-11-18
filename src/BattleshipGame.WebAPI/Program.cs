@@ -1,6 +1,7 @@
 using System.Reflection;
 using BattleshipGame.Application.Common.Extensions;
 using BattleshipGame.Application.Common.Security;
+using BattleshipGame.Application.Features.Players.Queries;
 using BattleshipGame.Infrastructure.Extensions;
 using BattleshipGame.Infrastructure.Resilience;
 using BattleshipGame.WebAPI.Authentication;
@@ -101,6 +102,12 @@ builder
         reloadOnChange: true
     )
     .AddEnvironmentVariables();
+
+builder
+    .Services.AddOptions<LeaderboardOptions>()
+    .Bind(builder.Configuration.GetSection(LeaderboardOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder
     .Services.AddOptions<AiOpponentResilienceOptions>()

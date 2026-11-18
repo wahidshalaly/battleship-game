@@ -63,12 +63,105 @@ public class PlayersController(ILogger<PlayersController> logger, IPlayerService
         return Ok(ToResponse(result));
     }
 
+    /// <summary>
+    /// Gets the top players on the leaderboard, best first. Players are ranked by win rate once
+    /// they have finished enough games; until then they are provisional and listed after the
+    /// ranked players.
+    /// </summary>
+    [HttpGet("leaderboard")]
+    [ProducesResponseType(typeof(LeaderboardResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<LeaderboardResponse>> GetLeaderboard(
+        [FromQuery] LeaderboardRequest request,
+        CancellationToken ct
+    )
+    {
+        var result = await playerService.GetLeaderboardAsync(request.Top, ct);
+        return Ok(ToResponse(result));
+    }
+
     private static PlayerResponse ToResponse(GetPlayerQueryResult result) =>
-        new(result.PlayerId.Value, result.Username, result.ActiveGameId, result.TotalGamesPlayed);
+        new(
+            result.PlayerId.Value,
+            result.Username,
+            result.ActiveGameId,
+            result.TotalGamesPlayed,
+            result.GamesWon,
+            result.GamesLost,
+            result.WinRate
+        );
+
+    private static LeaderboardResponse ToResponse(GetLeaderboardQueryResult result) =>
+        new(result.MinimumFinishedGamesToRank, [.. result.Entries.Select(ToResponse)]);
+
+    private static LeaderboardEntryResponse ToResponse(LeaderboardEntry entry) =>
+        new(
+            entry.Rank,
+            entry.PlayerId.Value,
+            entry.Username,
+            entry.GamesFinished,
+            entry.GamesWon,
+            entry.AiGamesWon,
+            entry.WinRate,
+            entry.IsProvisional
+        );
 }
 
 /// <param name="Id">The player's unique identifier.</param>
 /// <param name="Username">The player's username.</param>
 /// <param name="ActiveGameId">The currently active game ID, if any.</param>
-/// <param name="TotalGamesPlayed">The total number of games played.</param>
-public record PlayerResponse(Guid Id, string Username, Guid? ActiveGameId, int TotalGamesPlayed);
+/// <param name="TotalGamesPlayed">The total number of games played, finished or not.</param>
+/// <param name="GamesWon">The number of finished games the player won.</param>
+/// <param name="GamesLost">The number of finished games the player lost.</param>
+/// <param name="WinRate">The share of finished games won, from 0 to 1.</param>
+public record PlayerResponse(
+    Guid Id,
+    string Username,
+    Guid? ActiveGameId,
+    int TotalGamesPlayed,
+    int GamesWon,
+    int GamesLost,
+    double WinRate
+);
+
+/// <summary>
+/// Query parameters of the leaderboard request.
+/// </summary>
+public sealed class LeaderboardRequest
+{
+    /// <summary>
+    /// The maximum number of players to return, from 1 to 100.
+    /// </summary>
+    [FromQuery(Name = "top")]
+    public int Top { get; init; } = 10;
+}
+
+/// <param name="MinimumFinishedGamesToRank">
+/// The number of finished games a player needs to be ranked rather than provisional.
+/// </param>
+/// <param name="Entries">The players, best first.</param>
+public record LeaderboardResponse(
+    int MinimumFinishedGamesToRank,
+    IReadOnlyList<LeaderboardEntryResponse> Entries
+);
+
+/// <param name="Rank">The player's position, starting at 1.</param>
+/// <param name="PlayerId">The player's unique identifier.</param>
+/// <param name="Username">The player's username.</param>
+/// <param name="GamesFinished">The number of finished games.</param>
+/// <param name="GamesWon">The number of finished games won.</param>
+/// <param name="AiGamesWon">The number of games won against the AI opponent.</param>
+/// <param name="WinRate">The share of finished games won, from 0 to 1.</param>
+/// <param name="IsProvisional">
+/// Whether the player has too few finished games to be ranked by win rate yet.
+/// </param>
+public record LeaderboardEntryResponse(
+    int Rank,
+    Guid PlayerId,
+    string Username,
+    int GamesFinished,
+    int GamesWon,
+    int AiGamesWon,
+    double WinRate,
+    bool IsProvisional
+);

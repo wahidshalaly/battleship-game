@@ -100,12 +100,14 @@ graph TB
 **Components**:
 - **Application Services**:
   - `IGameplayService`, `GameplayService` — Orchestrates game lifecycle
-  - `IPlayerService`, `PlayerService` — Manages player operations and current-caller lookup (`GetCurrentAsync`, `GetCurrentRequiredAsync`, `CreateAsync`)
+  - `IPlayerService`, `PlayerService` — Manages player operations, current-caller lookup (`GetCurrentAsync`, `GetCurrentRequiredAsync`, `CreateAsync`) and the leaderboard (`GetLeaderboardAsync`)
 - **Commands**: `CreateGameCommand`, `PlaceShipCommand`, `PlayerAttackCommand`, `OpponentAttackCommand`, `CreatePlayerCommand` (handlers via MediatR)
-- **Queries**: `GetGameQuery`, `GetGameBoardsQuery` (the player's view of both boards: own ships in full, only sunk opponent ships), `GetPlayerQuery`, `GetPlayerByUsernameQuery`, `GetPlayerByIdentitySubjectQuery` (handlers via MediatR)
-- **DTOs**: Data transfer objects for inter-layer communication (`GetGameQueryResult`, `GetGameBoardsQueryResult`, `GetPlayerQueryResult`)
+- **Queries**: `GetGameQuery`, `GetGameBoardsQuery` (the player's view of both boards: own ships in full, only sunk opponent ships), `GetPlayerQuery`, `GetPlayerByUsernameQuery`, `GetPlayerByIdentitySubjectQuery`, `GetLeaderboardQuery` (handlers via MediatR)
+- **DTOs**: Data transfer objects for inter-layer communication (`GetGameQueryResult`, `GetGameBoardsQueryResult`, `GetPlayerQueryResult`, `GetLeaderboardQueryResult`, `GameResults`, `PlayerStanding`)
 - **Result Types**: Rich result objects from commands (`AttackResult`, `LastRoundResult`)
 - **Repository Contracts**: `IGameRepository`, `IPlayerRepository` (abstraction for persistence)
+- **Read-side Query Contracts**: `ILeaderboardReader` — player standings computed from finished games; it reads across the Game and Player aggregates, so it is not part of either repository
+- **Options**: `LeaderboardOptions` (`Leaderboard` section) — `MinimumFinishedGamesToRank`, validated at startup
 - **Identity Contracts**: `IIdentityProvider` — abstraction over the external IdP (Keycloak in production/tests)
 - **Domain Event Dispatcher**: `IDomainEventDispatcher` — Publishes domain events through MediatR
 - **Security Contracts**: `ICurrentUser` — resolves the authenticated caller's identity subject from the HTTP context
@@ -138,6 +140,7 @@ graph TB
 - **Repositories** (EF Core + PostgreSQL):
   - `GameRepository`: Implements `IGameRepository` over `BattleshipGameDbContext`
   - `PlayerRepository`: Implements `IPlayerRepository` over `BattleshipGameDbContext`
+  - `LeaderboardReader`: Implements `ILeaderboardReader` with one grouped query over finished games joined to players, sorted and cut in the database
   - See the **Persistence (EF Core + PostgreSQL)** section below for the data model
 - **Identity**:
   - `KeycloakIdentityProvider`: Implements `IIdentityProvider` via Keycloak Admin REST API + ROPC token endpoint
@@ -168,7 +171,7 @@ graph TB
 **Components**:
 - **Controllers**:
   - `AuthController` — identity façade: `POST /api/auth/register`, `POST /api/auth/signin`, `POST /api/auth/refresh`, `POST /api/auth/logout` (all `[AllowAnonymous]`)
-  - `PlayersController` — `GET /api/players/me` (caller's own profile)
+  - `PlayersController` — `GET /api/players/me` (caller's own profile, with games won, games lost and win rate), `GET /api/players/{id}`, `GET /api/players/{username}`, `GET /api/players/leaderboard?top=10` (top players, 1–100)
   - `GamesController` — game lifecycle endpoints + `GET /api/games/active` + `GET /api/games/{id}/boards` (the caller's view of both boards, so a client can resume a game)
 - **DTOs**: Request/response models (e.g., `RegisterRequest`, `SignInRequest`, `AuthTokenResponse`, `CreateGameRequest`)
 - **Middleware**: `ExceptionHandlingMiddleware` — maps domain/application exceptions to HTTP status codes (401 `InvalidCredentialsException`, 403 `ForbiddenAccessException`, 404 `NotFoundException`, 409 `IdentityConflictException`)
@@ -189,6 +192,8 @@ public interface IGameRepository
     Task SaveAsync(Game game, CancellationToken ct);
     Task<IReadOnlyCollection<Game>> GetByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
     Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
+    Task<int> CountByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
+    Task<GameResults> GetResultsByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
 }
 
 public interface IPlayerRepository
@@ -337,7 +342,7 @@ Persistence is implemented with **Entity Framework Core 10** on **PostgreSQL** (
 | `PlayerEntity` | `players` | Unique indexes on `username` and `identity_subject` |
 | `GameEntity` | `games` | Owns both boards as JSON (see below); filtered unique index on `player_id` for games that are not over (`IX_games_player_id_active`), so a player has at most one active game |
 
-A player's active game and game history are not stored on the player: they are the player's games that are, respectively, not over and over (`IGameRepository.GetActiveGameByPlayerIdAsync`, `CountByPlayerIdAsync`).
+A player's active game and game history are not stored on the player: they are the player's games that are, respectively, not over and over (`IGameRepository.GetActiveGameByPlayerIdAsync`, `CountByPlayerIdAsync`). Statistics are derived the same way: `GetResultsByPlayerIdAsync` counts a player's wins and losses, and `LeaderboardReader` groups all finished games by player (see the ranking rules in [analysis.md](analysis.md)). There is no summary table; one would be a deliberate cache, added only if the grouped query gets slow.
 
 There are **no separate Board / Cell / Ship tables**. Each `GameEntity` owns two boards (`OwnBoard`, `OppBoard`) mapped with `.ToJson()` into the `own_board` / `opp_board` `jsonb` columns; each board in turn owns its `Cells` and `Ships` collections, serialized inside that same JSON document. EF assigns a synthetic ordinal (`__synthesizedOrdinal`) as the key of these JSON-owned collection elements.
 
@@ -358,7 +363,7 @@ Repositories **stage** changes (add or mutate tracked entities) but do not call 
 - A dedicated `BattleshipGame.MigrationRunner` console project applies migrations.
 - The Aspire AppHost provisions PostgreSQL, runs the MigrationRunner, and starts the Web API only after migrations complete (`WaitForCompletion`). See [local-dev.md](local-dev.md).
 
-DI wiring (`AddInfrastructureServices`) registers `AddDbContext<BattleshipGameDbContext>` with `UseNpgsql(...)` against the `battleship` connection string, plus scoped `IGameRepository`, `IPlayerRepository`, and `IUnitOfWork`.
+DI wiring (`AddInfrastructureServices`) registers `AddDbContext<BattleshipGameDbContext>` with `UseNpgsql(...)` against the `battleship` connection string, plus scoped `IGameRepository`, `IPlayerRepository`, `ILeaderboardReader`, and `IUnitOfWork`.
 
 ## Error Handling Strategy
 
@@ -508,7 +513,7 @@ The `sub` claim in the access token is the Keycloak user ID, stored as `Player.I
 ### Feature Enhancements
 - **Multiplayer Support**: Real-time gameplay
 - **AI Opponents**: Computer player implementation ✅ Implemented (Random + Semantic Kernel strategies)
-- **Game Statistics**: Player performance tracking
+- **Game Statistics**: Player performance tracking ✅ Implemented (games won/lost, win rate, leaderboard)
 - **Tournament Mode**: Multi-game competitions
 
 ### Opponent Architecture (Implemented)

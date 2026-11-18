@@ -604,6 +604,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+  /api/players/leaderboard:
+    get:
+      tags:
+        - Players
+      summary: "Gets the top players on the leaderboard, best first. Players are ranked by win rate once\nthey have finished enough games; until then they are provisional and listed after the\nranked players."
+      parameters:
+        - name: top
+          in: query
+          description: 'The maximum number of players to return, from 1 to 100.'
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
 components:
   schemas:
     AttackRequest:
@@ -744,6 +769,55 @@ components:
         winnerSide:
           $ref: '#/components/schemas/BoardSide'
       additionalProperties: false
+    LeaderboardEntryResponse:
+      type: object
+      properties:
+        rank:
+          type: integer
+          description: 'The player''s position, starting at 1.'
+          format: int32
+        playerId:
+          type: string
+          description: The player's unique identifier.
+          format: uuid
+        username:
+          type: string
+          description: The player's username.
+          nullable: true
+        gamesFinished:
+          type: integer
+          description: The number of finished games.
+          format: int32
+        gamesWon:
+          type: integer
+          description: The number of finished games won.
+          format: int32
+        aiGamesWon:
+          type: integer
+          description: The number of games won against the AI opponent.
+          format: int32
+        winRate:
+          type: number
+          description: 'The share of finished games won, from 0 to 1.'
+          format: double
+        isProvisional:
+          type: boolean
+          description: Whether the player has too few finished games to be ranked by win rate yet.
+      additionalProperties: false
+    LeaderboardResponse:
+      type: object
+      properties:
+        minimumFinishedGamesToRank:
+          type: integer
+          description: The number of finished games a player needs to be ranked rather than provisional.
+          format: int32
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntryResponse'
+          description: 'The players, best first.'
+          nullable: true
+      additionalProperties: false
     OpponentStrategy:
       enum:
         - None
@@ -781,8 +855,20 @@ components:
           nullable: true
         totalGamesPlayed:
           type: integer
-          description: The total number of games played.
+          description: 'The total number of games played, finished or not.'
           format: int32
+        gamesWon:
+          type: integer
+          description: The number of finished games the player won.
+          format: int32
+        gamesLost:
+          type: integer
+          description: The number of finished games the player lost.
+          format: int32
+        winRate:
+          type: number
+          description: 'The share of finished games won, from 0 to 1.'
+          format: double
       additionalProperties: false
     ProblemDetails:
       type: object

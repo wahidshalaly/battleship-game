@@ -73,6 +73,41 @@ public class GetPlayerQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenPlayerHasFinishedGames_ShouldReturnWinsLossesAndWinRate()
+    {
+        // Arrange
+        ArrangePlayer("Winner");
+        ArrangeGames(activeGame: null, totalGames: 5, new GameResults(GamesWon: 3, GamesLost: 1));
+
+        // Act
+        var result = await _handler.Handle(new GetPlayerByIdQuery(_playerId), _ct);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.GamesWon.Should().Be(3);
+        result.GamesLost.Should().Be(1);
+        result.WinRate.Should().Be(0.75);
+    }
+
+    [Fact]
+    public async Task Handle_WhenPlayerHasNoFinishedGames_ShouldReturnZeroWinRate()
+    {
+        // Arrange
+        var activeGame = new GameFixture().CreateGameInStateStarted(_playerId);
+        ArrangePlayer("Newcomer");
+        ArrangeGames(activeGame, totalGames: 1, GameResults.None);
+
+        // Act
+        var result = await _handler.Handle(new GetPlayerByIdQuery(_playerId), _ct);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.GamesWon.Should().Be(0);
+        result.GamesLost.Should().Be(0);
+        result.WinRate.Should().Be(0);
+    }
+
+    [Fact]
     public async Task Handle_WhenPlayerDoesNotExist_ShouldReturnNullWithoutReadingGames()
     {
         // Arrange
@@ -119,16 +154,20 @@ public class GetPlayerQueryHandlerTests
             .MustHaveHappenedOnceExactly();
         A.CallTo(() => _gameRepository.CountByPlayerIdAsync(_playerId, cts.Token))
             .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _gameRepository.GetResultsByPlayerIdAsync(_playerId, cts.Token))
+            .MustHaveHappenedOnceExactly();
     }
 
     private void ArrangePlayer(string username) =>
         A.CallTo(() => _playerRepository.GetByIdAsync(_playerId, _ct))
             .Returns(new Player(_playerId, username, "auth|subject"));
 
-    private void ArrangeGames(Game? activeGame, int totalGames)
+    private void ArrangeGames(Game? activeGame, int totalGames, GameResults? results = null)
     {
         A.CallTo(() => _gameRepository.GetActiveGameByPlayerIdAsync(_playerId, _ct))
             .Returns(activeGame);
         A.CallTo(() => _gameRepository.CountByPlayerIdAsync(_playerId, _ct)).Returns(totalGames);
+        A.CallTo(() => _gameRepository.GetResultsByPlayerIdAsync(_playerId, _ct))
+            .Returns(results ?? GameResults.None);
     }
 }

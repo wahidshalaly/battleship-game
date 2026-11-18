@@ -862,6 +862,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/players/leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets the top players on the leaderboard, best first. Players are ranked by win rate once
+         *     they have finished enough games; until then they are provisional and listed after the
+         *     ranked players.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description The maximum number of players to return, from 1 to 100. */
+                    top?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LeaderboardResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -926,6 +978,51 @@ export interface components {
             gameState?: components["schemas"]["GameState"];
             winnerSide?: components["schemas"]["BoardSide"];
         };
+        LeaderboardEntryResponse: {
+            /**
+             * Format: int32
+             * @description The player's position, starting at 1.
+             */
+            rank?: number;
+            /**
+             * Format: uuid
+             * @description The player's unique identifier.
+             */
+            playerId?: string;
+            /** @description The player's username. */
+            username?: string | null;
+            /**
+             * Format: int32
+             * @description The number of finished games.
+             */
+            gamesFinished?: number;
+            /**
+             * Format: int32
+             * @description The number of finished games won.
+             */
+            gamesWon?: number;
+            /**
+             * Format: int32
+             * @description The number of games won against the AI opponent.
+             */
+            aiGamesWon?: number;
+            /**
+             * Format: double
+             * @description The share of finished games won, from 0 to 1.
+             */
+            winRate?: number;
+            /** @description Whether the player has too few finished games to be ranked by win rate yet. */
+            isProvisional?: boolean;
+        };
+        LeaderboardResponse: {
+            /**
+             * Format: int32
+             * @description The number of finished games a player needs to be ranked rather than provisional.
+             */
+            minimumFinishedGamesToRank?: number;
+            /** @description The players, best first. */
+            entries?: components["schemas"]["LeaderboardEntryResponse"][] | null;
+        };
         /** @enum {string} */
         OpponentStrategy: "None" | "Random" | "SemanticKernel";
         PlaceShipRequest: {
@@ -949,9 +1046,24 @@ export interface components {
             activeGameId?: string | null;
             /**
              * Format: int32
-             * @description The total number of games played.
+             * @description The total number of games played, finished or not.
              */
             totalGamesPlayed?: number;
+            /**
+             * Format: int32
+             * @description The number of finished games the player won.
+             */
+            gamesWon?: number;
+            /**
+             * Format: int32
+             * @description The number of finished games the player lost.
+             */
+            gamesLost?: number;
+            /**
+             * Format: double
+             * @description The share of finished games won, from 0 to 1.
+             */
+            winRate?: number;
         };
         ProblemDetails: {
             type?: string | null;
