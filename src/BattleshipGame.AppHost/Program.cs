@@ -48,9 +48,8 @@ builder
     .WithEnvironment("VITE_API_BASE_URL", "http://localhost:5298")
     .WaitFor(webapi);
 
-// Note: OpenAI-compatible API is managed externally.
-// For local development, you should have Ollama is installed and running.
-// For hosted environment, your should have a Cloud-based model provider.
-// In both cases, an API URL and Key should be available in configuration.
+// The OpenAI-compatible model is managed externally (Ollama locally, a cloud provider when
+// hosted). The Web API reads it from its own OpenAi settings: appsettings.Development.json and
+// user secrets locally, see docs/local-dev.md.
 
 builder.Build().Run();
