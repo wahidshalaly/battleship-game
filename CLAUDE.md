@@ -15,7 +15,7 @@ dotnet build
 # Run everything via .NET Aspire: PostgreSQL, Keycloak, migrations, Web API, frontend
 dotnet run --project src/BattleshipGame.AppHost
 
-# Run the Web API alone (http://localhost:5298); needs PostgreSQL, Keycloak and OPENAI_* settings
+# Run the Web API alone (http://localhost:5298); needs PostgreSQL, Keycloak and the OpenAi settings
 dotnet run --project src/BattleshipGame.WebAPI
 
 # Run all tests (integration tests need Docker for Testcontainers; no LLM needed)
@@ -55,7 +55,7 @@ cd src/BattleshipGame.WebAPI
 dotnet swagger tofile --output ../../docs/openapi.yaml --yaml bin/Debug/net11.0/BattleshipGame.WebAPI.dll v1
 ```
 
-The API validates its options at startup, so `swagger tofile` needs placeholder values for `Authentication__Authority`, `Authentication__Audience`, `Keycloak__*` and `OPENAI_*` (nothing connects). Then regenerate the frontend types (`npm run generate:api-types`). A document generated on Windows differs only in `\r\n` line endings — don't commit that noise.
+The API validates its options at startup, so `swagger tofile` needs placeholder values for `Authentication__Authority`, `Authentication__Audience`, `Keycloak__*` and `OpenAi__*` (nothing connects). Then regenerate the frontend types (`npm run generate:api-types`). A document generated on Windows differs only in `\r\n` line endings — don't commit that noise.
 
 ### Load Tests (K6 via Docker)
 
@@ -129,7 +129,7 @@ tests/
 
 ### AI Opponent Configuration
 
-The API reads the LLM settings from the `OPENAI_MODEL_ID`, `OPENAI_ENDPOINT` and `OPENAI_API_KEY` environment variables and refuses to start without them. For local development, run Ollama (endpoint `http://localhost:11434/v1`, any API key, default dev model `gemma4`); see `docs/local-dev.md`. `BattleshipPromptBuilder` builds the prompts from `GameSnapshot` (a read-only game state projection).
+The API binds the LLM settings to `OpenAiOptions` (section `OpenAi`: `ModelId`, `Endpoint`, `ApiKey`) and refuses to start without them. For local development, run Ollama: `appsettings.Development.json` holds the endpoint (`http://localhost:11434/v1`) and model (`gemma4`), and the API key goes in user secrets (`dotnet user-secrets set "OpenAi:ApiKey" ollama --project src/BattleshipGame.WebAPI`; any value works); see `docs/local-dev.md`. Hosted environments can use `OpenAi__*` environment variables. `BattleshipPromptBuilder` builds the prompts from `GameSnapshot` (a read-only game state projection).
 
 ## Conventions
 
