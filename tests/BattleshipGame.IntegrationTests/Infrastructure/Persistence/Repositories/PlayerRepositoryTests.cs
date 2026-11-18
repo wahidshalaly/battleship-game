@@ -1,5 +1,4 @@
 using BattleshipGame.Application.Interfaces.Persistence;
-using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -20,8 +19,8 @@ public class PlayerRepositoryTests(PostgresFixture postgres) : BaseRepositoryTes
     }
 
     // Each player needs a unique identity subject (DB has a unique index on it).
-    private static Player NewPlayer(string username, GameId? activeGameId = null) =>
-        new(new PlayerId(Guid.NewGuid()), username, $"sub_{Guid.NewGuid():N}", activeGameId);
+    private static Player NewPlayer(string username) =>
+        new(new PlayerId(Guid.NewGuid()), username, $"sub_{Guid.NewGuid():N}");
 
     #region GetByIdAsync Tests
 

@@ -16,8 +16,11 @@ public record GetPlayerByUsernameQuery(string Username) : IRequest<GetPlayerQuer
 /// Initializes a new instance of the GetPlayerByUsernameQueryHandler class.
 /// </remarks>
 /// <param name="playerRepository">The player repository.</param>
-public class GetPlayerByUsernameHandler(IPlayerRepository playerRepository)
-    : IRequestHandler<GetPlayerByUsernameQuery, GetPlayerQueryResult?>
+/// <param name="gameRepository">The game repository.</param>
+public class GetPlayerByUsernameHandler(
+    IPlayerRepository playerRepository,
+    IGameRepository gameRepository
+) : IRequestHandler<GetPlayerByUsernameQuery, GetPlayerQueryResult?>
 {
     /// <inheritdoc />
     public async Task<GetPlayerQueryResult?> Handle(
@@ -29,11 +32,6 @@ public class GetPlayerByUsernameHandler(IPlayerRepository playerRepository)
 
         return player is null
             ? null
-            : new GetPlayerQueryResult(
-                player.Id,
-                player.Username,
-                player.ActiveGameId?.Value,
-                player.TotalGamesPlayed
-            );
+            : await GetPlayerQueryResult.FromAsync(player, gameRepository, ct);
     }
 }

@@ -9,8 +9,8 @@ public class PlayerNotFoundException : Exception
         : base($"Player `{username}` is not found.") { }
 }
 
-public class PlayerIsInActiveException(Guid playerId)
-    : Exception($"Player `{playerId}` is in an active game.");
-
-public class PlayerIsNotInActiveException(Guid playerId)
-    : Exception($"Player `{playerId}` is NOT in an active game.");
+public class PlayerHasActiveGameException(Guid playerId, Guid activeGameId)
+    : Exception($"Player `{playerId}` already has an active game `{activeGameId}`.")
+{
+    public Guid ActiveGameId { get; } = activeGameId;
+}

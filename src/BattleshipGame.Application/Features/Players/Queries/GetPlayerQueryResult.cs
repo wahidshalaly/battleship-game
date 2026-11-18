@@ -1,3 +1,4 @@
+using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 
 namespace BattleshipGame.Application.Features.Players.Queries;
@@ -14,4 +15,21 @@ public record GetPlayerQueryResult(
     string Username,
     Guid? ActiveGameId,
     int TotalGamesPlayed
-);
+)
+{
+    internal static async Task<GetPlayerQueryResult> FromAsync(
+        Player player,
+        IGameRepository gameRepository,
+        CancellationToken ct
+    )
+    {
+        var activeGame = await gameRepository.GetActiveGameByPlayerIdAsync(player.Id, ct);
+        var totalGamesPlayed = await gameRepository.CountByPlayerIdAsync(player.Id, ct);
+        return new GetPlayerQueryResult(
+            player.Id,
+            player.Username,
+            activeGame?.Id.Value,
+            totalGamesPlayed
+        );
+    }
+}

@@ -67,7 +67,7 @@ public class AuthApiTests(PostgresFixture postgres, KeycloakFixture keycloak) : 
         using var authedClient = BearerClient(registerResult.AccessToken);
         var meResponse = await authedClient.GetAsync("/api/players/me");
         meResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
-        var me = await meResponse.Content.ReadFromJsonAsync<PlayerMeResponse>();
+        var me = await meResponse.Content.ReadFromJsonAsync<PlayerResponse>();
         me!.Username.Should().Be(username);
 
         // 3. GET /games/active — should be 204 (no active game yet)
@@ -169,11 +169,4 @@ public class AuthApiTests(PostgresFixture postgres, KeycloakFixture keycloak) : 
         );
         return client;
     }
-
-    private sealed record PlayerMeResponse(
-        Guid Id,
-        string Username,
-        Guid? ActiveGameId,
-        int TotalGamesPlayed
-    );
 }

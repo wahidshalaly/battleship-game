@@ -30,23 +30,24 @@ internal class StartNewGameHandler(
 {
     public async Task<Guid> Handle(StartNewGameCommand request, CancellationToken ct)
     {
-        var player =
+        _ =
             await playerRepository.GetByIdAsync(request.PlayerId, ct)
             ?? throw new PlayerNotFoundException(request.PlayerId);
 
-        var game = new Game(request.PlayerId, request.BoardSize, request.OpponentStrategy);
-        player.JoinGame(game.Id);
+        if (
+            await gameRepository.GetActiveGameByPlayerIdAsync(request.PlayerId, ct) is
+            { } activeGame
+        )
+            throw new PlayerHasActiveGameException(request.PlayerId, activeGame.Id);
 
-        // Both tracked on the same DbContext; UnitOfWorkBehavior commits them atomically.
+        var game = new Game(request.PlayerId, request.BoardSize, request.OpponentStrategy);
         await gameRepository.SaveAsync(game, ct);
-        await playerRepository.SaveAsync(player, ct);
 
         logger.LogInformation(
-            "Player joined new game. {@Payload}",
+            "Player started a new game. {@Payload}",
             new { PlayerId = request.PlayerId.Value, GameId = game.Id.Value }
         );
 
-        await eventDispatcher.DispatchEventsAsync(player, ct);
         await eventDispatcher.DispatchEventsAsync(game, ct);
 
         return game.Id;

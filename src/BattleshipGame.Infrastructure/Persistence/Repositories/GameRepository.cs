@@ -49,13 +49,16 @@ internal class GameRepository(BattleshipGameDbContext context) : IGameRepository
 
     public async Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken ct)
     {
-        var entity = await context
-            .Games.Where(g => g.PlayerId == playerId.Value && g.State != (int)GameState.GameOver)
-            .OrderBy(g => g.CreatedAt)
-            .LastOrDefaultAsync(ct);
+        var entity = await context.Games.FirstOrDefaultAsync(
+            g => g.PlayerId == playerId.Value && g.State != (int)GameState.GameOver,
+            ct
+        );
 
         return entity is null ? null : MapToDomain(entity);
     }
+
+    public Task<int> CountByPlayerIdAsync(PlayerId playerId, CancellationToken ct) =>
+        context.Games.CountAsync(g => g.PlayerId == playerId.Value, ct);
 
     private static Game MapToDomain(GameEntity entity) =>
         Game.Reconstitute(

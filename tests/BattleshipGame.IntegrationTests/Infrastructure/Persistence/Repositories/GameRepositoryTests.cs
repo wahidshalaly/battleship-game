@@ -117,7 +117,7 @@ public class GameRepositoryTests(PostgresFixture postgres) : BaseRepositoryTests
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var game1 = new Game(playerId);
+        var game1 = _fixture.CreateGameInStateGameOver(playerId, BoardSide.Player);
         var game2 = new Game(playerId);
         var otherPlayerGame = _fixture.CreateGameInStateReady(); // Different player
 
@@ -171,7 +171,7 @@ public class GameRepositoryTests(PostgresFixture postgres) : BaseRepositoryTests
 
         for (int i = 0; i < 5; i++)
         {
-            var game = new Game(playerId);
+            var game = _fixture.CreateGameInStateGameOver(playerId, BoardSide.Player);
             games.Add(game);
             await _subject.SaveAsync(game, _cancellationToken);
         }
@@ -234,15 +234,15 @@ public class GameRepositoryTests(PostgresFixture postgres) : BaseRepositoryTests
     }
 
     [Fact]
-    public async Task GetActiveGameByPlayerIdAsync_WithMultipleActiveGames_ShouldReturnLastCreatedActiveGame()
+    public async Task GetActiveGameByPlayerIdAsync_WithFinishedAndActiveGames_ShouldReturnActiveGame()
     {
         // Arrange
         var playerId = new PlayerId(Guid.NewGuid());
-        var game1 = new Game(playerId);
-        var game2 = new Game(playerId);
+        var finishedGame = _fixture.CreateGameInStateGameOver(playerId, BoardSide.Player);
+        var activeGame = new Game(playerId);
 
-        await _subject.SaveAsync(game1, _cancellationToken);
-        await _subject.SaveAsync(game2, _cancellationToken);
+        await _subject.SaveAsync(finishedGame, _cancellationToken);
+        await _subject.SaveAsync(activeGame, _cancellationToken);
         await CommitAsync();
 
         // Act
@@ -250,9 +250,65 @@ public class GameRepositoryTests(PostgresFixture postgres) : BaseRepositoryTests
 
         // Assert
         result.Should().NotBeNull();
-        result.PlayerId.Should().Be(playerId);
-        result.Id.Should().Be(game2.Id); // Last created active game
-        result.State.Should().Be(GameState.New);
+        result.Id.Should().Be(activeGame.Id);
+    }
+
+    [Fact]
+    public async Task GetActiveGameByPlayerIdAsync_WhenAllGamesAreOver_ShouldReturnNull()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        await _subject.SaveAsync(
+            _fixture.CreateGameInStateGameOver(playerId, BoardSide.Player),
+            _cancellationToken
+        );
+        await _subject.SaveAsync(
+            _fixture.CreateGameInStateGameOver(playerId, BoardSide.Opponent),
+            _cancellationToken
+        );
+        await CommitAsync();
+
+        // Act
+        var result = await _subject.GetActiveGameByPlayerIdAsync(playerId, _cancellationToken);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SaveAsync_WhenPlayerAlreadyHasActiveGame_ShouldBeRejectedByDatabase()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        await _subject.SaveAsync(new Game(playerId), _cancellationToken);
+        await CommitAsync();
+
+        // Act
+        await _subject.SaveAsync(new Game(playerId), _cancellationToken);
+        var act = () => CommitAsync();
+
+        // Assert
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public async Task CountByPlayerIdAsync_ShouldCountFinishedAndActiveGamesOfThatPlayerOnly()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        await _subject.SaveAsync(
+            _fixture.CreateGameInStateGameOver(playerId, BoardSide.Player),
+            _cancellationToken
+        );
+        await _subject.SaveAsync(new Game(playerId), _cancellationToken);
+        await _subject.SaveAsync(_fixture.CreateGameInStateReady(), _cancellationToken);
+        await CommitAsync();
+
+        // Act
+        var count = await _subject.CountByPlayerIdAsync(playerId, _cancellationToken);
+
+        // Assert
+        count.Should().Be(2);
     }
 
     [Fact]
@@ -371,7 +427,7 @@ public class GameRepositoryTests(PostgresFixture postgres) : BaseRepositoryTests
         var games = new List<Game>();
 
         for (int i = 0; i < gameCount; i++)
-            games.Add(new Game(playerId));
+            games.Add(_fixture.CreateGameInStateGameOver(playerId, BoardSide.Player));
 
         // Act
         foreach (var g in games)

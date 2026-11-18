@@ -7,7 +7,6 @@ public class BattleshipGameDbContext(DbContextOptions<BattleshipGameDbContext> o
     : DbContext(options)
 {
     internal DbSet<PlayerEntity> Players => Set<PlayerEntity>();
-    internal DbSet<PlayerGameHistoryEntry> PlayerGameHistory => Set<PlayerGameHistoryEntry>();
     internal DbSet<GameEntity> Games => Set<GameEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

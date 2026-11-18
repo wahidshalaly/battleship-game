@@ -91,8 +91,6 @@ graph TB
 - `GameReadyEvent`: Raised when both boards are ready for gameplay
 - `GameStartedEvent`: Raised when gameplay starts
 - `GameOverEvent`: Raised when game concludes
-- `PlayerJoinedGameEvent`: Raised when player joins game
-- `PlayerLeftGameEvent`: Raised when player leaves game
 
 **Dependencies**: None (pure domain logic)
 
@@ -331,13 +329,14 @@ Persistence is implemented with **Entity Framework Core 10** on **PostgreSQL** (
 
 ### DbContext and tables
 
-`BattleshipGameDbContext` exposes **internal** `DbSet`s (only the repositories touch them) and applies all `IEntityTypeConfiguration` types from the assembly. There are three tables:
+`BattleshipGameDbContext` exposes **internal** `DbSet`s (only the repositories touch them) and applies all `IEntityTypeConfiguration` types from the assembly. There are two tables:
 
 | Aggregate / entity | Table | Notes |
 |---|---|---|
-| `PlayerEntity` | `players` | Unique index on `username`; filtered unique index on `active_game_id` |
-| `PlayerGameHistoryEntry` | `player_game_history` | Child of player (FK `player_id`, cascade delete) |
-| `GameEntity` | `games` | Owns both boards as JSON (see below) |
+| `PlayerEntity` | `players` | Unique indexes on `username` and `identity_subject` |
+| `GameEntity` | `games` | Owns both boards as JSON (see below); filtered unique index on `player_id` for games that are not over (`IX_games_player_id_active`), so a player has at most one active game |
+
+A player's active game and game history are not stored on the player: they are the player's games that are, respectively, not over and over (`IGameRepository.GetActiveGameByPlayerIdAsync`, `CountByPlayerIdAsync`).
 
 There are **no separate Board / Cell / Ship tables**. Each `GameEntity` owns two boards (`OwnBoard`, `OppBoard`) mapped with `.ToJson()` into the `own_board` / `opp_board` `jsonb` columns; each board in turn owns its `Cells` and `Ships` collections, serialized inside that same JSON document. EF assigns a synthetic ordinal (`__synthesizedOrdinal`) as the key of these JSON-owned collection elements.
 

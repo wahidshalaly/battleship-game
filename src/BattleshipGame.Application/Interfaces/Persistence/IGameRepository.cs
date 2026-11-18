@@ -47,4 +47,6 @@ public interface IGameRepository
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The active game if found, otherwise null.</returns>
     Task<Game?> GetActiveGameByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
+
+    Task<int> CountByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
 }

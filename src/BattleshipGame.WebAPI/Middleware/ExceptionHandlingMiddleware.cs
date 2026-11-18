@@ -66,19 +66,13 @@ public class ExceptionHandlingMiddleware(
                 Status = StatusCodes.Status401Unauthorized,
                 Instance = context.Request.Path,
             },
-            PlayerIsInActiveException piaEx => new ProblemDetails
+            PlayerHasActiveGameException phagEx => new ProblemDetails
             {
                 Title = "Player Already In Game",
-                Detail = piaEx.Message,
-                Status = StatusCodes.Status400BadRequest,
+                Detail = phagEx.Message,
+                Status = StatusCodes.Status409Conflict,
                 Instance = context.Request.Path,
-            },
-            PlayerIsNotInActiveException pniaEx => new ProblemDetails
-            {
-                Title = "Player Not In Game",
-                Detail = pniaEx.Message,
-                Status = StatusCodes.Status400BadRequest,
-                Instance = context.Request.Path,
+                Extensions = { ["activeGameId"] = phagEx.ActiveGameId },
             },
             InvalidOperationException ioEx => new ProblemDetails
             {
