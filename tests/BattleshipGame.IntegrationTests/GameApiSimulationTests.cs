@@ -204,7 +204,10 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         var opponentHits = ShipCells(playerPlacements).Take(2).ToArray();
         var opponentMisses = OpenCells(playerPlacements).Take(2).ToArray();
 
+        // Each player attack below makes the server fire back on its own; the API can't choose
+        // that cell, so the scripted LLM opponent is told to fire at opponentHits/opponentMisses.
         _chat.ReplyWithCells([.. opponentHits, .. opponentMisses]);
+
         foreach (var cell in playerHits.Concat(playerMisses))
             await Attack(gameId, cell);
 
