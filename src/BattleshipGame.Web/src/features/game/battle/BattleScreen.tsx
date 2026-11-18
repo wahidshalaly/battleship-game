@@ -3,9 +3,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { problemMessage } from '../../../api/problemDetails'
 import type { components } from '../../../api/schema'
 import { BoardGrid } from '../../../components/BoardGrid'
-import { useAttack } from '../gameQueries'
-import { loadPlayerShips } from '../playerShipsStorage'
-import { applyRound, emptyBattleState } from './roundHistory'
+import { useAttack, useGameBoards } from '../gameQueries'
+import { toBattleState, type BoardState } from './battleState'
 
 type ShipKind = components['schemas']['ShipKind']
 
@@ -21,23 +20,31 @@ function sunkMessage(playerSunk?: ShipKind, opponentSunk?: ShipKind): string | n
   return parts.length > 0 ? parts.join(' ') : null
 }
 
+function cellClass(board: BoardState, code: string): string | null {
+  if (board.sunkCells.has(code)) return 'bg-red-900 border-red-700'
+  const shot = board.shots[code]
+  if (shot === 'Hit') return 'bg-red-600 border-red-400'
+  if (shot === 'Missed') return 'bg-slate-600 border-slate-500'
+  if (board.shipCells.has(code)) return 'bg-cyan-700 border-cyan-500'
+  return null
+}
+
 export function BattleScreen({ gameId, boardSize }: BattleScreenProps) {
   const queryClient = useQueryClient()
+  const boards = useGameBoards(gameId)
   const attack = useAttack(gameId)
-  const playerShips = useMemo(() => new Set(loadPlayerShips(gameId)), [gameId])
+  const battle = useMemo(() => toBattleState(boards.data), [boards.data])
 
-  const [battle, setBattle] = useState(emptyBattleState)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [gameOver, setGameOver] = useState(false)
 
   async function handleAttack(cell: string) {
-    if (gameOver || attack.isPending || cell in battle.myShots) return
+    if (gameOver || attack.isPending || cell in battle.opponent.shots) return
     setError(null)
     setMessage(null)
     try {
       const round = await attack.mutateAsync(cell)
-      setBattle((prev) => applyRound(prev, round))
       setMessage(sunkMessage(round.playerSunkShip, round.opponentSunkShip))
       if (round.gameState === 'GameOver') {
         setGameOver(true)
@@ -51,18 +58,26 @@ export function BattleScreen({ gameId, boardSize }: BattleScreenProps) {
   }
 
   function opponentCellClass(code: string): string {
-    const shot = battle.myShots[code]
-    if (shot === 'Hit') return 'bg-red-600 border-red-400'
-    if (shot === 'Missed') return 'bg-slate-600 border-slate-500'
-    return gameOver ? 'bg-slate-800' : 'bg-slate-800 hover:bg-cyan-800 cursor-crosshair'
+    return (
+      cellClass(battle.opponent, code) ??
+      (gameOver ? 'bg-slate-800' : 'bg-slate-800 hover:bg-cyan-800 cursor-crosshair')
+    )
   }
 
   function myCellClass(code: string): string {
-    const shot = battle.incomingShots[code]
-    if (shot === 'Hit') return 'bg-red-600 border-red-400'
-    if (shot === 'Missed') return 'bg-slate-600 border-slate-500'
-    if (playerShips.has(code)) return 'bg-cyan-700 border-cyan-500'
-    return 'bg-slate-800'
+    return cellClass(battle.own, code) ?? 'bg-slate-800'
+  }
+
+  if (boards.isLoading) {
+    return <p className="text-slate-400">Loading boards…</p>
+  }
+
+  if (boards.error) {
+    return (
+      <p role="alert" className="text-red-400">
+        {problemMessage(boards.error, 'Could not load the boards.')}
+      </p>
+    )
   }
 
   return (

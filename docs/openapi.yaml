@@ -222,6 +222,56 @@ paths:
                 $ref: '#/components/schemas/ProblemDetails'
         '500':
           description: Internal server error.
+  '/api/games/{id}/boards':
+    get:
+      tags:
+        - Games
+      summary: Retrieves the caller's view of both boards of a game.
+      description: "The own board has every ship, and the opponent's hits and misses. The opponent board has\nthe caller's hits and misses, and only the ships the caller has sunk."
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Returns both boards.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/GetGameBoardsQueryResult'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetGameBoardsQueryResult'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/GetGameBoardsQueryResult'
+        '403':
+          description: The caller does not own the game.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Game not found.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
   /api/games/active:
     get:
       tags:
@@ -582,6 +632,25 @@ components:
         - Player
         - Opponent
       type: string
+    BoardView:
+      type: object
+      properties:
+        ships:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShipView'
+          nullable: true
+        hits:
+          type: array
+          items:
+            type: string
+          nullable: true
+        misses:
+          type: array
+          items:
+            type: string
+          nullable: true
+      additionalProperties: false
     CellState:
       enum:
         - None
@@ -622,6 +691,17 @@ components:
           $ref: '#/components/schemas/GameState'
         winner:
           $ref: '#/components/schemas/BoardSide'
+      additionalProperties: false
+    GetGameBoardsQueryResult:
+      type: object
+      properties:
+        gameId:
+          type: string
+          format: uuid
+        ownBoard:
+          $ref: '#/components/schemas/BoardView'
+        opponentBoard:
+          $ref: '#/components/schemas/BoardView'
       additionalProperties: false
     GetGameQueryResult:
       type: object
@@ -759,6 +839,19 @@ components:
         - Vertical
         - Horizontal
       type: string
+    ShipView:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/ShipKind'
+        position:
+          type: array
+          items:
+            type: string
+          nullable: true
+        sunk:
+          type: boolean
+      additionalProperties: false
     SignInRequest:
       type: object
       properties:

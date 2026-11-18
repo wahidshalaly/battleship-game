@@ -2,44 +2,53 @@ import { useMemo, useState } from 'react'
 import { problemMessage } from '../../../api/problemDetails'
 import type { components } from '../../../api/schema'
 import { BoardGrid } from '../../../components/BoardGrid'
-import { usePlaceShip, useStartGame } from '../gameQueries'
-import { savePlayerShips } from '../playerShipsStorage'
+import { useGameBoards, usePlaceShip, useStartGame } from '../gameQueries'
 import { cellsForShip, fits, generateRandomPlacements } from './placementLogic'
 import { SHIP_KINDS, SHIP_LENGTHS, type PlaceableShipKind } from './shipLengths'
 
+type GameState = components['schemas']['GameState']
 type ShipOrientation = components['schemas']['ShipOrientation']
 
 interface PlacementScreenProps {
   gameId: string
   boardSize: number
+  gameState: GameState
 }
 
-export function PlacementScreen({ gameId, boardSize }: PlacementScreenProps) {
+export function PlacementScreen({ gameId, boardSize, gameState }: PlacementScreenProps) {
+  const boards = useGameBoards(gameId)
   const placeShip = usePlaceShip(gameId)
   const startGame = useStartGame(gameId)
 
-  const [placed, setPlaced] = useState<Record<string, string[]>>({})
-  const [armed, setArmed] = useState<PlaceableShipKind>(SHIP_KINDS[0])
+  const [chosen, setChosen] = useState<PlaceableShipKind | null>(null)
   const [orientation, setOrientation] = useState<ShipOrientation>('Horizontal')
   const [hover, setHover] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const placed = useMemo(
+    () =>
+      Object.fromEntries(
+        (boards.data?.ownBoard?.ships ?? []).map((ship) => [ship.kind, ship.position ?? []]),
+      ) as Record<string, string[]>,
+    [boards.data],
+  )
   const occupied = useMemo(() => new Set(Object.values(placed).flat()), [placed])
   const remaining = SHIP_KINDS.filter((k) => !(k in placed))
   const allPlaced = remaining.length === 0
+  const armed = chosen !== null && !(chosen in placed) ? chosen : remaining[0]
 
   // Cells the armed ship would occupy under the cursor (for a placement preview).
   const preview = useMemo(() => {
-    if (allPlaced || hover === null) return null
+    if (armed === undefined || hover === null) return null
     const cells = cellsForShip(armed, orientation, hover, boardSize)
     return cells && fits(cells, occupied) ? cells : null
-  }, [allPlaced, hover, armed, orientation, boardSize, occupied])
+  }, [hover, armed, orientation, boardSize, occupied])
 
   const previewSet = useMemo(() => new Set(preview ?? []), [preview])
 
   async function handleCellClick(bowCode: string) {
     setError(null)
-    if (allPlaced) return
+    if (armed === undefined) return
 
     const cells = cellsForShip(armed, orientation, bowCode, boardSize)
     if (!cells) {
@@ -58,12 +67,6 @@ export function PlacementScreen({ gameId, boardSize }: PlacementScreenProps) {
         orientation,
         bowCode,
       })
-      setPlaced((prev) => {
-        const next = { ...prev, [armed]: cells }
-        const stillRemaining = SHIP_KINDS.filter((k) => !(k in next))
-        if (stillRemaining.length > 0) setArmed(stillRemaining[0])
-        return next
-      })
     } catch (err) {
       setError(problemMessage(err, 'The server rejected that placement.'))
     }
@@ -73,6 +76,18 @@ export function PlacementScreen({ gameId, boardSize }: PlacementScreenProps) {
     if (occupied.has(code)) return 'bg-cyan-700 border-cyan-500'
     if (previewSet.has(code)) return 'bg-cyan-900 border-cyan-600'
     return 'bg-slate-800 hover:bg-slate-700'
+  }
+
+  if (boards.isLoading) {
+    return <p className="text-slate-400">Loading board…</p>
+  }
+
+  if (boards.error) {
+    return (
+      <p role="alert" className="text-red-400">
+        {problemMessage(boards.error, 'Could not load the board.')}
+      </p>
+    )
   }
 
   return (
@@ -125,7 +140,7 @@ export function PlacementScreen({ gameId, boardSize }: PlacementScreenProps) {
                   <button
                     type="button"
                     disabled={isPlaced}
-                    onClick={() => setArmed(kind)}
+                    onClick={() => setChosen(kind)}
                     className={`flex w-56 items-center justify-between rounded-md px-3 py-2 text-sm transition ${
                       isPlaced
                         ? 'bg-slate-800 text-slate-500 line-through'
@@ -146,10 +161,11 @@ export function PlacementScreen({ gameId, boardSize }: PlacementScreenProps) {
         {allPlaced && (
           <button
             type="button"
-            onClick={() => {
-              savePlayerShips(gameId, [...occupied])
-              startGame.mutate(generateRandomPlacements(boardSize))
-            }}
+            onClick={() =>
+              // A Ready game already has the opponent's ships (e.g. the tab closed while
+              // starting), and placing them again would be rejected.
+              startGame.mutate(gameState === 'Ready' ? [] : generateRandomPlacements(boardSize))
+            }
             disabled={startGame.isPending}
             className="mt-2 rounded-lg bg-emerald-600 px-5 py-2 font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
           >

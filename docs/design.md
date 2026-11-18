@@ -31,6 +31,7 @@ classDiagram
         +ShipId PlaceShip(BoardSide, ShipKind, ShipOrientation, string)
         +void Attack(BoardSide, string)
         +ShipKind GetShipKind(BoardSide, ShipId)
+        +bool IsShipSunk(BoardSide, ShipId)
         +bool IsGameOver(BoardSide)
         +bool IsReady(BoardSide)
     }
@@ -242,6 +243,7 @@ classDiagram
     class Queries {
         <<CQRS>>
         GetGameQuery
+        GetGameBoardsQuery
         GetPlayerQuery
     }
 
@@ -267,6 +269,7 @@ classDiagram
         <<ApiController>>
         +IActionResult StartNewGame(CreateGameRequest)
         +ActionResult~GetGameQueryResult~ GetGame(Guid)
+        +ActionResult~GetGameBoardsQueryResult~ GetGameBoards(Guid)
         +ActionResult~Guid~ PlaceShip(Guid, PlaceShipRequest)
         +ActionResult~LastRoundResult~ Attack(Guid, AttackRequest)
         +ActionResult~GameStateResponse~ UpdateGameState(Guid, UpdateGameStateRequest)
@@ -303,6 +306,24 @@ classDiagram
         +BoardSide WinnerSide
     }
 
+    class GetGameBoardsQueryResult {
+        +Guid GameId
+        +BoardView OwnBoard
+        +BoardView OpponentBoard
+    }
+
+    class BoardView {
+        +ShipView[] Ships
+        +string[] Hits
+        +string[] Misses
+    }
+
+    class ShipView {
+        +ShipKind Kind
+        +string[] Position
+        +bool Sunk
+    }
+
     class GameStateResponse {
         +GameState State
         +BoardSide WinnerSide
@@ -325,6 +346,9 @@ classDiagram
     GamesController ..> AttackRequest
     GamesController ..> UpdateGameStateRequest
     GamesController ..> GetGameQueryResult
+    GamesController ..> GetGameBoardsQueryResult
+    GetGameBoardsQueryResult *-- BoardView
+    BoardView *-- ShipView
     GamesController ..> GameStateResponse
     GamesController ..> LastRoundResult
 ```

@@ -102,8 +102,8 @@ graph TB
   - `IGameplayService`, `GameplayService` — Orchestrates game lifecycle
   - `IPlayerService`, `PlayerService` — Manages player operations and current-caller lookup (`GetCurrentAsync`, `GetCurrentRequiredAsync`, `CreateAsync`)
 - **Commands**: `CreateGameCommand`, `PlaceShipCommand`, `PlayerAttackCommand`, `OpponentAttackCommand`, `CreatePlayerCommand` (handlers via MediatR)
-- **Queries**: `GetGameQuery`, `GetPlayerQuery`, `GetPlayerByUsernameQuery`, `GetPlayerByIdentitySubjectQuery` (handlers via MediatR)
-- **DTOs**: Data transfer objects for inter-layer communication (`GetGameQueryResult`, `GetPlayerQueryResult`)
+- **Queries**: `GetGameQuery`, `GetGameBoardsQuery` (the player's view of both boards: own ships in full, only sunk opponent ships), `GetPlayerQuery`, `GetPlayerByUsernameQuery`, `GetPlayerByIdentitySubjectQuery` (handlers via MediatR)
+- **DTOs**: Data transfer objects for inter-layer communication (`GetGameQueryResult`, `GetGameBoardsQueryResult`, `GetPlayerQueryResult`)
 - **Result Types**: Rich result objects from commands (`AttackResult`, `LastRoundResult`)
 - **Repository Contracts**: `IGameRepository`, `IPlayerRepository` (abstraction for persistence)
 - **Identity Contracts**: `IIdentityProvider` — abstraction over the external IdP (Keycloak in production/tests)
@@ -169,7 +169,7 @@ graph TB
 - **Controllers**:
   - `AuthController` — identity façade: `POST /api/auth/register`, `POST /api/auth/signin`, `POST /api/auth/refresh`, `POST /api/auth/logout` (all `[AllowAnonymous]`)
   - `PlayersController` — `GET /api/players/me` (caller's own profile)
-  - `GamesController` — game lifecycle endpoints + `GET /api/games/active`
+  - `GamesController` — game lifecycle endpoints + `GET /api/games/active` + `GET /api/games/{id}/boards` (the caller's view of both boards, so a client can resume a game)
 - **DTOs**: Request/response models (e.g., `RegisterRequest`, `SignInRequest`, `AuthTokenResponse`, `CreateGameRequest`)
 - **Middleware**: `ExceptionHandlingMiddleware` — maps domain/application exceptions to HTTP status codes (401 `InvalidCredentialsException`, 403 `ForbiddenAccessException`, 404 `NotFoundException`, 409 `IdentityConflictException`)
 - **Validation**: `FluentValidation` validators per request type

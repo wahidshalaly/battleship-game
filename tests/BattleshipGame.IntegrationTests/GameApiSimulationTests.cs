@@ -96,6 +96,145 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.Forbidden);
     }
 
+    [Fact]
+    public async Task GetBoards_WhenCallerIsNotOwner_IsForbidden()
+    {
+        await SeedPlayer(_clientSubject, $"owner_{Guid.NewGuid():N}"[..32]);
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.Random);
+
+        var otherSubject = Guid.NewGuid().ToString();
+        using var other = CreateAuthenticatedClient(otherSubject);
+        await SeedPlayer(otherSubject, $"other_{Guid.NewGuid():N}"[..32]);
+
+        var response = await other.GetAsync($"/api/games/{gameId}/boards");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task GetBoards_WhenGameDoesNotExist_IsNotFound()
+    {
+        await SeedPlayer(_clientSubject, $"owner_{Guid.NewGuid():N}"[..32]);
+
+        var response = await _client.GetAsync($"/api/games/{Guid.NewGuid()}/boards");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetBoards_DuringPlacement_ReturnsShipsPlacedSoFar()
+    {
+        await SeedPlayer(_clientSubject, $"u_placement_{Guid.NewGuid():N}"[..32]);
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.Random);
+        var playerPlacements = GenerateRandomShipPlacements(BoardSize);
+        var placedSoFar = playerPlacements[..2];
+        await PlaceShips(gameId, placedSoFar, []);
+
+        var boards = await GetBoards(gameId);
+
+        boards
+            .OwnBoard.Ships.Should()
+            .BeEquivalentTo(placedSoFar.Select(p => new ShipView(p.Kind, p.Position, Sunk: false)));
+        boards.OpponentBoard.Ships.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetBoards_MidGame_ReturnsEarlierShotsAndHidesUnsunkOpponentShips()
+    {
+        // Arrange: sink the opponent's destroyer and hit one cell of another ship.
+        await SeedPlayer(_clientSubject, $"u_boards_{Guid.NewGuid():N}"[..32]);
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.Random);
+        var opponentPlacements = GenerateRandomShipPlacements(BoardSize);
+        var playerPlacements = GenerateRandomShipPlacements(BoardSize);
+        await PlaceShips(gameId, playerPlacements, opponentPlacements);
+        await StartGameplay(gameId);
+
+        var destroyer = opponentPlacements.Single(p => p.Kind == ShipKind.Destroyer);
+        var damaged = opponentPlacements.First(p => p.Kind != ShipKind.Destroyer);
+        string[] playerShots = [.. destroyer.Position, damaged.Position[0]];
+        var opponentShots = new List<(string Cell, CellState Result)>();
+        foreach (var cell in playerShots)
+        {
+            var round = await Attack(gameId, cell);
+            opponentShots.Add((round.OpponentTargetCell!, round.OpponentAttackResult!.Value));
+        }
+
+        // Act
+        var boards = await GetBoards(gameId);
+
+        // Assert
+        boards.GameId.Should().Be(gameId);
+        boards.OpponentBoard.Hits.Should().BeEquivalentTo(playerShots);
+        boards.OpponentBoard.Misses.Should().BeEmpty();
+        boards
+            .OpponentBoard.Ships.Should()
+            .ContainSingle()
+            .Which.Should()
+            .BeEquivalentTo(new ShipView(ShipKind.Destroyer, destroyer.Position, Sunk: true));
+
+        boards
+            .OwnBoard.Ships.Should()
+            .BeEquivalentTo(playerPlacements.Select(p => new { p.Kind, p.Position }));
+        boards
+            .OwnBoard.Hits.Should()
+            .BeEquivalentTo(
+                opponentShots.Where(s => s.Result == CellState.Hit).Select(s => s.Cell)
+            );
+        boards
+            .OwnBoard.Misses.Should()
+            .BeEquivalentTo(
+                opponentShots.Where(s => s.Result == CellState.Missed).Select(s => s.Cell)
+            );
+    }
+
+    [Fact]
+    public async Task ResumeAfterSigningOut_RestoresEveryHitAndMissOnBothBoards()
+    {
+        // Arrange: a game half-way through, with hits and misses on both sides. The opponent
+        // is the scripted LLM, so its shots are known up front.
+        await SeedPlayer(_clientSubject, $"u_resume_{Guid.NewGuid():N}"[..32]);
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.SemanticKernel);
+        var opponentPlacements = GenerateRandomShipPlacements(BoardSize);
+        var playerPlacements = GenerateRandomShipPlacements(BoardSize);
+        await PlaceShips(gameId, playerPlacements, opponentPlacements);
+        await StartGameplay(gameId);
+
+        var playerHits = ShipCells(opponentPlacements).Take(2).ToArray();
+        var playerMisses = OpenCells(opponentPlacements).Take(2).ToArray();
+        var opponentHits = ShipCells(playerPlacements).Take(2).ToArray();
+        var opponentMisses = OpenCells(playerPlacements).Take(2).ToArray();
+
+        // Each player attack below makes the server fire back on its own; the API can't choose
+        // that cell, so the scripted LLM opponent is told to fire at opponentHits/opponentMisses.
+        _chat.ReplyWithCells([.. opponentHits, .. opponentMisses]);
+
+        foreach (var cell in playerHits.Concat(playerMisses))
+            await Attack(gameId, cell);
+
+        // Act: sign out (drop the session) and sign in again as the same player, then resume
+        // the active game the way the lobby does.
+        _client.DefaultRequestHeaders.Remove(TestAuthHandler.SubjectHeader);
+        using var signedInAgain = CreateAuthenticatedClient(_clientSubject);
+        var activeGame = await signedInAgain.GetFromJsonAsync<GetGameQueryResult>(
+            "/api/games/active"
+        );
+        var boards = await signedInAgain.GetFromJsonAsync<GetGameBoardsQueryResult>(
+            $"/api/games/{activeGame!.GameId}/boards"
+        );
+
+        // Assert
+        activeGame.GameId.Should().Be(gameId);
+        activeGame.State.Should().Be(GameState.Started);
+        boards.Should().NotBeNull();
+        boards.OpponentBoard.Hits.Should().BeEquivalentTo(playerHits);
+        boards.OpponentBoard.Misses.Should().BeEquivalentTo(playerMisses);
+        boards.OwnBoard.Hits.Should().BeEquivalentTo(opponentHits);
+        boards.OwnBoard.Misses.Should().BeEquivalentTo(opponentMisses);
+        boards
+            .OwnBoard.Ships.Should()
+            .BeEquivalentTo(playerPlacements.Select(p => new { p.Kind, p.Position }));
+    }
+
     [Theory]
     [InlineData(OpponentStrategy.Random)]
     [InlineData(OpponentStrategy.SemanticKernel)]
@@ -258,6 +397,16 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         roundResult.GameState.Should().Be(GameState.Started);
     }
 
+    // Cells covered by the placed ships: attacking any of them is a hit.
+    private static IEnumerable<string> ShipCells(
+        (string BowCode, ShipKind Kind, ShipOrientation Orientation, string[] Position)[] placements
+    ) => placements.SelectMany(p => p.Position);
+
+    // Cells no ship covers: attacking any of them is a miss.
+    private static IEnumerable<string> OpenCells(
+        (string BowCode, ShipKind Kind, ShipOrientation Orientation, string[] Position)[] placements
+    ) => AllCells(BoardSize).Except(ShipCells(placements));
+
     // Every cell on the board in a fixed order (A1, B1, ... then A2, ...); never repeats.
     private static List<string> AllCells(int boardSize) =>
         [
@@ -314,6 +463,27 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         var result = await _client.GetFromJsonAsync<GetGameQueryResult>($"/api/games/{gameId}");
         result.Should().NotBeNull();
         return result;
+    }
+
+    private async Task<GetGameBoardsQueryResult> GetBoards(Guid gameId)
+    {
+        var result = await _client.GetFromJsonAsync<GetGameBoardsQueryResult>(
+            $"/api/games/{gameId}/boards"
+        );
+        result.Should().NotBeNull();
+        return result;
+    }
+
+    private async Task<LastRoundResult> Attack(Guid gameId, string cell)
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/api/games/{gameId}/attacks",
+            new AttackRequest(cell)
+        );
+        response.EnsureSuccessStatusCode();
+        var round = await response.Content.ReadFromJsonAsync<LastRoundResult>();
+        round.Should().NotBeNull();
+        return round;
     }
 
     private async Task VerifyGameState(Guid gameId, GameState gameState)
