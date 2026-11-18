@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router'
 import { problemMessage } from '../../api/problemDetails'
 import type { components } from '../../api/schema'
 import { PageShell } from '../../components/PageShell'
+import { useAuth } from '../auth/AuthContext'
+import { LeaderboardPanel } from '../stats/LeaderboardPanel'
+import { PlayerRecord } from '../stats/PlayerRecord'
+import { useLeaderboard } from '../stats/statsQueries'
 import { useActiveGame, useCreateGame } from './gameQueries'
 
 type OpponentStrategy = components['schemas']['OpponentStrategy']
@@ -16,6 +20,8 @@ export function LobbyPage() {
   const navigate = useNavigate()
   const { data: activeGame, isLoading } = useActiveGame()
   const createGame = useCreateGame()
+  const { player } = useAuth()
+  const leaderboard = useLeaderboard()
   const [opponent, setOpponent] = useState<OpponentStrategy>('Random')
   const [error, setError] = useState<string | null>(null)
 
@@ -77,6 +83,17 @@ export function LobbyPage() {
           </button>
         </section>
       )}
+      <div className="mt-8 grid gap-8 lg:grid-cols-3">
+        <PlayerRecord player={player} />
+        <div className="lg:col-span-2">
+          <LeaderboardPanel
+            leaderboard={leaderboard.data}
+            isLoading={leaderboard.isLoading}
+            isError={leaderboard.isError}
+            currentPlayerId={player?.id}
+          />
+        </div>
+      </div>
     </PageShell>
   )
 }
