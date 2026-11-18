@@ -107,7 +107,7 @@ tests/
 
 ### AI Opponent Configuration
 
-The `OpenAi` section in `appsettings.json` (or user secrets) configures the LLM endpoint. For local development, Ollama is expected at the configured URL. The default dev model is `llama-3.3-70b-versatile`. The SK strategy builds prompts via `BattleshipPromptBuilder` using `GameSnapshot` (a read-only game state projection).
+The `OpenAi` section in `appsettings.json` (or user secrets) configures the LLM endpoint. For local development, Ollama is expected at the configured URL. The default dev model is `gemma4`. The SK strategy builds prompts via `BattleshipPromptBuilder` using `GameSnapshot` (a read-only game state projection).
 
 ## Conventions
 
