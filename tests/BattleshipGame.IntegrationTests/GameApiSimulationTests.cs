@@ -190,41 +190,22 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     [Fact]
     public async Task ResumeAfterSigningOut_RestoresEveryHitAndMissOnBothBoards()
     {
-        // Arrange: a game half-way through, with hits and misses on both sides. The opponent
-        // is the scripted LLM, so its shots are known up front.
+        // Arrange: a game half-way through, with hits and misses on both sides. Both fleets
+        // sit in columns A-E (see FleetInColumnsAToE), so A-E cells hit and F-J cells miss.
+        string[] playerHits = ["A1", "B1"];
+        string[] playerMisses = ["F1", "G1"];
+        string[] opponentHits = ["C1", "D1"];
+        string[] opponentMisses = ["H1", "I1"];
+
         await SeedPlayer(_clientSubject, $"u_resume_{Guid.NewGuid():N}"[..32]);
+        // A Random opponent fires wherever it likes; an LLM opponent fires where the scripted
+        // fake tells it to, which is the only way to choose the opponent's shots.
         var gameId = await CreateGame(BoardSize, OpponentStrategy.SemanticKernel);
-        var opponentPlacements = GenerateRandomShipPlacements(BoardSize);
-        var playerPlacements = GenerateRandomShipPlacements(BoardSize);
-        await PlaceShips(gameId, playerPlacements, opponentPlacements);
+        await PlaceShips(gameId, FleetInColumnsAToE, FleetInColumnsAToE);
         await StartGameplay(gameId);
 
-        var opponentShipCells = opponentPlacements.SelectMany(p => p.Position).ToHashSet();
-        var playerShipCells = playerPlacements.SelectMany(p => p.Position).ToHashSet();
-        string[] playerHits =
-        [
-            opponentPlacements[0].Position[0],
-            opponentPlacements[1].Position[0],
-        ];
-        string[] playerMisses =
-        [
-            .. AllCells(BoardSize).Where(c => !opponentShipCells.Contains(c)).Take(2),
-        ];
-        string[] opponentHits = [playerPlacements[0].Position[0], playerPlacements[1].Position[0]];
-        string[] opponentMisses =
-        [
-            .. AllCells(BoardSize).Where(c => !playerShipCells.Contains(c)).Take(2),
-        ];
-        _chat.ReplyWithCells([
-            opponentHits[0],
-            opponentMisses[0],
-            opponentHits[1],
-            opponentMisses[1],
-        ]);
-
-        foreach (
-            var cell in (string[])[playerHits[0], playerMisses[0], playerHits[1], playerMisses[1]]
-        )
+        _chat.ReplyWithCells([.. opponentHits, .. opponentMisses]);
+        foreach (var cell in (string[])[.. playerHits, .. playerMisses])
             await Attack(gameId, cell);
 
         // Act: sign out (drop the session) and sign in again as the same player, then resume
@@ -248,7 +229,7 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         boards.OwnBoard.Misses.Should().BeEquivalentTo(opponentMisses);
         boards
             .OwnBoard.Ships.Should()
-            .BeEquivalentTo(playerPlacements.Select(p => new { p.Kind, p.Position }));
+            .BeEquivalentTo(FleetInColumnsAToE.Select(p => new { p.Kind, p.Position }));
     }
 
     [Theory]
@@ -412,6 +393,21 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         roundResult.OpponentAttackResult.Should().NotBeNull();
         roundResult.GameState.Should().Be(GameState.Started);
     }
+
+    // Every ship upright from row 1, one per column A-E, leaving columns F-J empty.
+    private static readonly (
+        string BowCode,
+        ShipKind Kind,
+        ShipOrientation Orientation,
+        string[] Position
+    )[] FleetInColumnsAToE =
+    [
+        ("A1", ShipKind.Carrier, ShipOrientation.Vertical, ["A1", "A2", "A3", "A4", "A5"]),
+        ("B1", ShipKind.Battleship, ShipOrientation.Vertical, ["B1", "B2", "B3", "B4"]),
+        ("C1", ShipKind.Cruiser, ShipOrientation.Vertical, ["C1", "C2", "C3"]),
+        ("D1", ShipKind.Submarine, ShipOrientation.Vertical, ["D1", "D2", "D3"]),
+        ("E1", ShipKind.Destroyer, ShipOrientation.Vertical, ["E1", "E2"]),
+    ];
 
     // Every cell on the board in a fixed order (A1, B1, ... then A2, ...); never repeats.
     private static List<string> AllCells(int boardSize) =>
