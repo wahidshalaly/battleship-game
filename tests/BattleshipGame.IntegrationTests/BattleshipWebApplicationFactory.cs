@@ -11,9 +11,6 @@ internal sealed class BattleshipWebApplicationFactory(
     FakeLlmChat? llmChat = null
 ) : WebApplicationFactory<Program>
 {
-    // Runs before the first factory instance boots the API, which reads OPENAI_* at startup.
-    static BattleshipWebApplicationFactory() => TestOpenAiSettings.EnsureEnvironment();
-
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
@@ -55,6 +52,11 @@ internal sealed class BattleshipWebApplicationFactory(
         builder.UseSetting("Keycloak:ClientSecret", "test-secret");
         builder.UseSetting("Keycloak:AdminUsername", "admin");
         builder.UseSetting("Keycloak:AdminPassword", "admin");
+
+        // Never contacted (the LLM is faked above), but the API validates these at startup.
+        builder.UseSetting("OpenAi:ModelId", "test-model");
+        builder.UseSetting("OpenAi:Endpoint", "http://127.0.0.1:9/v1");
+        builder.UseSetting("OpenAi:ApiKey", "test-placeholder-not-a-real-key");
 
         // A failing AI opponent is retried with real (2s+) backoff before falling back; one retry
         // keeps those tests fast while still exercising the retry path.
