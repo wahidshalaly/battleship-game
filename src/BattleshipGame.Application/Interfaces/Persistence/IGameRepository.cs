@@ -1,3 +1,4 @@
+using BattleshipGame.Application.Features.Players.Queries;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 
@@ -55,4 +56,12 @@ public interface IGameRepository
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The number of games.</returns>
     Task<int> CountByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
+
+    /// <summary>
+    /// Counts the wins and losses among a specific player's finished games.
+    /// </summary>
+    /// <param name="playerId">The player identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The player's game results; <see cref="GameResults.None"/> if none is finished.</returns>
+    Task<GameResults> GetResultsByPlayerIdAsync(PlayerId playerId, CancellationToken ct);
 }

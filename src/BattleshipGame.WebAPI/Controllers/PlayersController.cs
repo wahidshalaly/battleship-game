@@ -64,11 +64,30 @@ public class PlayersController(ILogger<PlayersController> logger, IPlayerService
     }
 
     private static PlayerResponse ToResponse(GetPlayerQueryResult result) =>
-        new(result.PlayerId.Value, result.Username, result.ActiveGameId, result.TotalGamesPlayed);
+        new(
+            result.PlayerId.Value,
+            result.Username,
+            result.ActiveGameId,
+            result.TotalGamesPlayed,
+            result.GamesWon,
+            result.GamesLost,
+            result.WinRate
+        );
 }
 
 /// <param name="Id">The player's unique identifier.</param>
 /// <param name="Username">The player's username.</param>
 /// <param name="ActiveGameId">The currently active game ID, if any.</param>
-/// <param name="TotalGamesPlayed">The total number of games played.</param>
-public record PlayerResponse(Guid Id, string Username, Guid? ActiveGameId, int TotalGamesPlayed);
+/// <param name="TotalGamesPlayed">The total number of games played, finished or not.</param>
+/// <param name="GamesWon">The number of finished games the player won.</param>
+/// <param name="GamesLost">The number of finished games the player lost.</param>
+/// <param name="WinRate">The share of finished games won, from 0 to 1.</param>
+public record PlayerResponse(
+    Guid Id,
+    string Username,
+    Guid? ActiveGameId,
+    int TotalGamesPlayed,
+    int GamesWon,
+    int GamesLost,
+    double WinRate
+);

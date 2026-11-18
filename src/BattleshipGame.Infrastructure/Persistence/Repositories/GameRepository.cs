@@ -1,3 +1,4 @@
+using BattleshipGame.Application.Features.Players.Queries;
 using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
@@ -59,6 +60,23 @@ internal class GameRepository(BattleshipGameDbContext context) : IGameRepository
 
     public Task<int> CountByPlayerIdAsync(PlayerId playerId, CancellationToken ct) =>
         context.Games.CountAsync(g => g.PlayerId == playerId.Value, ct);
+
+    public async Task<GameResults> GetResultsByPlayerIdAsync(
+        PlayerId playerId,
+        CancellationToken ct
+    )
+    {
+        var results = await context
+            .Games.Where(g => g.PlayerId == playerId.Value && g.State == (int)GameState.GameOver)
+            .GroupBy(g => g.PlayerId)
+            .Select(games => new GameResults(
+                games.Count(g => g.WinnerSide == (int)BoardSide.Player),
+                games.Count(g => g.WinnerSide == (int)BoardSide.Opponent)
+            ))
+            .SingleOrDefaultAsync(ct);
+
+        return results ?? GameResults.None;
+    }
 
     private static Game MapToDomain(GameEntity entity) =>
         Game.Reconstitute(

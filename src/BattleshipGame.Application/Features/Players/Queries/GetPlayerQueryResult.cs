@@ -9,16 +9,22 @@ namespace BattleshipGame.Application.Features.Players.Queries;
 /// <param name="PlayerId">The player's identifier.</param>
 /// <param name="Username">The player's username.</param>
 /// <param name="ActiveGameId">The currently active game ID, if any.</param>
-/// <param name="TotalGamesPlayed">The total number of games played.</param>
+/// <param name="TotalGamesPlayed">The total number of games played, finished or not.</param>
+/// <param name="GamesWon">The number of finished games the player won.</param>
+/// <param name="GamesLost">The number of finished games the player lost.</param>
+/// <param name="WinRate">The share of finished games won, from 0 to 1.</param>
 public record GetPlayerQueryResult(
     PlayerId PlayerId,
     string Username,
     Guid? ActiveGameId,
-    int TotalGamesPlayed
+    int TotalGamesPlayed,
+    int GamesWon,
+    int GamesLost,
+    double WinRate
 )
 {
     /// <summary>
-    /// Creates the result for a player, reading their active game and game count from games.
+    /// Creates the result for a player, reading their active game and statistics from games.
     /// </summary>
     /// <param name="player">The player.</param>
     /// <param name="gameRepository">The game repository.</param>
@@ -32,11 +38,15 @@ public record GetPlayerQueryResult(
     {
         var activeGame = await gameRepository.GetActiveGameByPlayerIdAsync(player.Id, ct);
         var totalGamesPlayed = await gameRepository.CountByPlayerIdAsync(player.Id, ct);
+        var results = await gameRepository.GetResultsByPlayerIdAsync(player.Id, ct);
         return new GetPlayerQueryResult(
             player.Id,
             player.Username,
             activeGame?.Id.Value,
-            totalGamesPlayed
+            totalGamesPlayed,
+            results.GamesWon,
+            results.GamesLost,
+            results.WinRate
         );
     }
 }

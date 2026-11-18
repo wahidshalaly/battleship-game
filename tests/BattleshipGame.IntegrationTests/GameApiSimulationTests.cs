@@ -165,6 +165,22 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     }
 
     [Fact]
+    public async Task PlayerProfile_CountsWinsAndLosses_ButNotTheUnfinishedGame()
+    {
+        await SeedPlayer(_clientSubject, $"u_stats_{Guid.NewGuid():N}"[..32]);
+        await PlayRandomGameToGameOver();
+        await PlayAiGameToDefeat();
+        await CreateGame(BoardSize, OpponentStrategy.Random);
+
+        var me = await GetMe();
+
+        me.TotalGamesPlayed.Should().Be(3);
+        me.GamesWon.Should().Be(1);
+        me.GamesLost.Should().Be(1);
+        me.WinRate.Should().Be(0.5);
+    }
+
+    [Fact]
     public async Task CreateGame_WhilePlayerHasActiveGame_IsRejectedWithConflict()
     {
         await SeedPlayer(_clientSubject, $"u_busy_{Guid.NewGuid():N}"[..32]);
@@ -281,6 +297,23 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         return gameId;
     }
 
+    // The scripted AI opponent fires only at the player's ships while the player only misses.
+    private async Task<Guid> PlayAiGameToDefeat()
+    {
+        var playerPlacements = GenerateRandomShipPlacements(BoardSize);
+        var opponentPlacements = GenerateRandomShipPlacements(BoardSize);
+        _chat.ReplyWithCells(playerPlacements.SelectMany(p => p.Position));
+
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.SemanticKernel);
+        await PlaceShips(gameId, playerPlacements, opponentPlacements);
+        await StartGameplay(gameId);
+        var opponentShipCells = opponentPlacements.SelectMany(p => p.Position).ToHashSet();
+        await AttackCells(gameId, AllCells(BoardSize).Where(c => !opponentShipCells.Contains(c)));
+
+        (await GetGame(gameId)).WinnerSide.Should().Be(BoardSide.Opponent);
+        return gameId;
+    }
+
     private async Task<PlayerResponse> GetMe()
     {
         var me = await _client.GetFromJsonAsync<PlayerResponse>("/api/players/me");
@@ -385,7 +418,7 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     }
 
     // Attacks the given ship cells until the game ends; returns the opponent's counter-attacks.
-    private async Task<List<string>> AttackShips(
+    private Task<List<string>> AttackShips(
         Guid gameId,
         (
             string BowCode,
@@ -393,25 +426,25 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
             ShipOrientation Orientation,
             string[] Position
         )[] shipPlacements
-    )
+    ) => AttackCells(gameId, shipPlacements.SelectMany(p => p.Position));
+
+    // Attacks the given cells until the game ends; returns the opponent's counter-attacks.
+    private async Task<List<string>> AttackCells(Guid gameId, IEnumerable<string> cellCodes)
     {
         var opponentCells = new List<string>();
-        foreach (var (_, _, _, position) in shipPlacements)
+        foreach (var cellCode in cellCodes)
         {
-            foreach (var cellCode in position)
-            {
-                var response = await _client.PostAsJsonAsync(
-                    $"/api/games/{gameId}/attacks",
-                    new AttackRequest(cellCode)
-                );
-                response.EnsureSuccessStatusCode();
-                var roundResult = await response.Content.ReadFromJsonAsync<LastRoundResult>();
-                output.WriteLine("Attacked {0}. Outcome: {1}", cellCode, roundResult);
-                if (roundResult?.OpponentTargetCell is { } opponentCell)
-                    opponentCells.Add(opponentCell);
-                if (roundResult?.GameState == GameState.GameOver)
-                    return opponentCells;
-            }
+            var response = await _client.PostAsJsonAsync(
+                $"/api/games/{gameId}/attacks",
+                new AttackRequest(cellCode)
+            );
+            response.EnsureSuccessStatusCode();
+            var roundResult = await response.Content.ReadFromJsonAsync<LastRoundResult>();
+            output.WriteLine("Attacked {0}. Outcome: {1}", cellCode, roundResult);
+            if (roundResult?.OpponentTargetCell is { } opponentCell)
+                opponentCells.Add(opponentCell);
+            if (roundResult?.GameState == GameState.GameOver)
+                return opponentCells;
         }
 
         return opponentCells;

@@ -1,3 +1,4 @@
+using BattleshipGame.Application.Features.Players.Queries;
 using BattleshipGame.Application.Interfaces.Persistence;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
 using BattleshipGame.Domain.DomainModel.PlayerAggregate;
@@ -309,6 +310,52 @@ public class GameRepositoryTests(PostgresFixture postgres) : BaseRepositoryTests
 
         // Assert
         count.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task GetResultsByPlayerIdAsync_ShouldCountWinsAndLossesOfFinishedGamesOfThatPlayerOnly()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        await _subject.SaveAsync(
+            _fixture.CreateGameInStateGameOver(playerId, BoardSide.Player),
+            _cancellationToken
+        );
+        await _subject.SaveAsync(
+            _fixture.CreateGameInStateGameOver(playerId, BoardSide.Player),
+            _cancellationToken
+        );
+        await _subject.SaveAsync(
+            _fixture.CreateGameInStateGameOver(playerId, BoardSide.Opponent),
+            _cancellationToken
+        );
+        await _subject.SaveAsync(_fixture.CreateGameInStateStarted(playerId), _cancellationToken);
+        await _subject.SaveAsync(
+            _fixture.CreateGameInStateGameOver(playerId: null, BoardSide.Player),
+            _cancellationToken
+        );
+        await CommitAsync();
+
+        // Act
+        var results = await _subject.GetResultsByPlayerIdAsync(playerId, _cancellationToken);
+
+        // Assert
+        results.Should().Be(new GameResults(GamesWon: 2, GamesLost: 1));
+    }
+
+    [Fact]
+    public async Task GetResultsByPlayerIdAsync_WhenPlayerHasOnlyAnUnfinishedGame_ShouldReturnNone()
+    {
+        // Arrange
+        var playerId = new PlayerId(Guid.NewGuid());
+        await _subject.SaveAsync(_fixture.CreateGameInStateStarted(playerId), _cancellationToken);
+        await CommitAsync();
+
+        // Act
+        var results = await _subject.GetResultsByPlayerIdAsync(playerId, _cancellationToken);
+
+        // Assert
+        results.Should().Be(GameResults.None);
     }
 
     [Fact]
