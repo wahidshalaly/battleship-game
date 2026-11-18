@@ -156,7 +156,7 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         foreach (var cell in playerShots)
         {
             var round = await Attack(gameId, cell);
-            opponentShots.Add((round.OpponentTargetCell!, round.OpponentAttackResult.Value));
+            opponentShots.Add((round.OpponentTargetCell!, round.OpponentAttackResult!.Value));
         }
 
         // Act
