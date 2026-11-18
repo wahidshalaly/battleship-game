@@ -22,14 +22,41 @@ public class ExceptionHandlingMiddleware(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "An unhandled exception occurred: {Message}", ex.Message);
-            await HandleExceptionAsync(context, ex);
+            var problemDetails = ToProblemDetails(context, ex);
+            Log(ex, problemDetails.Status ?? StatusCodes.Status500InternalServerError);
+            await WriteAsync(context, problemDetails);
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    /// <summary>
+    /// Logs server errors at Error level with the exception. Client errors (4xx) are expected
+    /// outcomes such as a wrong password or a conflict, so they are logged at Warning level
+    /// without a stack trace.
+    /// </summary>
+    /// <param name="exception">The exception that was handled.</param>
+    /// <param name="status">The HTTP status code returned for it.</param>
+    private void Log(Exception exception, int status)
     {
-        var problemDetails = exception switch
+        if (status >= StatusCodes.Status500InternalServerError)
+        {
+            logger.LogError(
+                exception,
+                "An unhandled exception occurred: {Message}",
+                exception.Message
+            );
+            return;
+        }
+
+        logger.LogWarning(
+            "Request rejected with {StatusCode} ({ExceptionType}): {Message}",
+            status,
+            exception.GetType().Name,
+            exception.Message
+        );
+    }
+
+    private static ProblemDetails ToProblemDetails(HttpContext context, Exception exception) =>
+        exception switch
         {
             GameNotFoundException gnfEx => new ProblemDetails
             {
@@ -97,6 +124,8 @@ public class ExceptionHandlingMiddleware(
             },
         };
 
+    private static Task WriteAsync(HttpContext context, ProblemDetails problemDetails)
+    {
         context.Response.ContentType = "application/problem+json";
         context.Response.StatusCode =
             problemDetails.Status ?? (int)HttpStatusCode.InternalServerError;
