@@ -76,4 +76,4 @@ Provide a concise analysis of the Battleship Game bounded contexts, their respon
 - Player statistics (games won, win rate, leaderboard) are queries over finished games, not state copied onto the player
 - Player-owned facts that cannot be derived from games (achievements, points ledger, rating) would be new aggregates keyed by `PlayerId`, recorded by handlers reacting to `GameOver`
 
-This analysis focuses on bounded contexts, responsibilities, and contracts. Detailed implementation priorities and tasks live in `technical-debt-and-roadmap.md`.
+This analysis focuses on bounded contexts, responsibilities, and contracts. Implementation work is tracked in GitHub issues.
