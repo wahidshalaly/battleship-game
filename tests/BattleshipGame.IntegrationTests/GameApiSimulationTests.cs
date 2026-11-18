@@ -187,6 +187,70 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
             );
     }
 
+    [Fact]
+    public async Task ResumeAfterSigningOut_RestoresEveryHitAndMissOnBothBoards()
+    {
+        // Arrange: a game half-way through, with hits and misses on both sides. The opponent
+        // is the scripted LLM, so its shots are known up front.
+        await SeedPlayer(_clientSubject, $"u_resume_{Guid.NewGuid():N}"[..32]);
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.SemanticKernel);
+        var opponentPlacements = GenerateRandomShipPlacements(BoardSize);
+        var playerPlacements = GenerateRandomShipPlacements(BoardSize);
+        await PlaceShips(gameId, playerPlacements, opponentPlacements);
+        await StartGameplay(gameId);
+
+        var opponentShipCells = opponentPlacements.SelectMany(p => p.Position).ToHashSet();
+        var playerShipCells = playerPlacements.SelectMany(p => p.Position).ToHashSet();
+        string[] playerHits =
+        [
+            opponentPlacements[0].Position[0],
+            opponentPlacements[1].Position[0],
+        ];
+        string[] playerMisses =
+        [
+            .. AllCells(BoardSize).Where(c => !opponentShipCells.Contains(c)).Take(2),
+        ];
+        string[] opponentHits = [playerPlacements[0].Position[0], playerPlacements[1].Position[0]];
+        string[] opponentMisses =
+        [
+            .. AllCells(BoardSize).Where(c => !playerShipCells.Contains(c)).Take(2),
+        ];
+        _chat.ReplyWithCells([
+            opponentHits[0],
+            opponentMisses[0],
+            opponentHits[1],
+            opponentMisses[1],
+        ]);
+
+        foreach (
+            var cell in (string[])[playerHits[0], playerMisses[0], playerHits[1], playerMisses[1]]
+        )
+            await Attack(gameId, cell);
+
+        // Act: sign out (drop the session) and sign in again as the same player, then resume
+        // the active game the way the lobby does.
+        _client.DefaultRequestHeaders.Remove(TestAuthHandler.SubjectHeader);
+        using var signedInAgain = CreateAuthenticatedClient(_clientSubject);
+        var activeGame = await signedInAgain.GetFromJsonAsync<GetGameQueryResult>(
+            "/api/games/active"
+        );
+        var boards = await signedInAgain.GetFromJsonAsync<GetGameBoardsQueryResult>(
+            $"/api/games/{activeGame!.GameId}/boards"
+        );
+
+        // Assert
+        activeGame.GameId.Should().Be(gameId);
+        activeGame.State.Should().Be(GameState.Started);
+        boards.Should().NotBeNull();
+        boards.OpponentBoard.Hits.Should().BeEquivalentTo(playerHits);
+        boards.OpponentBoard.Misses.Should().BeEquivalentTo(playerMisses);
+        boards.OwnBoard.Hits.Should().BeEquivalentTo(opponentHits);
+        boards.OwnBoard.Misses.Should().BeEquivalentTo(opponentMisses);
+        boards
+            .OwnBoard.Ships.Should()
+            .BeEquivalentTo(playerPlacements.Select(p => new { p.Kind, p.Position }));
+    }
+
     [Theory]
     [InlineData(OpponentStrategy.Random)]
     [InlineData(OpponentStrategy.SemanticKernel)]
