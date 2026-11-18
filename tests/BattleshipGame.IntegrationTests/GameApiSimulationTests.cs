@@ -199,32 +199,13 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         await PlaceShips(gameId, playerPlacements, opponentPlacements);
         await StartGameplay(gameId);
 
-        var opponentShipCells = opponentPlacements.SelectMany(p => p.Position).ToHashSet();
-        var playerShipCells = playerPlacements.SelectMany(p => p.Position).ToHashSet();
-        string[] playerHits =
-        [
-            opponentPlacements[0].Position[0],
-            opponentPlacements[1].Position[0],
-        ];
-        string[] playerMisses =
-        [
-            .. AllCells(BoardSize).Where(c => !opponentShipCells.Contains(c)).Take(2),
-        ];
-        string[] opponentHits = [playerPlacements[0].Position[0], playerPlacements[1].Position[0]];
-        string[] opponentMisses =
-        [
-            .. AllCells(BoardSize).Where(c => !playerShipCells.Contains(c)).Take(2),
-        ];
-        _chat.ReplyWithCells([
-            opponentHits[0],
-            opponentMisses[0],
-            opponentHits[1],
-            opponentMisses[1],
-        ]);
+        var playerHits = ShipCells(opponentPlacements).Take(2).ToArray();
+        var playerMisses = OpenCells(opponentPlacements).Take(2).ToArray();
+        var opponentHits = ShipCells(playerPlacements).Take(2).ToArray();
+        var opponentMisses = OpenCells(playerPlacements).Take(2).ToArray();
 
-        foreach (
-            var cell in (string[])[playerHits[0], playerMisses[0], playerHits[1], playerMisses[1]]
-        )
+        _chat.ReplyWithCells([.. opponentHits, .. opponentMisses]);
+        foreach (var cell in playerHits.Concat(playerMisses))
             await Attack(gameId, cell);
 
         // Act: sign out (drop the session) and sign in again as the same player, then resume
@@ -412,6 +393,16 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         roundResult.OpponentAttackResult.Should().NotBeNull();
         roundResult.GameState.Should().Be(GameState.Started);
     }
+
+    // Cells covered by the placed ships: attacking any of them is a hit.
+    private static IEnumerable<string> ShipCells(
+        (string BowCode, ShipKind Kind, ShipOrientation Orientation, string[] Position)[] placements
+    ) => placements.SelectMany(p => p.Position);
+
+    // Cells no ship covers: attacking any of them is a miss.
+    private static IEnumerable<string> OpenCells(
+        (string BowCode, ShipKind Kind, ShipOrientation Orientation, string[] Position)[] placements
+    ) => AllCells(BoardSize).Except(ShipCells(placements));
 
     // Every cell on the board in a fixed order (A1, B1, ... then A2, ...); never repeats.
     private static List<string> AllCells(int boardSize) =>
