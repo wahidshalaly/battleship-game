@@ -56,16 +56,21 @@ register/sign in, place your ships, and play a full game to completion.
 
 ## AI Opponent (optional)
 
-The SemanticKernel opponent talks to an OpenAI-compatible endpoint. For local development, run
-Ollama and set these environment variables (the API reads only these, and won't start without them):
+The SemanticKernel opponent talks to an OpenAI-compatible endpoint, configured by the `OpenAi`
+section (`ModelId`, `Endpoint`, `ApiKey`). The API validates all three at startup and won't start
+if any is missing, even if you only play against the `Random` opponent.
+
+For local development, `appsettings.Development.json` already points at Ollama (endpoint
+`http://localhost:11434/v1`, model `gemma4`, API key `ollama`; Ollama accepts any key), so the
+API starts with no extra setup. To play against the AI opponent, run Ollama and pull the model:
 
 ```bash
-export OPENAI_MODEL_ID=gemma4
-export OPENAI_ENDPOINT=http://localhost:11434/v1
-export OPENAI_API_KEY=ollama
+ollama pull gemma4
 ```
 
-If unset, games using the `Random` opponent strategy still work without any AI backend.
+To try another model or endpoint, change `OpenAi:ModelId` / `OpenAi:Endpoint` there. Hosted
+environments can use a settings file or the standard environment variables `OpenAi__ModelId`,
+`OpenAi__Endpoint` and `OpenAi__ApiKey`; keep a real provider's key out of the repository.
 
 ## Database Migrations
 

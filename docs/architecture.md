@@ -147,6 +147,7 @@ graph TB
   - `RandomAttackOpponent`: Random cell selection from available targets on Player's board
   - `LlmOpponent`: LLM-based strategic attack selection; builds the prompts, calls the model through `ILlmChat` and validates the reply
   - `ILlmChat` / `SemanticKernelChat`: the model call behind a project-owned interface; `SemanticKernelChat` is the only class that uses Semantic Kernel
+  - `OpenAiOptions`: config binding for `OpenAi` section (`ModelId`, `Endpoint`, `ApiKey`), validated at startup
   - `ResilientComputerOpponentDecorator`: wraps `LlmOpponent` with Polly retry + circuit breaker, falling back to `RandomAttackOpponent`
   - `ComputerOpponentFactory`: Factory resolving strategies via keyed DI services
   - `BattleshipPromptBuilder`: Constructs prompts for LLM-based strategies

@@ -47,7 +47,7 @@ jobs:
 
       - name: Integration tests
         # No LLM needed: the tests replace the model with a scripted fake and supply
-        # placeholder OPENAI_* settings for the API's startup check.
+        # placeholder OpenAi settings for the API's startup check.
         run: >-
           dotnet test tests/BattleshipGame.IntegrationTests/BattleshipGame.IntegrationTests.csproj
           --no-build -c Release --verbosity normal
