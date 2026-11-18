@@ -30,7 +30,7 @@ docker pull grafana/k6:latest
 
 **Requirements:**
 - Docker installed and running
-- API running at `http://host.docker.internal:5000` (or set custom URL via environment variable)
+- API reachable at `API_BASE_URL` (default `https://localhost:7127`; from Docker use e.g. `http://host.docker.internal:5298`)
 
 ## 🎯 Test Scenarios
 

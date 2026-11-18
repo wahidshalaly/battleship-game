@@ -442,6 +442,3 @@ dist-ssr/
 
 # CPM conversion evidence (local only)
 cpm-conversion/
-
-# Local .NET SDK install
-.dotnet/

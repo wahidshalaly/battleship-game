@@ -20,7 +20,6 @@
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.JavaScript" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
-    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
 
 </Project>

@@ -57,7 +57,7 @@ register/sign in, place your ships, and play a full game to completion.
 ## AI Opponent (optional)
 
 The SemanticKernel opponent talks to an OpenAI-compatible endpoint. For local development, run
-Ollama and configure the endpoint via user secrets or environment variables:
+Ollama and set these environment variables (the API reads only these, and won't start without them):
 
 ```bash
 export OPENAI_MODEL_ID=gemma4
