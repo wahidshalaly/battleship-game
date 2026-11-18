@@ -47,6 +47,8 @@ Provide a concise analysis of the Battleship Game bounded contexts, their respon
   - `POST /api/players` — create player
   - `GET /api/players/{id}` — get player by ID
   - `GET /api/players/{username}` — get player by username
+  - `GET /api/players/me` — caller's own profile, including games won, games lost and win rate
+  - `GET /api/players/leaderboard?top=10` — top players ranked by their finished games
   - (Planned) `GET /api/players/{id}/game_history` — expose history
 
 ## Invariants (Per Context)
@@ -62,7 +64,7 @@ Provide a concise analysis of the Battleship Game bounded contexts, their respon
 ## Interactions
 
 - Commands in Game Context produce domain events; rich results (`AttackResult`, `LastRoundResult`) returned to clients
-- Player-facing views (active game, games played) are queries over games
+- Player-facing views (active game, games played, games won and lost, win rate, leaderboard) are queries over games
 
 ## Observations (Alignment)
 
@@ -73,7 +75,8 @@ Provide a concise analysis of the Battleship Game bounded contexts, their respon
 
 ## Next Steps (Context-Focused)
 
-- Player statistics (games won, win rate, leaderboard) are queries over finished games, not state copied onto the player
+- Player statistics (games won, win rate, leaderboard) are implemented as queries over finished games, not state copied onto the player
+- Fewest shots to win needs the shot count, which lives inside the board JSON: a JSON query or a stored shot count on `games`
 - Player-owned facts that cannot be derived from games (achievements, points ledger, rating) would be new aggregates keyed by `PlayerId`, recorded by handlers reacting to `GameOver`
 
 This analysis focuses on bounded contexts, responsibilities, and contracts. Implementation work is tracked in GitHub issues.

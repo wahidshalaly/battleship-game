@@ -203,21 +203,31 @@ classDiagram
         +Task~PlayerId~ CreateAsync(string)
         +Task~GetPlayerQueryResult?~ GetByIdAsync(PlayerId)
         +Task~GetPlayerQueryResult?~ GetByUsernameAsync(string)
+        +Task~GetLeaderboardQueryResult~ GetLeaderboardAsync(int)
     }
 
     class PlayerService {
         +Task~PlayerId~ CreateAsync(string)
         +Task~GetPlayerQueryResult?~ GetByIdAsync(PlayerId)
         +Task~GetPlayerQueryResult?~ GetByUsernameAsync(string)
+        +Task~GetLeaderboardQueryResult~ GetLeaderboardAsync(int)
     }
 
     %% Repository Interfaces
     class IGameRepository {
         <<Interface>>
         +Task~Game?~ GetByIdAsync(GameId)
+        +Task~Game~ GetByIdOrThrowAsync(GameId)
         +Task SaveAsync(Game)
-        +Task DeleteAsync(GameId)
-        +Task~IEnumerable~Game~~ GetAllAsync()
+        +Task~IReadOnlyCollection~Game~~ GetByPlayerIdAsync(PlayerId)
+        +Task~Game?~ GetActiveGameByPlayerIdAsync(PlayerId)
+        +Task~int~ CountByPlayerIdAsync(PlayerId)
+        +Task~GameResults~ GetResultsByPlayerIdAsync(PlayerId)
+    }
+
+    class ILeaderboardReader {
+        <<Interface>>
+        +Task~IReadOnlyList~PlayerStanding~~ GetTopPlayersAsync(int top, int minimumFinishedGamesToRank)
     }
 
     class IPlayerRepository {
@@ -243,6 +253,7 @@ classDiagram
         <<CQRS>>
         GetGameQuery
         GetPlayerQuery
+        GetLeaderboardQuery
     }
 
     GameplayService ..|> IGameplayService

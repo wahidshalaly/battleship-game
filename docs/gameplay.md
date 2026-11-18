@@ -83,6 +83,16 @@ When a ship is destroyed, a message tells you which one ("You sank the opponent'
 Sink all five opponent ships (17 cells) before the opponent sinks yours. When the game ends, a
 banner announces the result and you can return to the lobby to play again.
 
+## Your record and the leaderboard
+
+The lobby shows **Your record** — games won, games lost and win rate — and the **Leaderboard** of
+the top ten players. Only finished games count; a game in progress is neither won nor lost.
+
+The leaderboard is ranked by win rate, but only for players with at least five finished games.
+Until then a player is marked **provisional** and listed after the ranked players, so one lucky win
+doesn't top the board. Ties go to the player with more wins against the AI opponent (beating it is
+harder than beating Random), then to the one with more wins.
+
 ## Resuming a game
 
 If you leave mid-game, signing back in (or returning to the lobby) lets you **Resume** it — the
