@@ -6,6 +6,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a learning playground for DDD, AI-powered applications, and engineering acceleration with AI. The game itself is secondary — the primary goal is exploring patterns and architecture.
 
+## Working Principles
+
+Adapted from [Karpathy's guidelines](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md). They favour caution over speed; use judgement on trivial tasks.
+
+### 1. Think before coding
+- State assumptions explicitly; if uncertain, ask.
+- If a request has several readings, present them instead of picking one silently.
+- If a simpler approach exists, say so and push back when warranted — even on a pattern-exploration task, name the simpler alternative before building the elaborate one.
+- If something is unclear, stop, name what is confusing and ask.
+
+### 2. Simplicity first
+- Minimum code that solves the problem: no features, options or configurability beyond what was asked.
+- No abstraction for single-use code — a new interface, base class or MediatR behaviour needs a second caller or a stated reason (testability, layer boundary).
+- No error handling for impossible states; domain invariants are enforced once, in the aggregate.
+- If 200 lines could be 50, rewrite it. Would a senior engineer call it overcomplicated?
+
+### 3. Surgical changes
+- Touch only what the task requires; every changed line should trace to the request.
+- Don't "improve" adjacent code, comments or formatting, and don't refactor what isn't broken. Match the existing style even if you'd do it differently.
+- Mention unrelated dead code or problems — don't fix them unasked.
+- Remove imports, members and files that *your* change orphaned; leave pre-existing dead code alone.
+- Follow-up work your change makes necessary (docs, `docs/openapi.yaml`, frontend types, migrations) is part of the change, not scope creep — see Working Agreements.
+
+### 4. Goal-driven execution
+Turn the task into a verifiable goal and loop until it is met:
+- "Fix the bug" → a failing test that reproduces it, then make it pass
+- "Add validation" → tests for the invalid inputs, then make them pass
+- "Refactor X" → the relevant tests pass before and after
+
+For multi-step work, state a brief plan with a check per step (`dotnet build`, `dotnet test --filter …`, `npm run test`, `dotnet csharpier check .`):
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+```
+
+These are working when diffs have fewer unnecessary changes, fewer rewrites come from overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
 ## Commands
 
 ```bash
