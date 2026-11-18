@@ -180,6 +180,36 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         me.WinRate.Should().Be(0.5);
     }
 
+    // The database is shared with other tests; at most 100 players there have finished a game.
+    [Fact]
+    public async Task Leaderboard_ListsPlayerOnlyOnceTheyHaveFinishedAGame()
+    {
+        var username = $"u_board_{Guid.NewGuid():N}"[..32];
+        await SeedPlayer(_clientSubject, username);
+        var gameId = await CreateGame(BoardSize, OpponentStrategy.Random);
+        (await GetLeaderboard(top: 100)).Entries.Should().NotContain(e => e.Username == username);
+
+        await FinishRandomGame(gameId);
+
+        var leaderboard = await GetLeaderboard(top: 100);
+        var entry = leaderboard.Entries.Should().ContainSingle(e => e.Username == username).Subject;
+        entry.GamesFinished.Should().Be(1);
+        entry.GamesWon.Should().Be(1);
+        entry.WinRate.Should().Be(1);
+        entry.IsProvisional.Should().BeTrue();
+        leaderboard.MinimumFinishedGamesToRank.Should().BePositive();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(101)]
+    public async Task Leaderboard_WithTopOutOfRange_IsRejectedWithBadRequest(int top)
+    {
+        var response = await _client.GetAsync($"/api/players/leaderboard?top={top}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     [Fact]
     public async Task CreateGame_WhilePlayerHasActiveGame_IsRejectedWithConflict()
     {
@@ -289,12 +319,18 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
     private async Task<Guid> PlayRandomGameToGameOver()
     {
         var gameId = await CreateGame(BoardSize, OpponentStrategy.Random);
+        await FinishRandomGame(gameId);
+        return gameId;
+    }
+
+    // Sets up a new game against Random and sinks every opponent ship, so the player wins.
+    private async Task FinishRandomGame(Guid gameId)
+    {
         var opponentPlacements = GenerateRandomShipPlacements(BoardSize);
         await PlaceShips(gameId, GenerateRandomShipPlacements(BoardSize), opponentPlacements);
         await StartGameplay(gameId);
         await AttackShips(gameId, opponentPlacements);
         await VerifyGameState(gameId, GameState.GameOver);
-        return gameId;
     }
 
     // The scripted AI opponent fires only at the player's ships while the player only misses.
@@ -319,6 +355,15 @@ public class GameApiSimulationTests(ITestOutputHelper output, PostgresFixture po
         var me = await _client.GetFromJsonAsync<PlayerResponse>("/api/players/me");
         me.Should().NotBeNull();
         return me;
+    }
+
+    private async Task<LeaderboardResponse> GetLeaderboard(int top)
+    {
+        var leaderboard = await _client.GetFromJsonAsync<LeaderboardResponse>(
+            $"/api/players/leaderboard?top={top}"
+        );
+        leaderboard.Should().NotBeNull();
+        return leaderboard;
     }
 
     private async Task SeedPlayer(string subject, string username)

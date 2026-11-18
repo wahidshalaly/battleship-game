@@ -16,6 +16,13 @@ public interface IPlayerService
     Task<GetPlayerQueryResult?> GetByUsernameAsync(string username, CancellationToken ct);
 
     /// <summary>
+    /// Returns the top players on the leaderboard, best first.
+    /// </summary>
+    /// <param name="top">The maximum number of players to return.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<GetLeaderboardQueryResult> GetLeaderboardAsync(int top, CancellationToken ct);
+
+    /// <summary>
     /// Returns the authenticated caller's <see cref="Player"/>, or <c>null</c> if they have no
     /// game profile yet.
     /// </summary>

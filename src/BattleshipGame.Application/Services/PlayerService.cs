@@ -32,6 +32,12 @@ public class PlayerService(IMediator mediator, ICurrentUser currentUser) : IPlay
     ) => await mediator.Send(new GetPlayerByUsernameQuery(username), ct);
 
     /// <inheritdoc />
+    public async Task<GetLeaderboardQueryResult> GetLeaderboardAsync(
+        int top,
+        CancellationToken ct
+    ) => await mediator.Send(new GetLeaderboardQuery(top), ct);
+
+    /// <inheritdoc />
     public async Task<Player?> GetCurrentAsync(CancellationToken ct)
     {
         var subject = currentUser.SubjectId;
