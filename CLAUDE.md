@@ -32,12 +32,14 @@ Adapted from [Karpathy's guidelines](https://github.com/multica-ai/andrej-karpat
 - Follow-up work your change makes necessary (docs, `docs/openapi.yaml`, frontend types, migrations) is part of the change, not scope creep — see Working Agreements.
 
 ### 4. Goal-driven execution
-Turn the task into a verifiable goal and loop until it is met:
+Turn the task into a verifiable goal and loop until it is met. Ask about *what* (intent, requirements); loop on *how* against the checks.
 - "Fix the bug" → a failing test that reproduces it, then make it pass
 - "Add validation" → tests for the invalid inputs, then make them pass
 - "Refactor X" → the relevant tests pass before and after
+- "Make it faster" → the naive, obviously correct version with tests first, then optimise with the tests still passing
+- "Change the UI" → Vitest for the logic, then check it in the running app (the `run` skill or a browser)
 
-For multi-step work, state a brief plan with a check per step (`dotnet build`, `dotnet test --filter …`, `npm run test`, `dotnet csharpier check .`):
+For non-trivial work, state a brief plan before editing, then proceed — don't wait for approval unless asked. Give each step a check (`dotnet build`, `dotnet test --filter …`, `npm run test`, `dotnet csharpier check .`):
 ```
 1. [Step] → verify: [check]
 2. [Step] → verify: [check]
