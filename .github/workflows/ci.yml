@@ -51,3 +51,34 @@ jobs:
         run: >-
           dotnet test tests/BattleshipGame.IntegrationTests/BattleshipGame.IntegrationTests.csproj
           --no-build -c Release --verbosity normal
+
+  frontend:
+    runs-on: ubuntu-latest
+    # No path filter: a required check that is skipped on backend-only PRs would
+    # leave those PRs waiting forever.
+    defaults:
+      run:
+        working-directory: src/BattleshipGame.Web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: src/BattleshipGame.Web/.nvmrc
+          cache: npm
+          cache-dependency-path: src/BattleshipGame.Web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm run test
