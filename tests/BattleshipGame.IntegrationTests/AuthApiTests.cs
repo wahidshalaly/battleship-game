@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using BattleshipGame.WebAPI.Controllers;
 using Microsoft.AspNetCore.Mvc.Testing;
 

@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <!-- Run IDE code-style analyzers (configured in .editorconfig) during build, so CI enforces them. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- IDE0005 (unused usings) only reports at build time when the XML documentation file is generated. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- CS1591: missing XML comment on public members; documentation coverage isn't enforced. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+</Project>

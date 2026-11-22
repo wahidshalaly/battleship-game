@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using BattleshipGame.Infrastructure.ComputerOpponent;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BattleshipGame.IntegrationTests;
 

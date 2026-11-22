@@ -3,7 +3,6 @@ using System.Text.Json;
 using BattleshipGame.Application.Features.Games.Queries;
 using BattleshipGame.Application.Services;
 using BattleshipGame.Domain.DomainModel.GameAggregate;
-using BattleshipGame.Infrastructure.Persistence;
 using BattleshipGame.Infrastructure.Persistence.Entities;
 using BattleshipGame.WebAPI.Controllers;
 using Microsoft.AspNetCore.Mvc.Testing;
