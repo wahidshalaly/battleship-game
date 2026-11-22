@@ -11,10 +11,12 @@ This is a learning playground for DDD, AI-powered applications, and engineering 
 Adapted from [Karpathy's guidelines](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md). They favour caution over speed; use judgement on trivial tasks.
 
 ### 1. Think before coding
-- State assumptions explicitly; if uncertain, ask.
-- If a request has several readings, present them instead of picking one silently.
-- If a simpler approach exists, say so and push back when warranted — even on a pattern-exploration task, name the simpler alternative before building the elaborate one.
-- If something is unclear, stop, name what is confusing and ask.
+- State the assumptions you make. Ask first when a wrong guess would be costly to undo (domain model, schema, public API, design direction); otherwise make the guess, say so and carry on.
+- If a request has several readings, or several approaches would work, present them with their tradeoffs and recommend one — don't pick silently.
+- Surface inconsistencies you notice: code vs docs, the request vs these conventions, a test that contradicts its name.
+- If a simpler approach exists, say so — even on a pattern-exploration task, name the simpler alternative before building the elaborate one.
+- If a suggestion from the user looks worse, say why once and offer the alternative; if they keep theirs, implement it without re-arguing. When your work is challenged, re-check it before agreeing — don't concede just because you were questioned.
+- If you get confused mid-task (results you can't explain, a fix that keeps failing), stop and say what you don't understand instead of piling on changes.
 
 ### 2. Simplicity first
 - Minimum code that solves the problem: no features, options or configurability beyond what was asked.
