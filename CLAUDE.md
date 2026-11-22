@@ -6,6 +6,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a learning playground for DDD, AI-powered applications, and engineering acceleration with AI. The game itself is secondary — the primary goal is exploring patterns and architecture.
 
+## Working Principles
+
+Adapted from Andrej Karpathy's observations on coding with LLM agents, via the [multica-ai summary](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md). They favour caution over speed where a mistake is costly to undo; use judgement on trivial tasks.
+
+### 1. Think before coding
+- State the assumptions you make. Ask first when a wrong guess would be costly to undo (domain model, schema, public API, design direction); otherwise make the guess, say so and carry on.
+- If a request has several readings, or several approaches would work, present them with their tradeoffs and recommend one — don't pick silently.
+- Surface inconsistencies you notice: code vs docs, the request vs these conventions, a test that contradicts its name.
+- If a simpler approach exists, say so — even on a pattern-exploration task, name the simpler alternative before building the elaborate one.
+- If a suggestion from the user looks worse, say why once and offer the alternative; if they keep theirs, implement it without re-arguing. When your work is challenged, re-check it before agreeing — don't concede just because you were questioned.
+- If you get confused mid-task (results you can't explain, a fix that keeps failing), stop and say what you don't understand instead of piling on changes.
+
+### 2. Simplicity first
+- Minimum code that solves the problem: no features, options or configurability beyond what was asked.
+- No abstraction for single-use code — a new interface, base class or MediatR behaviour needs a second caller or a stated reason (testability, layer boundary).
+- No error handling for impossible states; domain invariants are enforced once, in the aggregate.
+- If 200 lines could be 50, rewrite it. Would a senior engineer call it overcomplicated?
+
+### 3. Surgical changes
+- Touch only what the task requires; every changed line should trace to the request.
+- Don't "improve" adjacent code, comments or formatting, and don't refactor what isn't broken. Match the existing style even if you'd do it differently.
+- Mention unrelated dead code or problems — don't fix them unasked.
+- Remove imports, members and files that *your* change orphaned; leave pre-existing dead code alone.
+- Follow-up work your change makes necessary (docs, `docs/openapi.yaml`, frontend types, migrations) is part of the change, not scope creep — see Working Agreements.
+
+### 4. Goal-driven execution
+Turn the task into a verifiable goal and loop until it is met. Ask about *what* (intent, requirements); loop on *how* against the checks.
+- "Fix the bug" → a failing test that reproduces it, then make it pass
+- "Add validation" → tests for the invalid inputs, then make them pass
+- "Refactor X" → the relevant tests pass before and after
+- "Make it faster" → the naive, obviously correct version with tests first, then optimise with the tests still passing
+- "Change the UI" → Vitest for the logic, then check it in the running app (the `run` skill or a browser)
+
+For non-trivial work, state a brief plan before editing, then proceed — don't wait for approval unless asked. Give each step a check (`dotnet build`, `dotnet test --filter …`, `npm run test`, `dotnet csharpier check .`):
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+```
+
+These are working when diffs have fewer unnecessary changes, fewer rewrites come from overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
 ## Commands
 
 ```bash
