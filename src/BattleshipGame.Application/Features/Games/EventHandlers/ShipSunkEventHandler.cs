@@ -10,7 +10,7 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// <remarks>
 /// Initializes a new instance of the ShipSunkEventHandler class.
 /// </remarks>
-/// <param name="logger">The logger instance.</param>
+/// <param name="broadcastRepository">Broadcasts game announcements.</param>
 internal class ShipSunkEventHandler(IBroadcastor broadcastRepository)
     : INotificationHandler<ShipSunkEvent>
 {
