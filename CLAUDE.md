@@ -8,7 +8,7 @@ This is a learning playground for DDD, AI-powered applications, and engineering 
 
 ## Working Principles
 
-Adapted from [Karpathy's guidelines](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md). They favour caution over speed; use judgement on trivial tasks.
+Adapted from Andrej Karpathy's observations on coding with LLM agents, via the [multica-ai summary](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md). They favour caution over speed where a mistake is costly to undo; use judgement on trivial tasks.
 
 ### 1. Think before coding
 - State the assumptions you make. Ask first when a wrong guess would be costly to undo (domain model, schema, public API, design direction); otherwise make the guess, say so and carry on.
