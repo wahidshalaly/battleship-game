@@ -234,6 +234,7 @@ The API binds the LLM settings to `OpenAiOptions` (section `OpenAi`: `ModelId`, 
 
 - **PR scope:** if a change creates the need for a follow-up (it leaves the model inconsistent otherwise), do it in the same PR as separate commits. Open a separate issue/PR only for work with independent value, risky changes, or when the PR gets too big to review.
 - **Commits:** one concern per commit, with a message that explains why.
+- **Before opening a PR:** run `/simplify` and `/code-review` on the branch and address what they find. CI then gates the merge: .NET build, tests, CSharpier, unused usings (IDE0005 is an error), and the frontend's lint, build and tests.
 - **Issues:** if the approach changes during implementation, update the issue (resolution note, superseded plan, accurate acceptance criteria) so it doesn't mislead later readers.
 
 ## Documentation
