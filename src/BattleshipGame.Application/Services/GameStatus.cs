@@ -10,6 +10,7 @@ namespace BattleshipGame.Application.Services;
 /// <param name="GameState">The current state of the game after the attack.</param>
 /// <param name="WinnerSide">The winning side if the game is over, otherwise None.</param>
 /// <param name="SunkShip">The kind of ship that was sunk, if applicable.</param>
+/// <param name="ShipSize">The size of the sunk ship, if applicable.</param>
 public record AttackResult(
     string TargetCell,
     CellState CellState,

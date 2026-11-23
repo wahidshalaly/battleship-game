@@ -14,6 +14,7 @@ public interface IGameplayService
     /// </summary>
     /// <param name="playerId"></param>
     /// <param name="boardSize"></param>
+    /// <param name="opponentStrategy"></param>
     /// <param name="ct"></param>
     /// <returns></returns>
     Task<GameId> StartNewGameAsync(

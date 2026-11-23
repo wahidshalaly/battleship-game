@@ -2,3 +2,10 @@
 
 # CA1822: Mark members as static
 dotnet_diagnostic.CA1822.severity = none
+
+# IDE0005: Remove unnecessary usings (error so CI fails on code a change orphaned)
+dotnet_diagnostic.IDE0005.severity = error
+
+# EF Core generates migrations with usings it may not need; don't fail every new migration.
+[**/Persistence/Migrations/*.cs]
+dotnet_diagnostic.IDE0005.severity = none

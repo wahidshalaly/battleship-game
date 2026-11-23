@@ -1,8 +1,6 @@
 using BattleshipGame.Application.Common.Exceptions;
-using BattleshipGame.Domain.DomainModel.PlayerAggregate;
 using BattleshipGame.Domain.Exceptions;
 using BattleshipGame.WebAPI.Middleware;
-using Microsoft.AspNetCore.Http;
 
 namespace BattleshipGame.IntegrationTests.Middleware;
 

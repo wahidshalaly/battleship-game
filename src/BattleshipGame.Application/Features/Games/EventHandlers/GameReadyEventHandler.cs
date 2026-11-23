@@ -7,7 +7,7 @@ namespace BattleshipGame.Application.Features.Games.EventHandlers;
 /// <summary>
 /// Handles the GameReadyEvent domain event and executes side effects.
 /// </summary>
-/// <param name="logger">The logger instance.</param>
+/// <param name="broadcastRepository">Broadcasts game announcements.</param>
 internal class GameReadyEventHandler(IBroadcastor broadcastRepository)
     : INotificationHandler<GameReadyEvent>
 {
